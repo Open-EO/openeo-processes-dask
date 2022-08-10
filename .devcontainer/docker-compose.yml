@@ -30,4 +30,4 @@ services:
       target: dask-worker
     command: ["dask-worker", "tcp://scheduler:8786"]
     deploy:
-      replicas: 2
+      replicas: 1
