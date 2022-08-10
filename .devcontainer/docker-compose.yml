@@ -1,0 +1,33 @@
+version: "3.1"
+
+services:
+  workspace:
+    build:
+      context: ..
+      dockerfile: "./.devcontainer/Dockerfile"
+      target: devcontainer
+    tty: true
+    volumes: 
+      - ../:/openeo-processes-dask
+    environment:
+      - DASK_SCHEDULER_ADDRESS="tcp://scheduler:8786"
+
+  scheduler:
+    build:
+      context: ..
+      dockerfile: "./.devcontainer/Dockerfile"
+      target: dask-worker
+    hostname: scheduler
+    ports:
+      - "8786:8786"
+      - "8787:8787"
+    command: ["dask-scheduler"]
+
+  worker:
+    build:
+      context: ..
+      dockerfile: "./.devcontainer/Dockerfile"
+      target: dask-worker
+    command: ["dask-worker", "tcp://scheduler:8786"]
+    deploy:
+      replicas: 2
