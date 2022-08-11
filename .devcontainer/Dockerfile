@@ -62,7 +62,6 @@ ARG USER_ID
 ARG GROUP_ID
 ARG USERNAME
 
-ARG CACHEBUST=5
 USER $USERNAME
 
 # Copy in project dependency specification.
@@ -83,7 +82,7 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT 0
 
 COPY --from=devcontainer-builder --chown=${USER_ID}:${GROUP_ID} ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-# RUN poetry env use ${VIRTUAL_ENV}
+WORKDIR /openeo-processes-dask
 
 # Build the wheel in an ephemeral stage to make it available to dask workers later!
 FROM devcontainer-builder as wheel-builder

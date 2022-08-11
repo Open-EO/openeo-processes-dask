@@ -20,9 +20,11 @@ In this project, the "full-featured development environment" is specified via a 
 Download the `Visual Studio Code Remote - Containers` and run the "Reopen in Container" command.
 
 #### Pure docker
-To spin up the environment run `docker-compose build -f ./.devcontainer/Dockerfile --network=host . `
-To rebuild the entire setup (e.g. for when you've changed something in the Dockerfiles) add the ` --no-cache` flag: `docker-compose build -f ./.devcontainer/Dockerfile --network=host . --no-cache`
+To spin up the environment run `docker compose -f ./.devcontainer/docker-compose.yml up -d`
+To rebuild the entire setup (e.g. for when you've changed something in the Dockerfiles) use the following command with the ` --no-cache` flag: `docker compose -f ./.devcontainer/docker-compose.yml build --no-cache`
 
 To get an interactive shell into the running devcontainer (named `openeo-devcontainer`) run `docker exec -it openeo-devcontainer /bin/bash`.
 Test that your setup works with `poetry run python -m pytest`. 
 To run the example notebooks in `examples` you'll need to setup the devcontainer to host a jupyter notebook. 
+
+To tear the environment down again run `docker compose -f ./.devcontainer/docker-compose.yml down`.
