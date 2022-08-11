@@ -9,9 +9,9 @@
 	
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
-		"python.defaultInterpreterPath": ".venv/bin/python",
-		"python.venvPath": ".venv",
-		"python.pythonPath": ".venv/bin/python",
+		"python.defaultInterpreterPath": "/opt/venv/",
+		"python.venvPath": "/opt/venv/",
+		"python.pythonPath": "/opt/venv/bin/python",
 		"python.testing.pytestArgs": [
 			"tests"
 		],
@@ -27,9 +27,9 @@
 		"eamodio.gitlens"
 	],
 
-	"postCreateCommand": "poetry install --extras 'load-save vector ml'",
-
 	"remoteEnv": {
 		"GPG_TTY": "$(tty)`"
-	}
+	},
+
+	"remoteUser": "ubuntu"
 }
