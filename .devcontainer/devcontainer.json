@@ -29,7 +29,5 @@
 
 	"remoteEnv": {
 		"GPG_TTY": "$(tty)`"
-	},
-
-	"remoteUser": "ubuntu"
+	}
 }
