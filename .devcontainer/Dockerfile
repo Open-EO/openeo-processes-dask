@@ -11,7 +11,7 @@ ARG PYTHONDONTWRITEBYTECODE 1
 ARG PYTHONBUFFERED 1
 ARG POETRY_VIRTUALENVS_IN_PROJECT=0
 ARG POETRY_HOME="/opt/poetry/"
-ARG VIRTUAL_ENV=/opt/venv/
+ARG VIRTUAL_ENV=/opt/openeo-processes-dask/.venv/
 ARG WORKDIR
 ARG USER_ID
 ARG GROUP_ID
@@ -27,7 +27,7 @@ ENV WORKDIR=$WORKDIR
 ENV POETRY_VIRTUALENVS_IN_PROJECT=$POETRY_VIRTUALENVS_IN_PROJECT
 ENV VIRTUAL_ENV=$VIRTUAL_ENV
 
-ENV PATH="${POETRY_HOME}/bin:${PATH}"
+ENV PATH="${POETRY_HOME}/bin:$VIRTUAL_ENV/bin:${PATH}"
 
 RUN apt-get update -qy && \
     apt-get install -qy --no-install-recommends \
@@ -38,35 +38,39 @@ RUN apt-get update -qy && \
         git 
 
 RUN apt-get update -qy && \
-    apt-get install -qy --no-install-recommends python3 python3-distutils
+    apt-get install -qy --no-install-recommends python3 python3-distutils python3-venv
 
 # Install Poetry - respects $POETRY_VERSION & $POETRY_HOME
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
-RUN mkdir -p -m=00775 ${WORKDIR}
-RUN chown -R 1000:1000 ${WORKDIR}
-
 # Create the user so the program doesn't run as root. This increases security of the container.
 RUN addgroup --gid $GROUP_ID $USERNAME
 RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID $USERNAME
+
+RUN mkdir -p -m=00775 ${WORKDIR}
+RUN chown -R $USER_ID:$GROUP_ID ${WORKDIR}
 
 USER $USERNAME
 
 WORKDIR ${WORKDIR}
 
 FROM devcontainer-base AS devcontainer-builder
+# Note that this step needs to happen in the directory that the venv will live after, because this location is written to the shebang in the `.venv/bin/pip` file.
+
 ENV POETRY_VIRTUALENVS_IN_PROJECT 1
 ARG USER_ID
 ARG GROUP_ID
 ARG USERNAME
 
-ARG CACHEBUST=4
+ARG CACHEBUST=5
 USER $USERNAME
 
 # Copy in project dependency specification.
 COPY --chown=${USER_ID}:${GROUP_ID} pyproject.toml ${WORKDIR}/
 
 RUN poetry install --no-root
+
+RUN rm pyproject.toml
 
 FROM devcontainer-base as devcontainer
 ARG USER_ID
@@ -77,7 +81,7 @@ ARG VIRTUAL_ENV
 
 ENV POETRY_VIRTUALENVS_IN_PROJECT 0
 
-COPY --from=devcontainer-builder --chown=${USER_ID}:${GROUP_ID} ${WORKDIR}/.venv/ ${VIRTUAL_ENV}
+COPY --from=devcontainer-builder --chown=${USER_ID}:${GROUP_ID} ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # RUN poetry env use ${VIRTUAL_ENV}
 

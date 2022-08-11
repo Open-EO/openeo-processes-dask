@@ -9,9 +9,9 @@
 	
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
-		"python.defaultInterpreterPath": "/opt/venv/",
-		"python.venvPath": "/opt/venv/",
-		"python.pythonPath": "/opt/venv/bin/python",
+		"python.defaultInterpreterPath": "/opt/openeo-processes-dask/.venv",
+		"python.venvPath": "/opt/openeo-processes-dask/.venv",
+		"python.pythonPath": "/opt/openeo-processes-dask/.venv/bin/python",
 		"python.testing.pytestArgs": [
 			"tests"
 		],
