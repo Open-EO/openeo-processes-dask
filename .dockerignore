@@ -21,7 +21,6 @@
 **/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
-README.md
 **/.mypy_cache
 **/.pytest_cache
 **/venv
