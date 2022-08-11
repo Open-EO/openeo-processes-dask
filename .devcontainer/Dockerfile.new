@@ -60,7 +60,7 @@ ARG USER_ID
 ARG GROUP_ID
 ARG USERNAME
 
-ARG CACHEBUST=1 
+ARG CACHEBUST=2
 USER $USERNAME
 
 # Copy in project dependency specification.
@@ -69,9 +69,15 @@ COPY --chown=${USER_ID}:${GROUP_ID} pyproject.toml ${WORKDIR}/
 RUN poetry install --no-root
 
 FROM devcontainer-base as devcontainer
+ARG USER_ID
+ARG GROUP_ID
+ARG USERNAME
+ARG WORKDIR
+ARG VIRTUAL_ENV
+
 ENV POETRY_VIRTUALENVS_IN_PROJECT 0
 
-COPY --from=devcontainer-builder ${WORKDIR}/.venv/ ${VIRTUAL_ENV}
+COPY --from=devcontainer-builder --chown=${USER_ID}:${GROUP_ID} ${WORKDIR}/.venv/ ${VIRTUAL_ENV}
 
 # RUN poetry env use ${VIRTUAL_ENV}
 
@@ -86,6 +92,7 @@ RUN poetry build --format wheel
 FROM ghcr.io/dask/dask:2022.8.0 AS dask-worker
 
 ARG WORKDIR
+# TODO: variable
 WORKDIR /opt/openeo-processes-dask/dist/
 
 COPY --from=wheel-builder ${WORKDIR}/dist/ .
