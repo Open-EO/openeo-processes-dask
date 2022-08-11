@@ -20,6 +20,10 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+packages = [
+    { include = "src/openeo_processes_dask" }
+]
+
 
 [tool.poetry.dependencies]
 python = "^3.8, <3.11"

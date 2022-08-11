@@ -60,7 +60,7 @@ ARG USER_ID
 ARG GROUP_ID
 ARG USERNAME
 
-ARG CACHEBUST=2
+ARG CACHEBUST=4
 USER $USERNAME
 
 # Copy in project dependency specification.
@@ -83,7 +83,15 @@ COPY --from=devcontainer-builder --chown=${USER_ID}:${GROUP_ID} ${WORKDIR}/.venv
 
 # Build the wheel in an ephemeral stage to make it available to dask workers later!
 FROM devcontainer-builder as wheel-builder
+ARG USER_ID
+ARG GROUP_ID
+ARG USERNAME
+ARG WORKDIR
+ARG VIRTUAL_ENV
+
 ENV POETRY_VIRTUALENVS_IN_PROJECT 0
+
+COPY --from=devcontainer-builder --chown=${USER_ID}:${GROUP_ID} ${WORKDIR}/.venv/ ${VIRTUAL_ENV}
 
 COPY . ${WORKDIR}
 RUN poetry build --format wheel
