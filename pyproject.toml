@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "openeo-processes-dask"
 version = "0.1.0"
-description = ""
-authors = ["Lukas Weidenholzer <lukas.weidenholzer@eodc.eu>"]
+description = "Python implementations of many OpenEO processes, dask-friendly by default."
+authors = ["Lukas Weidenholzer <lukas.weidenholzer@eodc.eu>", "Sean Hoyal <sean.hoyal@eodc.eu>", "Valentina Hutter <valentina.hutter@eodc.eu>"]
 license = "Apache 2.0"
 readme = "README.md"
 repository = "https://github.com/Open-EO/openeo-processes-dask"
@@ -16,7 +16,6 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Typing :: Typed",
 ]
 
@@ -26,7 +25,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = "^3.8, <3.10"
+python = ">=3.9,<3.10"
 geopandas = "^0.12.1"
 xarray = "^2022.11.0"
 dask = {extras = ["array"], version = "^2022.11.1"}
