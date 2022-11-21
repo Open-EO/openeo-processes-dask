@@ -7,7 +7,7 @@ license = "Apache 2.0"
 readme = "README.md"
 repository = "https://github.com/Open-EO/openeo-processes-dask"
 classifiers = [
-    "Development Status :: 1 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache 2.0",
     "Operating System :: Ubuntu",
@@ -21,28 +21,25 @@ classifiers = [
 ]
 
 packages = [
-    { include = "src/openeo_processes_dask" }
+    { include = "openeo_processes_dask" }
 ]
 
 
 [tool.poetry.dependencies]
-python = "^3.8, <3.11"
-# stackstac = { extras = ["viz"], version = "^0.4.2", optional = true }
-lz4 = "^4.0.2"
-dask = {extras = ["array"], version = "^2022.8.0"}
-stackstac = "^0.4.2"
-distributed = "^2022.8.0"
-pystac-client = "^0.4.0"
+python = "^3.8, <3.10"
+geopandas = "^0.12.1"
+xarray = "^2022.11.0"
+dask = "^2022.11.1"
+rasterio = "^1.3.4"
+dask-geopandas = "^0.2.0"
+datacube = "^1.8.9"
+xgboost = "^1.7.1"
+rioxarray = "^0.13.1"
+odc-algo = "^0.2.3"
 
 [tool.poetry.dev-dependencies]
-# pytest = "^7.1.2"
-# types-PyYAML = "^6.0"
-# ipykernel = "^6.15.1"
-# graphviz = "^0.20.1"
-# pystac-client = "^0.4.0"
 pytest = "^7.1.2"
 ipykernel = "^6.15.1"
-matplotlib = "^3.5.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
