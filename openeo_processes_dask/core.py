@@ -2,7 +2,7 @@ from functools import wraps
 import importlib
 import inspect
 from typing import Optional
-from eodc_pg_parser.pg_schema import ParameterReference
+from openeo_pg_parser_networkx.pg_schema import ParameterReference
 from openeo_processes_dask.exceptions import ProcessParameterMissing
 from openeo_processes_dask.process_implementations.cubes.utils import RENAME_DIMS
 
