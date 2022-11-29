@@ -1,6 +1,5 @@
 import logging
 
-import dask.array as da
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -52,6 +51,8 @@ def create_fake_rastercube(
     raster_cube.rio.write_crs(spatial_extent.crs, inplace=True)
 
     if "dask" in backend:
+        import dask.array as da
+
         raster_cube.data = da.from_array(raster_cube.data, chunks=chunks)
 
     return raster_cube
