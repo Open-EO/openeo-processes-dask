@@ -52,7 +52,6 @@ pandas-stubs = "^1.5.2.221124"
 [tool.mypy]
 files = "openeo_processes_dask"
 mypy_path = "openeo_processes_dask"
-ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

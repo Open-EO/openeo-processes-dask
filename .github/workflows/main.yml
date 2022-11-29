@@ -74,8 +74,8 @@ jobs:
       - name: Pre-commit hooks
         run: poetry run pre-commit run --all-files
 
-      # - name: Run mypy
-      #   run: poetry run mypy
+      - name: Run mypy
+        run: poetry run mypy
 
       - name: Run pytest
         run: poetry run pytest -v
