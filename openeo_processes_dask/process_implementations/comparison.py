@@ -1,7 +1,8 @@
 import math
+
+import dask.array as da
 import numpy as np
 import xarray as xr
-import dask.array as da
 
 __all__ = [
     "is_empty",
@@ -15,8 +16,9 @@ __all__ = [
     "gte",
     "lt",
     "lte",
-    "between"
+    "between",
 ]
+
 
 def keep_attrs(x, y, data):
     if isinstance(x, xr.DataArray) and isinstance(y, xr.DataArray):
@@ -62,16 +64,24 @@ def is_infinite(x):
     return da.isinf(x)
 
 
-def eq(x, y, delta=False, case_sensitive=True, reduce=False): # TODO: add equal checks for date strings in xar
+def eq(
+    x, y, delta=False, case_sensitive=True, reduce=False
+):  # TODO: add equal checks for date strings in xar
     if x is None or y is None:
         return None
 
-    x_type = x.dtype if isinstance(x, (xr.core.dataarray.DataArray, np.ndarray)) else type(x)
-    y_type = y.dtype if isinstance(y, (xr.core.dataarray.DataArray, np.ndarray)) else type(y)
+    x_type = (
+        x.dtype if isinstance(x, (xr.core.dataarray.DataArray, np.ndarray)) else type(x)
+    )
+    y_type = (
+        y.dtype if isinstance(y, (xr.core.dataarray.DataArray, np.ndarray)) else type(y)
+    )
 
-    if (x_type in [float, int]) and (y_type in [float, int]):  # both arrays only contain numbers
+    if (x_type in [float, int]) and (
+        y_type in [float, int]
+    ):  # both arrays only contain numbers
         if type(delta) in [float, int]:
-            ar_eq = (abs(x-y) <= delta)
+            ar_eq = abs(x - y) <= delta
         else:
             ar_eq = x == y
     else:
@@ -83,7 +93,9 @@ def eq(x, y, delta=False, case_sensitive=True, reduce=False): # TODO: add equal 
         return ar_eq
 
 
-def neq(x, y, delta=None, case_sensitive=True, reduce=False):  # TODO: add equal checks for date strings
+def neq(
+    x, y, delta=None, case_sensitive=True, reduce=False
+):  # TODO: add equal checks for date strings
     eq_val = eq(x, y, delta=delta, case_sensitive=case_sensitive, reduce=reduce)
     if eq_val is None:
         return None
@@ -102,10 +114,10 @@ def gt(x, y, reduce=False):
         return gt_ar
 
 
-def gte(x, y, reduce = False):
+def gte(x, y, reduce=False):
     if x is None or y is None:
         return None
-    gte_ar = ((x-y) >= 0)
+    gte_ar = (x - y) >= 0
     gte_ar = keep_attrs(x, y, gte_ar)
     if reduce:
         return gte_ar.all()
@@ -113,7 +125,7 @@ def gte(x, y, reduce = False):
         return gte_ar
 
 
-def lt(x, y, reduce = False):
+def lt(x, y, reduce=False):
     if x is None or y is None:
         return None
     lt_ar = x < y
@@ -124,7 +136,7 @@ def lt(x, y, reduce = False):
         return lt_ar
 
 
-def lte(x, y, reduce = False):
+def lte(x, y, reduce=False):
     if x is None or y is None:
         return None
     lte_ar = x <= y
@@ -141,9 +153,9 @@ def between(x, min, max, exclude_max=False, reduce=False):
     if lt(max, min):
         return False
     if exclude_max:
-        bet = da.logical_and(gte(x, min, reduce=reduce) , lt(x, max, reduce=reduce))
+        bet = da.logical_and(gte(x, min, reduce=reduce), lt(x, max, reduce=reduce))
     else:
-        bet = da.logical_and(gte(x, min, reduce=reduce) , lte(x, max, reduce=reduce))
+        bet = da.logical_and(gte(x, min, reduce=reduce), lte(x, max, reduce=reduce))
     if isinstance(x, xr.DataArray):
         bet.attrs = x.attrs
     return bet

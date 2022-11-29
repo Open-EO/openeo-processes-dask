@@ -20,7 +20,9 @@ class ArrayElementNotAvailable(Exception):
 
 class TooManyDimensions(Exception):
     def __init__(self, msg):
-        self.message = "The number of dimensions must be reduced to three for `aggregate_spatial`."
+        self.message = (
+            "The number of dimensions must be reduced to three for `aggregate_spatial`."
+        )
 
     def __str__(self):
         return self.message

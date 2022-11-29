@@ -71,8 +71,8 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev
 
-      # - name: Pre-commit hooks
-      #   run: poetry run pre-commit run --all-files
+      - name: Pre-commit hooks
+        run: poetry run pre-commit run --all-files
 
       # - name: Run mypy
       #   run: poetry run mypy

@@ -1,15 +1,7 @@
-import numpy as np
 import dask.array as da
+import numpy as np
 
-__all__ = [
-    "and_",
-    "or_",
-    "xor",
-    "not_",
-    "if_",
-    "any_",
-    "all_"
-]
+__all__ = ["and_", "or_", "xor", "not_", "if_", "any_", "all_"]
 
 
 def and_(x, y):
@@ -49,28 +41,27 @@ def if_(value, accept, reject=np.nan):
     return p
 
 
-def any_(data, ignore_nodata = True, dimension = None):
-    data_nan = data.where(data == True, False) # Set NaN to False
+def any_(data, ignore_nodata=True, dimension=None):
+    data_nan = data.where(data == True, False)  # Set NaN to False
     if ignore_nodata:
         return data_nan.any(dim=dimension)
     else:
         data = data.any(dim=dimension)
         data_nan = data_nan.any(dim=dimension)
-        if (data == data_nan).all(): # See if there are NaNs, that were set to False
+        if (data == data_nan).all():  # See if there are NaNs, that were set to False
             return data
         else:
             return data.where(data == data_nan, np.nan)
 
 
-def all_(data, ignore_nodata = True, dimension = None):
+def all_(data, ignore_nodata=True, dimension=None):
     data_nan = data.where(data == True, False)
     if ignore_nodata:
-        return data.all(dim=dimension) # all ignores NaNs
+        return data.all(dim=dimension)  # all ignores NaNs
     else:
         data = data.all(dim=dimension)
         data_nan = data_nan.all(dim=dimension)
-        if (data == data_nan).all(): # See if there are NaNs, that were set to False
+        if (data == data_nan).all():  # See if there are NaNs, that were set to False
             return data
         else:
             return data.where(data == data_nan, np.nan)
-

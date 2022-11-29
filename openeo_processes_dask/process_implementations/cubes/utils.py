@@ -1,11 +1,20 @@
-from functools import wraps
-from openeo_processes_dask.process_implementations.data_model import RasterCube
 import logging
+from functools import wraps
 
+from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 logger = logging.getLogger(__name__)
 
-RENAME_DIMS =  {"time": "t", "Time": "t", "Bands": "bands", "band": "bands", "latitude": "x", "longitude": "y", "lat": "x", "lon": "y"}
+RENAME_DIMS = {
+    "time": "t",
+    "Time": "t",
+    "Bands": "bands",
+    "band": "bands",
+    "latitude": "x",
+    "longitude": "y",
+    "lat": "x",
+    "lon": "y",
+}
 
 
 def _normalise_output_datacube(data) -> RasterCube:
@@ -17,23 +26,28 @@ def _normalise_output_datacube(data) -> RasterCube:
             pass
 
     # Order dimensions for rioxarray
-    data = data.transpose('bands', 't', 'z', 'y', 'x', missing_dims="ignore")
+    data = data.transpose("bands", "t", "z", "y", "x", missing_dims="ignore")
 
-    if 'origin' not in data.attrs.keys():
-        data.attrs['origin'] = 'odc'
+    if "origin" not in data.attrs.keys():
+        data.attrs["origin"] = "odc"
 
-    if not hasattr(data, 'crs'):
-        if hasattr(data, 'rio'):
-            data.attrs['crs'] = data.rio.crs
+    if not hasattr(data, "crs"):
+        if hasattr(data, "rio"):
+            data.attrs["crs"] = data.rio.crs
         else:
-            raise AttributeError("No CRS could be determined for gridding processing output.")
+            raise AttributeError(
+                "No CRS could be determined for gridding processing output."
+            )
 
     return data
 
+
 def normalise_output_datacube(f):
     """Decorator to ensure certain properties on Rastercubes."""
+
     @wraps(f)
     def wrapper(*args, **kwargs) -> RasterCube:
         data = f(*args, **kwargs)  # type: RasterCube
         return _normalise_output_datacube(data)
+
     return wrapper

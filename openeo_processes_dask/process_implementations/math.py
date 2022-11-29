@@ -1,7 +1,8 @@
-import numpy as np
 import numbers
-import xarray as xr
+
 import dask.array as da
+import numpy as np
+import xarray as xr
 
 __all__ = [
     "e",
@@ -17,7 +18,7 @@ __all__ = [
     "max_",
     "median",
     "mean",
-    "sd", 
+    "sd",
     "variance",
     "floor",
     "ceil",
@@ -37,7 +38,7 @@ __all__ = [
     "tan",
     "arctan",
     "tanh",
-    "artanh", 
+    "artanh",
     "arctan2",
     "linear_scale_range",
     "scale",
@@ -51,8 +52,9 @@ __all__ = [
     "quantiles",
     "product",
     "normalized_difference",
-    "ndvi"
+    "ndvi",
 ]
+
 
 def keep_attrs(x, y, data):
     if isinstance(x, xr.DataArray) and isinstance(y, xr.DataArray):
@@ -64,6 +66,7 @@ def keep_attrs(x, y, data):
     elif isinstance(y, xr.DataArray):
         data.attrs = y.attrs
     return data
+
 
 def e():
     return np.e
@@ -82,12 +85,12 @@ def constant(x):
 
 
 def divide(x, y, **kwargs):
-    result =  x / y
+    result = x / y
     return keep_attrs(x, y, result)
 
 
 def subtract(x, y, **kwargs):
-    result =  x - y
+    result = x - y
     return keep_attrs(x, y, result)
 
 
@@ -143,11 +146,11 @@ def round(x, p=0):
 
 def exp(p):
     return da.exp(p)
-    
+
 
 def log(x, base):
-    
-    l = da.log(x)/da.log(base)
+
+    l = da.log(x) / da.log(base)
     if isinstance(x, xr.DataArray):
         l.attrs = x.attrs
     return l
@@ -155,8 +158,8 @@ def log(x, base):
 
 def ln(x):
     return da.log(x)
-    
-    
+
+
 def cos(x):
     return da.cos(x)
 
@@ -209,15 +212,15 @@ def arctan2(y, x):
     return keep_attrs(x, y, da.arctan2(y, x))
 
 
-def linear_scale_range(x, inputMin, inputMax, outputMin=0., outputMax=1.):
+def linear_scale_range(x, inputMin, inputMax, outputMin=0.0, outputMax=1.0):
     lsr = ((x - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin
     if isinstance(x, xr.DataArray):
         lsr.attrs = x.attrs
     return lsr
 
 
-def scale(x, factor=1.):
-    s = x*factor
+def scale(x, factor=1.0):
+    s = x * factor
     if isinstance(x, xr.DataArray):
         s.attrs = x.attrs
     return s
@@ -252,23 +255,27 @@ def power(base, p):
 def extrema(data, ignore_nodata=True, dimension=None):
     minimum = data.min(dim=dimension, skipna=ignore_nodata)
     maximum = data.max(dim=dimension, skipna=ignore_nodata)
-    extrema = xr.concat([minimum, maximum], dim='extrema')
-    extrema['extrema'] = ['min', 'max']
+    extrema = xr.concat([minimum, maximum], dim="extrema")
+    extrema["extrema"] = ["min", "max"]
     extrema.attrs = data.attrs
     return extrema
 
 
 def clip(x, min, max):
-    return x.clip(min = min, max = max)
+    return x.clip(min=min, max=max)
 
 
 def quantiles(data, probabilities=None, q=None, ignore_nodata=True, dimension=None):
     if probabilities is not None and q is not None:
-        raise Exception("QuantilesParameterConflict: The process `quantiles` only allows that either the `probabilities` or the `q` parameter is set.")
+        raise Exception(
+            "QuantilesParameterConflict: The process `quantiles` only allows that either the `probabilities` or the `q` parameter is set."
+        )
     if probabilities is None and q is None:
-        raise Exception("QuantilesParameterMissing: The process `quantiles` requires either the `probabilities` or `q` parameter to be set.")
+        raise Exception(
+            "QuantilesParameterMissing: The process `quantiles` requires either the `probabilities` or `q` parameter to be set."
+        )
     if q is not None:
-        probabilities = list(np.arange(0, 1, 1./q))[1:]
+        probabilities = list(np.arange(0, 1, 1.0 / q))[1:]
     q = data.quantile(np.array(probabilities), dim=dimension, skipna=ignore_nodata)
     q.attrs = data.attrs
     return q
@@ -284,8 +291,8 @@ def sum_(data, ignore_nodata=True, dimension=None):
             elif isinstance(item, numbers.Number):
                 summand += item
         # Concatenate along dim 'new_dim'
-        data = xr.concat(data_tmp, dim='new_dim')
-        return data.sum(dim='new_dim', skipna=ignore_nodata) + summand
+        data = xr.concat(data_tmp, dim="new_dim")
+        return data.sum(dim="new_dim", skipna=ignore_nodata) + summand
 
     if isinstance(data, xr.DataArray):
         if not dimension:
@@ -300,7 +307,7 @@ def product(data, ignore_nodata=True, dimension=None, extra_values=None):
     if len(extra_values) > 0:
         multiplicand = np.prod(extra_values)
     else:
-        multiplicand = 1.
+        multiplicand = 1.0
     p = data.prod(dim=dimension, skipna=ignore_nodata) * multiplicand
     p.attrs = data.attrs
     return p
@@ -311,39 +318,37 @@ def normalized_difference(x, y):
     return keep_attrs(x, y, nd)
 
 
-def ndvi(data, nir='nir', red='red', target_band=None):
+def ndvi(data, nir="nir", red="red", target_band=None):
     r = np.nan
     n = np.nan
-    if 'bands' in data.dims:
-        if red == 'red':
-            if 'B04' in data['bands'].values:
-                r = data.sel(bands='B04')
-        elif red == 'rededge':
-            if 'B05' in data['bands'].values:
-                r = data.sel(bands='B05')
-            elif 'B06' in data['bands'].values:
-                r = data.sel(bands='B06')
-            elif 'B07' in data['bands'].values:
-                r = data.sel(bands='B07')
-        if nir == 'nir':
-            n = data.sel(bands='B08')
-        elif nir == 'nir08':
-            if 'B8a' in data['bands'].values:
-                n = data.sel(bands='B8a')
-            elif 'B8A' in data['bands'].values:
-                n = data.sel(bands='B8A')
-            elif 'B05' in data['bands'].values:
-                n = data.sel(bands='B05')
-        elif nir == 'nir09':
-            if 'B09' in data['bands'].values:
-                n = data.sel(bands='B09')
-        if red in data['bands'].values:
+    if "bands" in data.dims:
+        if red == "red":
+            if "B04" in data["bands"].values:
+                r = data.sel(bands="B04")
+        elif red == "rededge":
+            if "B05" in data["bands"].values:
+                r = data.sel(bands="B05")
+            elif "B06" in data["bands"].values:
+                r = data.sel(bands="B06")
+            elif "B07" in data["bands"].values:
+                r = data.sel(bands="B07")
+        if nir == "nir":
+            n = data.sel(bands="B08")
+        elif nir == "nir08":
+            if "B8a" in data["bands"].values:
+                n = data.sel(bands="B8a")
+            elif "B8A" in data["bands"].values:
+                n = data.sel(bands="B8A")
+            elif "B05" in data["bands"].values:
+                n = data.sel(bands="B05")
+        elif nir == "nir09":
+            if "B09" in data["bands"].values:
+                n = data.sel(bands="B09")
+        if red in data["bands"].values:
             r = data.sel(bands=red)
-        if nir in data['bands'].values:
+        if nir in data["bands"].values:
             n = data.sel(bands=nir)
     nd = (n - r) / (n + r)
     if target_band is not None:
         nd = nd.assign_coords(bands=target_band)
     return nd
-
-
