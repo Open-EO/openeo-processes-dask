@@ -34,7 +34,3 @@ class ProcessParameterMissing(Exception):
 
 class ModelNotFoundException(Exception):
     pass
-
-
-class DimensionNotAvailable(Exception):
-    pass
