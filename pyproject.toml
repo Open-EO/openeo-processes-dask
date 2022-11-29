@@ -50,8 +50,8 @@ mypy = "^0.991"
 pandas-stubs = "^1.5.2.221124"
 
 [tool.mypy]
-files = "src"
-mypy_path = "src"
+files = "openeo_processes_dask"
+mypy_path = "openeo_processes_dask"
 ignore_missing_imports = true
 
 [build-system]
