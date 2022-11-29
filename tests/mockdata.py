@@ -15,8 +15,8 @@ def generate_fake_rastercube(
     spatial_extent: BoundingBox,
     temporal_extent: TemporalInterval,
     bands: list,
-    n_spatial_coords: int,
-    n_timesteps: int,
+    n_spatial_coords: int = 20,
+    n_timesteps: int = 10,
 ):
 
     # Calculate the desired resolution based on how many samples we desire on the longest axis.
