@@ -49,6 +49,11 @@ pre-commit = "^2.20.0"
 mypy = "^0.991"
 pandas-stubs = "^1.5.2.221124"
 
+[tool.mypy]
+files = "src"
+mypy_path = "src"
+ignore_missing_imports = true
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
