@@ -1,36 +1,50 @@
-from openeo_processes_dask.process_implementations.data_model import RasterCube
 from typing import Callable, Optional
+
+import dask_geopandas
+import geopandas as gpd
 import numpy as np
 import xarray as xr
-import geopandas as gpd
-import dask_geopandas
+
+from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 __all__ = ["merge_cubes"]
 
 
 def merge_cubes(
-    cube1: RasterCube, cube2: RasterCube, overlap_resolver: Callable = None, context: Optional[dict] = None, **kwargs
+    cube1: RasterCube,
+    cube2: RasterCube,
+    overlap_resolver: Callable = None,
+    context: Optional[dict] = None,
+    **kwargs,
 ):
     if context is None:
         context = {}
     if not isinstance(cube1, type(cube2)):
-        raise Exception(f"Provided cubes have incompatible types. cube1: {type(cube1)}, cube2: {type(cube2)}")
-    
-    is_geopandas = isinstance(cube1, gpd.geodataframe.GeoDataFrame) and isinstance(cube2, gpd.geodataframe.GeoDataFrame)
-    is_delayed_geopandas = isinstance(cube1, dask_geopandas.core.GeoDataFrame) and isinstance(cube2, dask_geopandas.core.GeoDataFrame)
+        raise Exception(
+            f"Provided cubes have incompatible types. cube1: {type(cube1)}, cube2: {type(cube2)}"
+        )
+
+    is_geopandas = isinstance(cube1, gpd.geodataframe.GeoDataFrame) and isinstance(
+        cube2, gpd.geodataframe.GeoDataFrame
+    )
+    is_delayed_geopandas = isinstance(
+        cube1, dask_geopandas.core.GeoDataFrame
+    ) and isinstance(cube2, dask_geopandas.core.GeoDataFrame)
     if is_geopandas or is_delayed_geopandas:
         if list(cube1.columns) == list(cube2.columns):
             if is_delayed_geopandas:
                 merged_cube = cube1.append(cube2)
             if is_geopandas:
                 merged_cube = cube1.append(cube2, ignore_index=True)
-            print("Warning - Overlap resolver is not implemented for geopandas vector-cubes, cubes are simply appended!")
+            print(
+                "Warning - Overlap resolver is not implemented for geopandas vector-cubes, cubes are simply appended!"
+            )
         else:
-            if 'geometry' in cube1.columns and 'geometry' in cube2.columns:
-                merged_cube = cube1.merge(cube2, on='geometry')
+            if "geometry" in cube1.columns and "geometry" in cube2.columns:
+                merged_cube = cube1.merge(cube2, on="geometry")
         return merged_cube
 
-    if (cube1.dims == cube2.dims):  # Check if the dimensions have the same names
+    if cube1.dims == cube2.dims:  # Check if the dimensions have the same names
         matching = 0
         not_matching = 0
         relevant_coords = [c for c in cube1.coords if c != "spatial_ref"]
@@ -45,18 +59,22 @@ def merge_cubes(
                 not_matching += 1
                 dim_not_matching = c  # dimensions with some matching coordinates
         if matching == len(relevant_coords):  # all dimensions match
-            if overlap_resolver is None:  # no overlap resolver, so a new dimension is added
-                merge = xr.concat([cube1, cube2], dim='cubes')
-                merge['cubes'] = ["Cube01", "Cube02"]
+            if (
+                overlap_resolver is None
+            ):  # no overlap resolver, so a new dimension is added
+                merge = xr.concat([cube1, cube2], dim="cubes")
+                merge["cubes"] = ["Cube01", "Cube02"]
             else:
                 if callable(overlap_resolver):  # overlap resolver, for example add
                     merge = overlap_resolver(cube1, cube2, **context)
                 elif isinstance(overlap_resolver, xr.core.dataarray.DataArray):
                     merge = overlap_resolver
                 else:
-                    raise Exception('OverlapResolverMissing')
+                    raise Exception("OverlapResolverMissing")
         else:  # WIP
-            if not_matching == 1:  # one dimension where some coordinates match, others do not, other dimensions match
+            if (
+                not_matching == 1
+            ):  # one dimension where some coordinates match, others do not, other dimensions match
                 same1 = []
                 diff1 = []
                 index = 0
@@ -106,13 +124,17 @@ def merge_cubes(
         for c in c2.dims:
             if not (c in c1.dims):
                 dimension = c
-        if np.array(check).all() and len(c2[dimension]) == 1 and callable(overlap_resolver):
+        if (
+            np.array(check).all()
+            and len(c2[dimension]) == 1
+            and callable(overlap_resolver)
+        ):
             c2 = c2.transpose(dimension, ...)
             merge = overlap_resolver(c2[0], c1, **context)
         elif isinstance(overlap_resolver, xr.core.dataarray.DataArray):
             merge = overlap_resolver
         else:
-            raise Exception('OverlapResolverMissing')
+            raise Exception("OverlapResolverMissing")
     for a in cube1.attrs:
         if a in cube2.attrs and (cube1.attrs[a] == cube2.attrs[a]):
             merge.attrs[a] = cube1.attrs[a]

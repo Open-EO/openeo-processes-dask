@@ -1,4 +1,5 @@
-from typing import Union, Optional, Callable
+from typing import Callable, Optional, Union
+
 import xarray as xr
 
 from openeo_processes_dask.exceptions import (

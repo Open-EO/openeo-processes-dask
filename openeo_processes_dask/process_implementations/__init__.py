@@ -3,11 +3,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from .cubes import *
 from .arrays import *
-from .math import *
-from .logic import *
 from .comparison import *
+from .cubes import *
+from .logic import *
+from .math import *
 
 try:
     from .ml import *
