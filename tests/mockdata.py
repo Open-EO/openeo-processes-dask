@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import dask.array as da
 import xarray as xr
-import pyproj
 
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 
@@ -26,32 +25,16 @@ def generate_fake_rastercube(seed, spatial_extent: BoundingBox, temporal_extent:
 
     coords = {"x": x, "y": y, "t": t, "bands": bands}
     
+    # This is to enable simulating fake data from different collections.
+    # The [:9] part is necessary because Dask.random.seed can only accept 32-bit values
     da.random.seed(int(str(abs(hash(seed)))[:9]))
     _data = da.random.random(tuple([len(v) for _, v in coords.items()]))
 
     data = xr.DataArray(
         data=_data,
         coords=coords,
-        attrs={"crs": spatial_extent.crs,
-                "origin": 'test'},
+        attrs={"crs": spatial_extent.crs},
     )
     data.rio.write_crs(spatial_extent.crs, inplace=True)
 
     return data.chunk("auto", "auto", "auto", -1)
-
-def generate_fake_bounding_box(crs: pyproj.CRS):
-    # if crs.axis_info[0].unit_name == "degrees":
-    #     size = 
-    # elif crs.axis_info[0].unit_name == "metres":
-    #     size = 
-    
-    random_x = rng.uniform(-1, 0, 1)
-    random_y = np.random.RandomState()
-
-
-    return BoundingBox(west=crs.area_of_use.west, east=crs.area_of_use.east, north=crs.area_of_use.north, south=crs.area_of_use.south, crs=crs)
-    
-
-
-def generate_fake_temporal_interval():
-    pass
