@@ -13,7 +13,7 @@ __all__ = ["merge_cubes"]
 def merge_cubes(
     cube1: RasterCube,
     cube2: RasterCube,
-    overlap_resolver: Callable = None,
+    overlap_resolver: Optional[Callable] = None,
     context: Optional[dict] = None,
     **kwargs,
 ):
