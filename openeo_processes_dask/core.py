@@ -72,7 +72,7 @@ process_registry = {
 }
 
 # Add aliases
-aliases = {"read_vector": "load_vector_cube"}
+aliases = {}
 
 for alias, process_name in aliases.items():
     process_registry[alias] = process_registry[process_name]

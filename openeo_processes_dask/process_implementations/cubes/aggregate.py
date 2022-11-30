@@ -68,8 +68,8 @@ def aggregate_temporal_period(
     if period in periods_to_frequency.keys():
         frequency = periods_to_frequency[period]
 
-    data = data.resample(t=frequency)
-    return reducer(data=data, **kwargs)
+    resampled_data = data.resample(t=frequency)
+    return reducer(data=resampled_data, **kwargs)
 
 
 def aggregate_spatial(
