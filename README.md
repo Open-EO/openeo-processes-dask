@@ -1,5 +1,7 @@
 # OpenEO Processes Dask
 
+[![codecov](https://codecov.io/github/Open-EO/openeo-processes-dask/branch/main/graph/badge.svg?token=RA82MUN9RZ)](https://codecov.io/github/Open-EO/openeo-processes-dask)
+
 ## Development environment
 openeo-processes-dask requires poetry >1.2, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
 
