@@ -78,4 +78,9 @@ jobs:
       #   run: poetry run mypy
 
       - name: Run pytest
-        run: poetry run pytest -v
+        run: poetry run pytest --cov=openeo_processes_dask --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
