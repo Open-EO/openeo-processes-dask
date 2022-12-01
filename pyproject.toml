@@ -9,13 +9,10 @@ repository = "https://github.com/Open-EO/openeo-processes-dask"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache 2.0",
-    "Operating System :: Ubuntu",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.9",
-    "Typing :: Typed",
 ]
 
 packages = [
