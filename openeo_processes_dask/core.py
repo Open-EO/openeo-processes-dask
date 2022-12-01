@@ -1,3 +1,5 @@
+import importlib
+import inspect
 import logging
 from collections.abc import MutableMapping
 from functools import wraps
@@ -117,3 +119,18 @@ class ProcessRegistry(MutableMapping):
         self.aliases[self._keytransform(process_id)] = self._keytransform(alias)
 
         logger.debug(f"Added alias {alias} -> {process_id} to process registry.")
+
+
+# This is not cool in most Python code, but I think it's fine here. It allows us to import and register new functions by just upgrading
+# the process_implementation package, without adding it to this list here!
+standard_processes = [
+    func
+    for _, func in inspect.getmembers(
+        importlib.import_module("openeo_processes_dask.process_implementations"),
+        inspect.isfunction,
+    )
+]
+
+process_registry = ProcessRegistry()
+for p in standard_processes:
+    process_registry[p.__name__] = p
