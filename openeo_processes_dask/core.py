@@ -1,5 +1,3 @@
-import importlib
-import inspect
 import logging
 from collections.abc import MutableMapping
 from functools import wraps
@@ -11,16 +9,6 @@ from openeo_processes_dask.exceptions import ProcessParameterMissing
 from openeo_processes_dask.process_implementations.cubes.utils import RENAME_DIMS
 
 logger = logging.getLogger(__name__)
-
-# This is not cool in most Python code, but I think it's fine here. It allows us to import and register new functions by just upgrading
-# the process_implementation package, without adding it to this list here!
-standard_processes = [
-    func
-    for _, func in inspect.getmembers(
-        importlib.import_module("openeo_processes_dask.process_implementations"),
-        inspect.isfunction,
-    )
-]
 
 
 def process(f):
@@ -68,17 +56,6 @@ def process(f):
     return wrapper
 
 
-process_registry = {
-    func.__name__.strip("_"): process(func) for func in standard_processes
-}
-
-# Add aliases
-aliases = {}
-
-for alias, process_name in aliases.items():
-    process_registry[alias] = process_registry[process_name]
-
-
 class ProcessRegistry(MutableMapping):
     """
     The process registry is basically a dictionary mapping from process_id to the callable implementation.
@@ -96,12 +73,13 @@ class ProcessRegistry(MutableMapping):
 
     def __setitem__(self, key, value):
         t_key = self._keytransform(key)
-        self.store[t_key] = value
+        decorated_value = process(value)
+        self.store[t_key] = decorated_value
 
         # Update aliases if any exist
         if t_key in self.aliases:
             for alias in self.aliases[t_key]:
-                self.store[alias] = value
+                self.store[alias] = decorated_value
 
     def __delitem__(self, key):
         t_key = self._keytransform(key)
