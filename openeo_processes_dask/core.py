@@ -1,8 +1,9 @@
 import importlib
 import inspect
 import logging
+from collections.abc import MutableMapping
 from functools import wraps
-from typing import Optional
+from typing import Callable, Optional
 
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
@@ -76,3 +77,65 @@ aliases = {}
 
 for alias, process_name in aliases.items():
     process_registry[alias] = process_registry[process_name]
+
+
+class ProcessRegistry(MutableMapping):
+    """
+    The process registry is basically a dictionary mapping from process_id to the callable implementation.
+    It also allows registering aliases for process_ids.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.store = dict()  # type: dict[str, Callable]
+        self.aliases = dict()  # type: dict[str, str]
+
+        self.update(dict(*args, **kwargs))  # use the free update to set keys
+
+    def __getitem__(self, key) -> Callable:
+        return self.store[self._keytransform(key)]
+
+    def __setitem__(self, key, value):
+        t_key = self._keytransform(key)
+        self.store[t_key] = value
+
+        # Update aliases if any exist
+        if t_key in self.aliases:
+            for alias in self.aliases[t_key]:
+                self.store[alias] = value
+
+    def __delitem__(self, key):
+        t_key = self._keytransform(key)
+
+        del self.store[t_key]
+
+        # Update aliases if any exist
+        if t_key in self.aliases:
+            for alias in self.aliases[t_key]:
+                del self.store[alias]
+
+    def __iter__(self):
+        return iter(self.store)
+
+    def __len__(self):
+        return len(self.store)
+
+    def _keytransform(self, key):
+        """Some processes are prefixed with an underscore to prevent clashes with built-in names.
+        These need to be stripped before being put into the registry."""
+        return key.strip("_")
+
+    def add_alias(self, process_id: str, alias: str):
+        """
+        Method to allow adding aliases to processes.
+        This can be useful for not-yet standardised processes, where an OpenEO client might use a different process_id than the backend.
+        """
+
+        if process_id not in self.keys():
+            raise ValueError(
+                f"Could not add alias {alias} -> {process_id}, because process_id {process_id} was not found in the process registry."
+            )
+
+        self[self._keytransform(alias)] = self[self._keytransform(process_id)]
+        self.aliases[self._keytransform(process_id)] = self._keytransform(alias)
+
+        logger.debug(f"Added alias {alias} -> {process_id} to process registry.")
