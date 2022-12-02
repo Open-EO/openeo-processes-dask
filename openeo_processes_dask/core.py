@@ -71,27 +71,27 @@ class ProcessRegistry(MutableMapping):
         self.update(dict(*args, **kwargs))  # use the free update to set keys
 
     def __getitem__(self, key) -> Callable:
-        return self.store[self._keytransform(key)]
+        t_key = self._keytransform(key)
+        if t_key in self.store:
+            return self.store[t_key]
+        if t_key in self.aliases:
+            original_key = self.aliases[t_key]
+            if original_key in self.store:
+                return self.store[original_key]
+            else:
+                del self.aliases[t_key]
+
+        raise KeyError(f"Key {key} not found in process registry!")
 
     def __setitem__(self, key, value):
         t_key = self._keytransform(key)
         decorated_value = process(value)
         self.store[t_key] = decorated_value
 
-        # Update aliases if any exist
-        if t_key in self.aliases:
-            for alias in self.aliases[t_key]:
-                self.store[alias] = decorated_value
-
     def __delitem__(self, key):
         t_key = self._keytransform(key)
 
         del self.store[t_key]
-
-        # Update aliases if any exist
-        if t_key in self.aliases:
-            for alias in self.aliases[t_key]:
-                del self.store[alias]
 
     def __iter__(self):
         return iter(self.store)
@@ -110,14 +110,13 @@ class ProcessRegistry(MutableMapping):
         This can be useful for not-yet standardised processes, where an OpenEO client might use a different process_id than the backend.
         """
 
-        if process_id not in self.keys():
+        if process_id not in self.store:
             raise ValueError(
                 f"Could not add alias {alias} -> {process_id}, because process_id {process_id} was not found in the process registry."
             )
 
-        self[self._keytransform(alias)] = self[self._keytransform(process_id)]
-        self.aliases[self._keytransform(process_id)] = self._keytransform(alias)
-
+        # Add the alias to the self.aliases dict
+        self.aliases[self._keytransform(alias)] = self._keytransform(process_id)
         logger.debug(f"Added alias {alias} -> {process_id} to process registry.")
 
 
