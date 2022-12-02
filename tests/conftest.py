@@ -1,8 +1,12 @@
+import importlib
+import inspect
 import logging
 
 import numpy as np
 import pytest
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
+
+from openeo_processes_dask.core import ProcessRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +20,9 @@ def random_data(size, dtype, seed=42):
 
 
 @pytest.fixture
-def bounding_box(west=10.45, east=10.5, south=46.1, north=46.2, crs="EPSG:4326"):
+def bounding_box(
+    west=10.45, east=10.5, south=46.1, north=46.2, crs="EPSG:4326"
+) -> BoundingBox:
     spatial_extent = {
         "west": west,
         "east": east,
@@ -28,5 +34,23 @@ def bounding_box(west=10.45, east=10.5, south=46.1, north=46.2, crs="EPSG:4326")
 
 
 @pytest.fixture
-def temporal_interval(interval=["2018-05-01", "2018-06-01"]):
+def temporal_interval(interval=["2018-05-01", "2018-06-01"]) -> TemporalInterval:
     return TemporalInterval.parse_obj(interval)
+
+
+@pytest.fixture
+def process_registry() -> ProcessRegistry:
+    standard_processes = [
+        func
+        for _, func in inspect.getmembers(
+            importlib.import_module("openeo_processes_dask.process_implementations"),
+            inspect.isfunction,
+        )
+    ]
+
+    registry = ProcessRegistry()
+
+    for process in standard_processes:
+        registry[process.__name__] = process
+
+    return registry
