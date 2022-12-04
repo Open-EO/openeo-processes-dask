@@ -57,6 +57,7 @@ def fit_regr_random_forest(
     else:
         X = data_ddf
 
+    # This is a workaround for the openeo-python-client current returning inline geojson for this process
     if isinstance(target, str):
         target = load_vector_cube(target)
 
