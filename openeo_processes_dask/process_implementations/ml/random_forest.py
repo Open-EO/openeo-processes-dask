@@ -27,7 +27,7 @@ def fit_regr_random_forest(
     predictors_vars: Optional[list[str]] = None,
     target_var: str = None,
     **kwargs,
-):
+) -> xgb.core.Booster:
     params = {
         "learning_rate": 1,
         "max_depth": 5,
@@ -59,7 +59,7 @@ def fit_regr_random_forest(
 
     # This is a workaround for the openeo-python-client current returning inline geojson for this process
     if isinstance(target, str):
-        target = load_vector_cube(target)
+        target = load_vector_cube(filename=target)
 
     y = target.drop(target.columns.difference([target_var]), axis=1)
 
@@ -67,7 +67,7 @@ def fit_regr_random_forest(
     dtrain = xgb.dask.DaskDMatrix(client, X, y)
     output = xgb.dask.train(client, params, dtrain, num_boost_round=1)
 
-    return output
+    return output["booster"]
 
 
 def predict_random_forest(
