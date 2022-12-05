@@ -26,11 +26,11 @@ from tests.mockdata import create_fake_rastercube
     ],
 )
 def test_aggregate_temporal_period(
-    temporal_extent, period, expected, bounding_box, random_data
+    temporal_extent, period, expected, bounding_box, random_raster_data
 ):
     """"""
     input_cube = create_fake_rastercube(
-        data=random_data,
+        data=random_raster_data,
         spatial_extent=bounding_box,
         temporal_extent=TemporalInterval.parse_obj(temporal_extent),
         bands=["B02", "B03", "B04", "B08"],
@@ -53,17 +53,17 @@ def test_aggregate_temporal_period(
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 def test_aggregate_temporal_period_numpy_equals_dask(
-    random_data, bounding_box, temporal_interval
+    random_raster_data, bounding_box, temporal_interval
 ):
     numpy_cube = create_fake_rastercube(
-        data=random_data,
+        data=random_raster_data,
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B02", "B03", "B04", "B08"],
         backend="numpy",
     )
     dask_cube = create_fake_rastercube(
-        data=random_data,
+        data=random_raster_data,
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B02", "B03", "B04", "B08"],

@@ -8,6 +8,9 @@ import numpy as np
 import xarray as xr
 import xgboost as xgb
 
+from openeo_processes_dask.process_implementations.cubes.experimental import (
+    load_vector_cube,
+)
 from openeo_processes_dask.process_implementations.data_model import (
     RasterCube,
     VectorCube,
@@ -24,7 +27,7 @@ def fit_regr_random_forest(
     predictors_vars: Optional[list[str]] = None,
     target_var: str = None,
     **kwargs,
-):  # -> RegressionModel
+) -> xgb.core.Booster:
     params = {
         "learning_rate": 1,
         "max_depth": 5,
@@ -43,6 +46,9 @@ def fit_regr_random_forest(
             predictors.to_dask_dataframe().reset_index().repartition(npartitions=1)
         )
 
+    if isinstance(predictors, dask.dataframe.DataFrame):
+        data_ddf = predictors
+
     if not isinstance(predictors, dask.dataframe.DataFrame):
         raise Exception("[!] No compatible vector input data has been provided.")
 
@@ -51,13 +57,17 @@ def fit_regr_random_forest(
     else:
         X = data_ddf
 
+    # This is a workaround for the openeo-python-client current returning inline geojson for this process
+    if isinstance(target, str):
+        target = load_vector_cube(filename=target)
+
     y = target.drop(target.columns.difference([target_var]), axis=1)
 
     client = dask.distributed.default_client()
     dtrain = xgb.dask.DaskDMatrix(client, X, y)
     output = xgb.dask.train(client, params, dtrain, num_boost_round=1)
 
-    return output
+    return output["booster"]
 
 
 def predict_random_forest(
