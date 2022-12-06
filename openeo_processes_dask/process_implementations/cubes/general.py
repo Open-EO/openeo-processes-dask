@@ -7,13 +7,13 @@ from openeo_processes_dask.process_implementations.data_model import RasterCube
 __all__ = ["create_raster_cube", "drop_dimension", "dimension_labels"]
 
 
-def drop_dimension(data: RasterCube, dimension: str) -> RasterCube:
-    if dimension not in data.dims:
+def drop_dimension(data: RasterCube, name: str) -> RasterCube:
+    if name not in data.dims:
         raise DimensionNotAvailable(
             "A dimension with the specified name does not exist."
         )
 
-    return data.drop_dims(dimension)
+    return data.drop(dimension)
 
 
 def create_raster_cube() -> RasterCube:
