@@ -2,6 +2,10 @@ class DimensionNotAvailable(Exception):
     pass
 
 
+class DimensionLabelCountMismatch(Exception):
+    pass
+
+
 class ArrayElementParameterConflict(Exception):
     pass
 
