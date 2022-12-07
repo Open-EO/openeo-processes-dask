@@ -60,8 +60,8 @@ def merge_cubes(
                 dim_not_matching = c  # dimensions with some matching coordinates
         if matching == len(relevant_coords):  # all dimensions match
             if overlap_resolver is None:  # Example 3.1 in https://processes.openeo.org/#merge_cubes: overlapping dims, but no overlap resolver, so a new dimension is added
-                merge = xr.concat([cube1, cube2], dim='cubes')
-                merge['cubes'] = ["Cube01", "Cube02"]
+                merge = xr.concat([cube1, cube2], dim="cubes")
+                merge["cubes"] = ["Cube01", "Cube02"]
             else:
                 if callable(overlap_resolver):  # Example 3.2 in https://processes.openeo.org/#merge_cubes: overlapping dims, overlap resolver for example add
                     parameters = {"x": cube1, "y": cube2, "context": context}
@@ -111,7 +111,7 @@ def merge_cubes(
             parameters = {"x": cube1, "y": cube2, "context": context}
             merge = overlap_resolver(parameters=parameters)
         else:
-            raise Exception('OverlapResolverMissing')
+            raise Exception("OverlapResolverMissing")
     for a in cube1.attrs:
         if a in cube2.attrs and (cube1.attrs[a] == cube2.attrs[a]):
             merge.attrs[a] = cube1.attrs[a]
