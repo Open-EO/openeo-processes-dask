@@ -1,9 +1,19 @@
 class DimensionNotAvailable(Exception):
-    pass
+    def __init__(self, msg):
+        self.message = "A dimension with the specified name does not exist."
+
+    def __str__(self):
+        return self.message
 
 
 class DimensionLabelCountMismatch(Exception):
-    pass
+    def __init__(self, msg):
+        self.message = (
+            "The number of dimension labels exceeds one, which requires a reducer."
+        )
+
+    def __str__(self):
+        return self.message
 
 
 class ArrayElementParameterConflict(Exception):
