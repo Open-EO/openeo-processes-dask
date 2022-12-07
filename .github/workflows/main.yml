@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [Ubuntu]
-        python-version: ["3.9"]
+        python-version: ["3.9", "3.10"]
         include:
           - os: Ubuntu
             image: ubuntu-20.04
