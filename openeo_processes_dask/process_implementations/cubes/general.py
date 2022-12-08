@@ -12,9 +12,13 @@ __all__ = ["create_raster_cube", "drop_dimension", "dimension_labels"]
 
 def drop_dimension(data: RasterCube, name: str) -> RasterCube:
     if name not in data.dims:
-        raise DimensionNotAvailable()
+        raise DimensionNotAvailable(
+            f"Provided dimension ({name}) not found in data.dims: {data.dims}"
+        )
     if len(data[name]) > 1:
-        raise DimensionLabelCountMismatch()
+        raise DimensionLabelCountMismatch(
+            "The number of dimension labels exceeds one, which requires a reducer."
+        )
     return data.drop(name)
 
 
@@ -24,5 +28,7 @@ def create_raster_cube() -> RasterCube:
 
 def dimension_labels(data: RasterCube, dimension: str) -> RasterCube:
     if dimension not in data.dims:
-        raise DimensionNotAvailable()
+        raise DimensionNotAvailable(
+            f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
+        )
     return data.coords[dimension]

@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 import numpy as np
 
@@ -17,7 +17,7 @@ def reduce_dimension(
 ) -> RasterCube:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
-            f"Provided dimension not found in data.dims: {data.dims}"
+            f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
     parameters = {"data": data, "context": context}
     reduced_data = reducer(parameters=parameters, dimension=dimension)
