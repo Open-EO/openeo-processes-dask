@@ -38,3 +38,13 @@ class ModelNotFoundException(Exception):
 
 class DimensionNotAvailable(Exception):
     pass
+
+
+class OverlapResolverMissing(Exception):
+    def __init__(self, msg):
+        self.message = (
+            "Overlapping data cubes, but no overlap resolver has been specified."
+        )
+
+    def __str__(self):
+        return self.message
