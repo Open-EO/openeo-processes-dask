@@ -1,7 +1,7 @@
 import json
 import logging
 import urllib
-from typing import Dict, Optional
+from typing import Optional
 
 import dask_geopandas
 import geopandas as gpd

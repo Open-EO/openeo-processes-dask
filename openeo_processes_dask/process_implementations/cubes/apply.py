@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
 
 from openeo_processes_dask.exceptions import DimensionNotAvailable
 from openeo_processes_dask.process_implementations.data_model import RasterCube
@@ -23,7 +23,7 @@ def apply_dimension(
 ) -> RasterCube:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
-            f"Provided dimension not found in data.dims: {data.dims}"
+            f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
     parameters = {"data": data, "context": context}

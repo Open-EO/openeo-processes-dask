@@ -1,54 +1,38 @@
-class DimensionNotAvailable(Exception):
-    def __init__(self, msg):
-        self.message = "A dimension with the specified name does not exist."
-
-    def __str__(self):
-        return self.message
-
-
-class DimensionLabelCountMismatch(Exception):
-    def __init__(self, msg):
-        self.message = (
-            "The number of dimension labels exceeds one, which requires a reducer."
-        )
-
-    def __str__(self):
-        return self.message
-
-
-class ArrayElementParameterConflict(Exception):
+class OpenEOException(Exception):
     pass
 
 
-class ArrayElementParameterMissing(Exception):
+class DimensionLabelCountMismatch(OpenEOException):
     pass
 
 
-class ArrayNotLabeled(Exception):
+class ArrayElementParameterConflict(OpenEOException):
     pass
 
 
-class ArrayElementNotAvailable(Exception):
+class ArrayElementParameterMissing(OpenEOException):
     pass
 
 
-class TooManyDimensions(Exception):
-    def __init__(self, msg):
-        self.message = (
-            "The number of dimensions must be reduced to three for `aggregate_spatial`."
-        )
-
-    def __str__(self):
-        return self.message
-
-
-class ProcessParameterMissing(Exception):
+class ArrayNotLabeled(OpenEOException):
     pass
 
 
-class ModelNotFoundException(Exception):
+class ArrayElementNotAvailable(OpenEOException):
     pass
 
 
-class DimensionNotAvailable(Exception):
+class TooManyDimensions(OpenEOException):
+    pass
+
+
+class ProcessParameterMissing(OpenEOException):
+    pass
+
+
+class ModelNotFoundException(OpenEOException):
+    pass
+
+
+class DimensionNotAvailable(OpenEOException):
     pass
