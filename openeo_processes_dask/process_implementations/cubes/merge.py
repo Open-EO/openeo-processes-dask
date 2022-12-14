@@ -127,7 +127,7 @@ def merge_cubes(
             merge = overlap_resolver(parameters=parameters)
         else:
             raise OverlapResolverMissing(
-                f"Overlapping data cubes, but no overlap resolver has been specified."
+                "Datacubes overlap, but no overlap resolver has been specified."
             )
     for a in cube1.attrs:
         if a in cube2.attrs and (cube1.attrs[a] == cube2.attrs[a]):
