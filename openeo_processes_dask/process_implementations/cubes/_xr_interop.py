@@ -12,12 +12,20 @@ class OpenEOExtensionDa:
     @property
     def x_dim(self):
         spatial_dims = self._obj.odc.spatial_dims
-        return spatial_dims[1]
+        if spatial_dims is not None:
+            return spatial_dims[1]
+        raise DimensionNotAvailable(
+            f"Unable to identify spatial dimensions on datacube. Available dimensions: {self._obj.dims}"
+        )
 
     @property
     def y_dim(self):
         spatial_dims = self._obj.odc.spatial_dims
-        return spatial_dims[0]
+        if spatial_dims is not None:
+            return spatial_dims[0]
+        raise DimensionNotAvailable(
+            f"Unable to identify spatial dimensions on datacube. Available dimensions: {self._obj.dims}"
+        )
 
     @property
     def z_dim(self):
@@ -34,7 +42,7 @@ class OpenEOExtensionDa:
                 return guess
 
         raise DimensionNotAvailable(
-            f"Datacube has no temporal dimension. Available dimensions: {self._obj.dims}"
+            f"Unable to identify temporal dimension on datacube. Available dimensions: {self._obj.dims}"
         )
 
     def bands_dim(self):
@@ -47,5 +55,5 @@ class OpenEOExtensionDa:
                 return guess
 
         raise DimensionNotAvailable(
-            f"Datacube has no bands dimensions. Available dimensions: {self._obj.dims}"
+            f"Unable to identify bands dimension on datacube. Available dimensions: {self._obj.dims}"
         )
