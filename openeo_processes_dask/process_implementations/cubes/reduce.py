@@ -39,4 +39,6 @@ def reduce_spatial(
     data: RasterCube, reducer: Callable, context: Optional[dict] = None, **kwargs
 ) -> RasterCube:
     parameters = {"data": data, "context": context}
-    return reducer(parameters=parameters, dimension=["x", "y"])
+    return reducer(
+        parameters=parameters, dimension=[data.openeo.x_dim, data.openeo.y_dim]
+    )
