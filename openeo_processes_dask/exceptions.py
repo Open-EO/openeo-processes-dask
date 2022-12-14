@@ -1,42 +1,40 @@
-class DimensionNotAvailable(Exception):
+class OpenEOException(Exception):
     pass
 
 
-class ArrayElementParameterConflict(Exception):
+class DimensionLabelCountMismatch(OpenEOException):
     pass
 
 
-class ArrayElementParameterMissing(Exception):
+class ArrayElementParameterConflict(OpenEOException):
     pass
 
 
-class ArrayNotLabeled(Exception):
+class ArrayElementParameterMissing(OpenEOException):
     pass
 
 
-class ArrayElementNotAvailable(Exception):
+class ArrayNotLabeled(OpenEOException):
     pass
 
 
-class TooManyDimensions(Exception):
-    def __init__(self, msg):
-        self.message = (
-            "The number of dimensions must be reduced to three for `aggregate_spatial`."
-        )
-
-    def __str__(self):
-        return self.message
-
-
-class ProcessParameterMissing(Exception):
+class ArrayElementNotAvailable(OpenEOException):
     pass
 
 
-class ModelNotFoundException(Exception):
+class TooManyDimensions(OpenEOException):
     pass
 
 
-class DimensionNotAvailable(Exception):
+class ProcessParameterMissing(OpenEOException):
+    pass
+
+
+class ModelNotFoundException(OpenEOException):
+    pass
+
+
+class DimensionNotAvailable(OpenEOException):
     pass
 
 
