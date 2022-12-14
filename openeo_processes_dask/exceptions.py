@@ -36,3 +36,7 @@ class ModelNotFoundException(OpenEOException):
 
 class DimensionNotAvailable(OpenEOException):
     pass
+
+
+class OverlapResolverMissing(OpenEOException):
+    pass
