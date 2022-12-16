@@ -116,8 +116,11 @@ def median(data, dimension=None, ignore_nodata=True, **kwargs):
     return data.median(dim=dimension, skipna=ignore_nodata, keep_attrs=True)
 
 
-def mean(data, dimension=None, ignore_nodata=True, **kwargs):
-    return data.mean(dim=dimension, skipna=ignore_nodata, keep_attrs=True)
+def mean(data, ignore_nodata=False, axis=-1, **kwargs):
+    if ignore_nodata:
+        return np.nanmean(data, axis=axis)
+    else:
+        return np.mean(data, axis=axis)
 
 
 def sd(data, dimension=None, ignore_nodata=True, **kwargs):
