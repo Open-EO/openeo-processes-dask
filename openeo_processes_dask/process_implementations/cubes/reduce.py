@@ -20,7 +20,9 @@ def reduce_dimension(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
     parameters = {"data": data, "context": context}
-    reduced_data = reducer(parameters=parameters, dimension=dimension)
+
+    reduced_data = data.reduce(reducer, dim=dimension)
+    # reduced_data = reducer(parameters=parameters)
 
     # Preset
     if "reduced_dimensions_min_values" not in data.attrs:

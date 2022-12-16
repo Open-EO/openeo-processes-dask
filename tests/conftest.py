@@ -1,19 +1,18 @@
 import importlib
 import inspect
 import logging
+from functools import partial
 
 import dask_geopandas
 import geopandas as gpd
 import numpy as np
 import pytest
-from dask.distributed import Client
 from geopandas.geodataframe import GeoDataFrame
 from openeo_pg_parser_networkx.pg_schema import (
     DEFAULT_CRS,
     BoundingBox,
     TemporalInterval,
 )
-from shapely.geometry import Point, Polygon
 
 from openeo_processes_dask.core import ProcessRegistry
 from openeo_processes_dask.process_implementations.data_model import VectorCube
@@ -21,9 +20,7 @@ from openeo_processes_dask.process_implementations.data_model import VectorCube
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture
-def dask_client():
-    return Client()
+pytest_plugins = ["tests.dask_friendliness"]
 
 
 @pytest.fixture
