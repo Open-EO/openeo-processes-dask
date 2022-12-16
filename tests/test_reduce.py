@@ -24,7 +24,6 @@ def test_reduce_dimension(temporal_interval, bounding_box, random_raster_data):
     _process = partial(process_registry["mean"], ignore_nodata=True)
 
     output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
-    # output_cube.compute()
 
     general_output_checks(
         input_cube=input_cube,

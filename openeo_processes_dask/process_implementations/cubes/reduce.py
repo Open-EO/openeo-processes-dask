@@ -22,7 +22,6 @@ def reduce_dimension(
     parameters = {"data": data, "context": context}
 
     reduced_data = data.reduce(reducer, dim=dimension)
-    # reduced_data = reducer(parameters=parameters)
 
     # Preset
     if "reduced_dimensions_min_values" not in data.attrs:

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, List
+from typing import Callable
 
 import dask
 import dask_geopandas
@@ -69,7 +69,8 @@ def aggregate_temporal_period(
         frequency = periods_to_frequency[period]
 
     resampled_data = data.resample(t=frequency)
-    return reducer(data=resampled_data, **kwargs)
+
+    return resampled_data.reduce(reducer)
 
 
 def aggregate_spatial(
