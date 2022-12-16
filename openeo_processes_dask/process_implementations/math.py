@@ -1,5 +1,6 @@
 import numbers
 
+import dask
 import dask.array as da
 import numpy as np
 import xarray as xr
@@ -13,9 +14,9 @@ __all__ = [
     "subtract",
     "multiply",
     "add",
-    "sum_",
-    "min_",
-    "max_",
+    "_sum",
+    "_min",
+    "_max",
     "median",
     "mean",
     "sd",
@@ -86,34 +87,43 @@ def constant(x):
 
 def divide(x, y, **kwargs):
     result = x / y
-    return keep_attrs(x, y, result)
+    return result
 
 
 def subtract(x, y, **kwargs):
     result = x - y
-    return keep_attrs(x, y, result)
+    return result
 
 
 def multiply(x, y, **kwargs):
     result = x * y
-    return keep_attrs(x, y, result)
+    return result
 
 
 def add(x, y, **kwargs):
     result = x + y
-    return keep_attrs(x, y, result)
+    return result
 
 
-def min_(data, dimension=None, ignore_nodata=True, **kwargs):
-    return data.min(dim=dimension, skipna=ignore_nodata, keep_attrs=True)
+def _min(data, ignore_nodata=True, axis=-1, **kwargs):
+    if ignore_nodata:
+        return np.nanmin(data, axis=axis)
+    else:
+        return np.min(data, axis=axis)
 
 
-def max_(data, dimension=None, ignore_nodata=True, **kwargs):
-    return data.max(dim=dimension, skipna=ignore_nodata, keep_attrs=True)
+def _max(data, ignore_nodata=True, axis=-1, **kwargs):
+    if ignore_nodata:
+        return np.nanmax(data, axis=axis)
+    else:
+        return np.max(data, axis=axis)
 
 
-def median(data, dimension=None, ignore_nodata=True, **kwargs):
-    return data.median(dim=dimension, skipna=ignore_nodata, keep_attrs=True)
+def median(data, ignore_nodata=True, axis=-1, **kwargs):
+    if ignore_nodata:
+        return np.nanmedian(data, axis=axis)
+    else:
+        return np.median(data, axis=axis)
 
 
 def mean(data, ignore_nodata=False, axis=-1, **kwargs):
@@ -123,12 +133,18 @@ def mean(data, ignore_nodata=False, axis=-1, **kwargs):
         return np.mean(data, axis=axis)
 
 
-def sd(data, dimension=None, ignore_nodata=True, **kwargs):
-    return data.std(dim=dimension, skipna=ignore_nodata, keep_attrs=True)
+def sd(data, ignore_nodata=False, axis=-1, **kwargs):
+    if ignore_nodata:
+        return np.nanstd(data, axis=axis, ddof=1)
+    else:
+        return np.std(data, axis=axis, ddof=1)
 
 
-def variance(data, dimension=None, ignore_nodata=True, **kwargs):
-    return data.var(dim=dimension, skipna=ignore_nodata, keep_attrs=True)
+def variance(data, ignore_nodata=False, axis=-1, **kwargs):
+    if ignore_nodata:
+        return np.nanvar(data, axis=axis, ddof=1)
+    else:
+        return np.var(data, axis=axis, ddof=1)
 
 
 def floor(x):
@@ -152,120 +168,112 @@ def exp(p):
 
 
 def log(x, base):
-
-    l = da.log(x) / da.log(base)
-    if isinstance(x, xr.DataArray):
-        l.attrs = x.attrs
-    return l
+    return np.log(x) / np.log(base)
 
 
 def ln(x):
-    return da.log(x)
+    return np.log(x)
 
 
 def cos(x):
-    return da.cos(x)
+    return np.cos(x)
 
 
 def arccos(x):
-    return da.arccos(x)
+    return np.arccos(x)
 
 
 def cosh(x):
-    return da.cosh(x)
+    return np.cosh(x)
 
 
 def arcosh(x):
-    return da.arccosh(x)
+    return np.arccosh(x)
 
 
 def sin(x):
-    return da.sin(x)
+    return np.sin(x)
 
 
 def arcsin(x):
-    return da.arcsin(x)
+    return np.arcsin(x)
 
 
 def sinh(x):
-    return da.sinh(x)
+    return np.sinh(x)
 
 
 def arsinh(x):
-    return da.arcsinh(x)
+    return np.arcsinh(x)
 
 
 def tan(x):
-    return da.tan(x)
+    return np.tan(x)
 
 
 def arctan(x):
-    return da.arctan(x)
+    return np.arctan(x)
 
 
 def tanh(x):
-    return da.tanh(x)
+    return np.tanh(x)
 
 
 def artanh(x):
-    return da.arctanh(x)
+    return np.arctanh(x)
 
 
 def arctan2(y, x):
-    return keep_attrs(x, y, da.arctan2(y, x))
+    return np.arctan2(y, x)
 
 
 def linear_scale_range(x, inputMin, inputMax, outputMin=0.0, outputMax=1.0):
     lsr = ((x - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin
-    if isinstance(x, xr.DataArray):
-        lsr.attrs = x.attrs
     return lsr
 
 
 def scale(x, factor=1.0):
     s = x * factor
-    if isinstance(x, xr.DataArray):
-        s.attrs = x.attrs
     return s
 
 
 def mod(x, y):
     if x is None or y is None:
-        return None
+        return np.nan
     m = x % y
-    return keep_attrs(x, y, m)
+    return m
 
 
 def absolute(x):
-    return da.fabs(x)
+    return np.abs(x)
 
 
 def sgn(x):
-    return da.sign(x)
+    return np.sign(x)
 
 
 def sqrt(x):
-    return da.sqrt(x)
+    return np.sqrt(x)
 
 
 def power(base, p):
     e = base**p
-    if isinstance(base, xr.DataArray):
-        e.attrs = base.attrs
     return e
 
 
-def extrema(data, ignore_nodata=True, dimension=None):
-    minimum = data.min(dim=dimension, skipna=ignore_nodata)
-    maximum = data.max(dim=dimension, skipna=ignore_nodata)
-    extrema = xr.concat([minimum, maximum], dim="extrema")
-    extrema["extrema"] = ["min", "max"]
-    extrema.attrs = data.attrs
-    return extrema
+def extrema(data, ignore_nodata=True, axis=-1):
+    if isinstance(data, xr.DataArray):
+        data = data.data
+
+    # TODO: Could be sped up by only iterating over array once
+    minimum = _min(data, skipna=ignore_nodata, axis=axis)
+    maximum = _max(data, skipna=ignore_nodata, axis=axis)
+    array = dask.delayed(np.array)([minimum, maximum])
+    return da.from_delayed(array, (2,), dtype=data.dtype)
 
 
 def clip(x, min, max):
-    return x.clip(min=min, max=max)
+    return np.clip(x, a_min=min, a_max=max)
 
 
 def quantiles(data, probabilities=None, q=None, ignore_nodata=True, dimension=None):
@@ -273,10 +281,7 @@ def quantiles(data, probabilities=None, q=None, ignore_nodata=True, dimension=No
         raise Exception(
             "QuantilesParameterConflict: The process `quantiles` only allows that either the `probabilities` or the `q` parameter is set."
         )
-    if probabilities is None and q is None:
-        raise Exception(
-            "QuantilesParameterMissing: The process `quantiles` requires either the `probabilities` or `q` parameter to be set."
-        )
+
     if q is not None:
         probabilities = list(np.arange(0, 1, 1.0 / q))[1:]
     q = data.quantile(np.array(probabilities), dim=dimension, skipna=ignore_nodata)
@@ -284,7 +289,7 @@ def quantiles(data, probabilities=None, q=None, ignore_nodata=True, dimension=No
     return q
 
 
-def sum_(data, ignore_nodata=True, dimension=None):
+def _sum(data, ignore_nodata=True, dimension=None):
     summand = 0
     if isinstance(data, list):
         data_tmp = []
@@ -318,7 +323,7 @@ def product(data, ignore_nodata=True, dimension=None, extra_values=None):
 
 def normalized_difference(x, y):
     nd = (x - y) / (x + y)
-    return keep_attrs(x, y, nd)
+    return nd
 
 
 def ndvi(data, nir="nir", red="red", target_band=None):
@@ -351,7 +356,7 @@ def ndvi(data, nir="nir", red="red", target_band=None):
             r = data.sel(bands=red)
         if nir in data["bands"].values:
             n = data.sel(bands=nir)
-    nd = (n - r) / (n + r)
+    nd = normalized_difference(n, r)
     if target_band is not None:
         nd = nd.assign_coords(bands=target_band)
     return nd
