@@ -30,10 +30,18 @@ def load_vector_cube(
     # TODO: Remove once https://github.com/Open-EO/openeo-python-client/issues/104 is resolved.
     if filename is not None:
         logger.info("Attempting to load vector cube from filename.")
-        try:
-            geometries = json.loads(filename)
-        except Exception as e:
-            logger.warning(f"Could not load vector cube from filename {filename}", e)
+        if Path(filename).exists():
+            try:
+                with open(filename) as f:
+                    geometries = json.load(f)
+            except Exception as e:
+                logger.warning(
+                    f"Could not load vector cube from filename {filename}", e
+                )
+        else:
+            error_message = f"The provided file {filename} does not exist!"
+            logger.warning(error_message)
+            raise Exception(error_message)
 
     # TODO: Loading random files from untrusted URLs is dangerous, this has to be rethought going forward!
     if URL is not None:
@@ -52,12 +60,8 @@ def load_vector_cube(
         raise Exception("Could not load the provided geometries!")
 
     # Each feature must have a properties field, even if there is no property
-    # This is necessary due to this bug in geopandas: https://github.com/geopandas/geopandas/pull/2243
-    # TODO: Remove once this is solved.
     for feature in geometries["features"]:
         if "properties" not in feature:
-            feature["properties"] = {}
-        elif feature["properties"] is None:
             feature["properties"] = {}
 
     geometries_crs = (
