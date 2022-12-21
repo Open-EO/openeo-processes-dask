@@ -5,6 +5,11 @@ import dask.array as da
 import numpy as np
 import xarray as xr
 
+from openeo_processes_dask.exceptions import (
+    QuantilesParameterConflict,
+    QuantilesParameterMissing,
+)
+
 __all__ = [
     "e",
     "pi",
@@ -24,7 +29,7 @@ __all__ = [
     "floor",
     "ceil",
     "int",
-    "round",
+    "_round",
     "exp",
     "log",
     "ln",
@@ -55,18 +60,6 @@ __all__ = [
     "normalized_difference",
     "ndvi",
 ]
-
-
-def keep_attrs(x, y, data):
-    if isinstance(x, xr.DataArray) and isinstance(y, xr.DataArray):
-        for a in x.attrs:
-            if a in y.attrs and (x.attrs[a] == y.attrs[a]):
-                data.attrs[a] = x.attrs[a]
-    elif isinstance(x, xr.DataArray):
-        data.attrs = x.attrs
-    elif isinstance(y, xr.DataArray):
-        data.attrs = y.attrs
-    return data
 
 
 def e():
@@ -148,23 +141,23 @@ def variance(data, ignore_nodata=False, axis=-1, **kwargs):
 
 
 def floor(x):
-    return da.floor(x)
+    return np.floor(x)
 
 
 def ceil(x):
-    return da.ceil(x)
+    return np.ceil(x)
 
 
 def int(x):
-    return da.trunc(x)
+    return np.trunc(x)
 
 
-def round(x, p=0):
-    return x.round(p)
+def _round(x, p=0):
+    return np.around(x, decimals=p)
 
 
 def exp(p):
-    return da.exp(p)
+    return np.exp(p)
 
 
 def log(x, base):
@@ -238,10 +231,7 @@ def scale(x, factor=1.0):
 
 
 def mod(x, y):
-    if x is None or y is None:
-        return np.nan
-    m = x % y
-    return m
+    return np.mod(x, y)
 
 
 def absolute(x):
@@ -262,9 +252,6 @@ def power(base, p):
 
 
 def extrema(data, ignore_nodata=True, axis=-1):
-    if isinstance(data, xr.DataArray):
-        data = data.data
-
     # TODO: Could be sped up by only iterating over array once
     minimum = _min(data, skipna=ignore_nodata, axis=axis)
     maximum = _max(data, skipna=ignore_nodata, axis=axis)
@@ -276,17 +263,36 @@ def clip(x, min, max):
     return np.clip(x, a_min=min, a_max=max)
 
 
-def quantiles(data, probabilities=None, q=None, ignore_nodata=True, dimension=None):
+def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=-1):
     if probabilities is not None and q is not None:
-        raise Exception(
-            "QuantilesParameterConflict: The process `quantiles` only allows that either the `probabilities` or the `q` parameter is set."
+        raise QuantilesParameterConflict(
+            "The process `quantiles` requires either the `probabilities` or `q` parameter to be set."
         )
 
+    if probabilities is None and q is None:
+        raise QuantilesParameterMissing(
+            "The process `quantiles` only allows that either the `probabilities` or the `q` parameter is set."
+        )
+
+    if isinstance(probabilities, list):
+        probabilities = np.array(probabilities)
+
     if q is not None:
-        probabilities = list(np.arange(0, 1, 1.0 / q))[1:]
-    q = data.quantile(np.array(probabilities), dim=dimension, skipna=ignore_nodata)
-    q.attrs = data.attrs
-    return q
+        probabilities = np.arange(1.0 / q, 1, 1.0 / q)
+
+    if data.size == 0:
+        return np.array([np.nan] * len(probabilities))
+
+    if ignore_nodata:
+        result = np.nanquantile(
+            data, q=probabilities, method="linear", axis=axis, keepdims=True
+        )
+    else:
+        result = np.quantile(
+            data, q=probabilities, method="linear", axis=axis, keepdims=True
+        )
+
+    return result
 
 
 def _sum(data, ignore_nodata=True, dimension=None):
