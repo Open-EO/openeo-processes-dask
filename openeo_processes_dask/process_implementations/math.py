@@ -359,4 +359,6 @@ def ndvi(data, nir="nir", red="red", target_band=None):
     nd = normalized_difference(n, r)
     if target_band is not None:
         nd = nd.assign_coords(bands=target_band)
+    # TODO: Remove this once we have the .openeo accessor
+    nd.attrs = data.attrs
     return nd
