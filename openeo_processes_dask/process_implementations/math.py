@@ -6,8 +6,13 @@ import numpy as np
 import xarray as xr
 
 from openeo_processes_dask.exceptions import (
+    OpenEOException,
     QuantilesParameterConflict,
     QuantilesParameterMissing,
+)
+from openeo_processes_dask.process_implementations.cubes.utils import (
+    _has_dask,
+    _is_dask_array,
 )
 
 __all__ = [
@@ -70,8 +75,15 @@ def pi():
     return np.pi
 
 
-def nan():
-    return np.nan
+def nan(data=None):
+    if data is None or isinstance(data, np.ndarray):
+        return np.nan
+    elif data is not None and _has_dask() and _is_dask_array(data):
+        return dask.delayed(np.nan)
+    else:
+        raise OpenEOException(
+            f"Don't know which nan-value to use for provided datatype: {type(data)}."
+        )
 
 
 def constant(x):
@@ -296,6 +308,9 @@ def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=-1):
 
 
 def _sum(data, ignore_nodata=True, axis=-1):
+    if len(data) == 0:
+        return nan(data=data)
+
     if ignore_nodata:
         result = np.nansum(data, axis=axis)
     else:
@@ -304,6 +319,9 @@ def _sum(data, ignore_nodata=True, axis=-1):
 
 
 def product(data, ignore_nodata=True, axis=-1):
+    if len(data) == 0:
+        return nan(data=data)
+
     if ignore_nodata:
         result = np.nanprod(data, axis=axis)
     else:

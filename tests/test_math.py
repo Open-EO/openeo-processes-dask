@@ -1,6 +1,8 @@
 from copy import deepcopy
 
+import dask.array as da
 import numpy as np
+import pytest
 
 from openeo_processes_dask.process_implementations.math import *
 
@@ -38,17 +40,26 @@ def test_sum():
     assert np.isnan(_sum([1, np.nan], ignore_nodata=False))
 
 
-def test_product():
-    assert product([5, 0]) == 0
-    assert product([-2, 4, 2.5]) == -20
-    assert np.isnan(product([1, np.nan], ignore_nodata=False))
-    assert product([-1]) == -1
-    assert np.isnan(product([np.nan], ignore_nodata=False))
-    assert np.isnan(product([]))
+@pytest.mark.parametrize(
+    "array,expected,ignore_nodata",
+    [
+        ([5, 0], 0, True),
+        ([-2, 4, 2.5], -20, True),
+        ([1, np.nan], "nan", False),
+        ([-1], -1, True),
+        ([np.nan], "nan", False),
+        ([], "nan", True),
+    ],
+)
+def test_product(array, expected, ignore_nodata):
+    array = np.array(array)
+    expected = np.array(expected)
+    result_np = product(array, ignore_nodata=ignore_nodata)
+    if expected != "nan":
+        assert np.array_equal(result_np, expected)
+    else:
+        assert np.isnan(result_np)
 
-    C = np.ones((2, 5, 5)) * 100
-    assert np.sum(product(C) - np.ones((5, 5)) * 10000) == 0
-    assert np.sum(product(deepcopy(C), extra_values=[2]) - np.ones((5, 5)) * 20000) == 0
-    assert (
-        np.sum(product(deepcopy(C), extra_values=[2, 3]) - np.ones((5, 5)) * 60000) == 0
-    )
+    result_dask = product(da.from_array(array), ignore_nodata=ignore_nodata).compute()
+
+    assert np.array_equal(result_dask, result_np, equal_nan=True)
