@@ -1,9 +1,6 @@
-import numbers
-
 import dask
 import dask.array as da
 import numpy as np
-import xarray as xr
 
 from openeo_processes_dask.exceptions import (
     OpenEOException,
