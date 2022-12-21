@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import dask.array as da
 import numpy as np
 import pytest
@@ -52,6 +50,7 @@ def test_sum():
     ],
 )
 def test_product(array, expected, ignore_nodata):
+    # TODO: Add test for axis keyword
     array = np.array(array)
     expected = np.array(expected)
     result_np = product(array, ignore_nodata=ignore_nodata)
@@ -63,3 +62,15 @@ def test_product(array, expected, ignore_nodata):
     result_dask = product(da.from_array(array), ignore_nodata=ignore_nodata).compute()
 
     assert np.array_equal(result_dask, result_np, equal_nan=True)
+
+
+@pytest.mark.parametrize(
+    "x,y,expected",
+    [(5, 3, 0.25), (1, 1, 0), (np.array([1, 1]), np.array([0, 1]), np.array([1, 0]))],
+)
+def test_normalized_difference(x, y, expected):
+    result_np = normalized_difference(x, y)
+    assert np.array_equal(result_np, expected)
+
+    result_dask = normalized_difference(da.from_array(x), da.from_array(y))
+    assert np.array_equal(result_np, result_dask.compute())
