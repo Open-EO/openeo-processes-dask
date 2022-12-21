@@ -77,7 +77,9 @@ def aggregate_temporal_period(
     if period in periods_to_frequency.keys():
         frequency = periods_to_frequency[period]
     else:
-        raise NotImplemented(f"Provided period ({period}) is not supported yet.")
+        raise NotImplementedError(
+            f"The provided period ({period}) is not implemented yet. The available ones are {list(periods_to_frequency.keys())}."
+        )
     resampled_data = data.resample(t=frequency)
     return reducer(data=resampled_data, **kwargs)
 
