@@ -28,3 +28,9 @@ def test_quantiles():
         np.all([np.isnan(quantile) for quantile in quantiles_5])
         and len(quantiles_5) == 2
     )
+
+
+def test_sum():
+    assert _sum([5, 1]) == 6
+    assert _sum([-2, 4, 2.5]) == 4.5
+    assert np.isnan(_sum([1, np.nan], ignore_nodata=False))

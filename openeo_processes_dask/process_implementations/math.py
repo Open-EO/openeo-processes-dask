@@ -295,25 +295,12 @@ def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=-1):
     return result
 
 
-def _sum(data, ignore_nodata=True, dimension=None):
-    summand = 0
-    if isinstance(data, list):
-        data_tmp = []
-        for item in data:
-            if isinstance(item, xr.DataArray):
-                data_tmp.append(item)
-            elif isinstance(item, numbers.Number):
-                summand += item
-        # Concatenate along dim 'new_dim'
-        data = xr.concat(data_tmp, dim="new_dim")
-        return data.sum(dim="new_dim", skipna=ignore_nodata) + summand
-
-    if isinstance(data, xr.DataArray):
-        if not dimension:
-            dimension = data.dims[0]
-        s = data.sum(dim=dimension, skipna=ignore_nodata)
-        s.attrs = data.attrs
-        return s
+def _sum(data, ignore_nodata=True, axis=-1):
+    if ignore_nodata:
+        result = np.nansum(data, axis=axis)
+    else:
+        result = np.sum(data, axis=axis)
+    return result
 
 
 def product(data, ignore_nodata=True, dimension=None, extra_values=None):
