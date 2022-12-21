@@ -11,6 +11,7 @@ from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_
 from tests.mockdata import create_fake_rastercube
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_apply(temporal_interval, bounding_box, random_raster_data):
