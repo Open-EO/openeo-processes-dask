@@ -303,15 +303,12 @@ def _sum(data, ignore_nodata=True, axis=-1):
     return result
 
 
-def product(data, ignore_nodata=True, dimension=None, extra_values=None):
-    extra_values = extra_values if extra_values is not None else []
-    if len(extra_values) > 0:
-        multiplicand = np.prod(extra_values)
+def product(data, ignore_nodata=True, axis=-1):
+    if ignore_nodata:
+        result = np.nanprod(data, axis=axis)
     else:
-        multiplicand = 1.0
-    p = data.prod(dim=dimension, skipna=ignore_nodata) * multiplicand
-    p.attrs = data.attrs
-    return p
+        result = np.prod(data, axis=axis)
+    return result
 
 
 def normalized_difference(x, y):

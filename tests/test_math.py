@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 
 from openeo_processes_dask.process_implementations.math import *
@@ -34,3 +36,19 @@ def test_sum():
     assert _sum([5, 1]) == 6
     assert _sum([-2, 4, 2.5]) == 4.5
     assert np.isnan(_sum([1, np.nan], ignore_nodata=False))
+
+
+def test_product():
+    assert product([5, 0]) == 0
+    assert product([-2, 4, 2.5]) == -20
+    assert np.isnan(product([1, np.nan], ignore_nodata=False))
+    assert product([-1]) == -1
+    assert np.isnan(product([np.nan], ignore_nodata=False))
+    assert np.isnan(product([]))
+
+    C = np.ones((2, 5, 5)) * 100
+    assert np.sum(product(C) - np.ones((5, 5)) * 10000) == 0
+    assert np.sum(product(deepcopy(C), extra_values=[2]) - np.ones((5, 5)) * 20000) == 0
+    assert (
+        np.sum(product(deepcopy(C), extra_values=[2, 3]) - np.ones((5, 5)) * 60000) == 0
+    )
