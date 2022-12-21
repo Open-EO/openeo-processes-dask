@@ -1,5 +1,7 @@
 from typing import Callable, Optional
 
+import xarray as xr
+
 from openeo_processes_dask.exceptions import DimensionNotAvailable
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 
@@ -9,8 +11,9 @@ __all__ = ["apply"]
 def apply(
     data: RasterCube, process: Callable, context: Optional[dict] = None, **kwargs
 ) -> RasterCube:
-    parameters = {"x": data, "context": context}
-    return process(parameters=parameters, **kwargs)
+    return NotImplementedError(
+        "apply doesn't currently work with the process implementations in math, etc. Need to migrate to apply_ufunc to enable this!"
+    )
 
 
 def apply_dimension(
