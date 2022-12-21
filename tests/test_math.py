@@ -38,20 +38,20 @@ def test_sum():
     assert np.isnan(_sum([1, np.nan], ignore_nodata=False))
 
 
-@pytest.mark.parametrize("axis", [-1, 0])
 @pytest.mark.parametrize(
-    "array,expected,ignore_nodata",
+    "array,expected,ignore_nodata,axis",
     [
-        (np.array([5, 0]), 0, True),
-        (np.array([-2, 4, 2.5]), -20, True),
-        (np.array([1, np.nan]), "nan", False),
-        (np.array([-1]), -1, True),
-        (np.array([np.nan]), "nan", False),
-        (np.array([]), "nan", True),
+        (np.array([5, 0]), 0, True, None),
+        (np.array([-2, 4, 2.5]), -20, True, None),
+        (np.array([1, np.nan]), "nan", False, None),
+        (np.array([-1]), -1, True, None),
+        (np.array([np.nan]), "nan", False, None),
+        (np.array([]), "nan", True, None),
+        (np.array([[0, 2, 4], [5, 4, 3]]), np.array([0, 8, 12]), True, 0),
+        (np.array([[0, 2, 4], [5, 4, 3]]), np.array([0, 60]), True, 1),
     ],
 )
 def test_product(array, expected, ignore_nodata, axis):
-    # TODO: Add test for axis keyword
     array = np.array(array)
     result_np = product(array, ignore_nodata=ignore_nodata, axis=axis)
     if expected != "nan":
