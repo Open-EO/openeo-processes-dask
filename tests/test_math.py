@@ -55,7 +55,7 @@ def test_product(array, expected, ignore_nodata):
     expected = np.array(expected)
     result_np = product(array, ignore_nodata=ignore_nodata)
     if expected != "nan":
-        assert np.array_equal(result_np, expected)
+        assert np.array_equal(result_np, expected, equal_nan=True)
     else:
         assert np.isnan(result_np)
 
@@ -70,7 +70,7 @@ def test_product(array, expected, ignore_nodata):
 )
 def test_normalized_difference(x, y, expected):
     result_np = normalized_difference(x, y)
-    assert np.array_equal(result_np, expected)
+    assert np.array_equal(result_np, expected, equal_nan=True)
 
     result_dask = normalized_difference(da.from_array(x), da.from_array(y))
-    assert np.array_equal(result_np, result_dask.compute())
+    assert np.array_equal(result_np, result_dask.compute(), equal_nan=True)
