@@ -8,7 +8,7 @@ import rasterio
 import xarray as xr
 from datacube.utils.geometry import Geometry
 
-from openeo_processes_dask.exceptions import DimensionNotAvailable, TooManyDimensions
+from openeo_processes_dask.exceptions import TooManyDimensions
 from openeo_processes_dask.process_implementations.data_model import (
     RasterCube,
     VectorCube,
@@ -32,10 +32,6 @@ def aggregate_temporal(
 ) -> RasterCube:
     if "dimension" not in kwargs:
         kwargs["dimension"] = "time"
-    if kwargs["dimension"] not in data.dims:
-        raise DimensionNotAvailable(
-            f"Provided dimension ({kwargs['dimension']}) not found in data.dims: {data.dims}"
-        )
     if not "labels" in kwargs:
         kwargs["labels"] = np.arange(len(kwargs["intervals"]))
     intervals = np.array(kwargs["intervals"])
@@ -59,12 +55,7 @@ def aggregate_temporal(
 def aggregate_temporal_period(
     data: RasterCube, reducer: Callable, period: str, **kwargs
 ) -> RasterCube:
-    if "dimension" not in kwargs:
-        kwargs["dimension"] = "time"
-    if kwargs["dimension"] not in data.dims:
-        raise DimensionNotAvailable(
-            f"Provided dimension ({kwargs['dimension']}) not found in data.dims: {data.dims}"
-        )
+
     periods_to_frequency = {
         "hour": "H",
         "day": "D",
@@ -76,8 +67,7 @@ def aggregate_temporal_period(
 
     if period in periods_to_frequency.keys():
         frequency = periods_to_frequency[period]
-    else:
-        raise NotImplemented(f"Provided period ({period}) is not supported yet.")
+
     resampled_data = data.resample(t=frequency)
     return reducer(data=resampled_data, **kwargs)
 
