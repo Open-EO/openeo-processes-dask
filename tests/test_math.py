@@ -38,28 +38,30 @@ def test_sum():
     assert np.isnan(_sum([1, np.nan], ignore_nodata=False))
 
 
+@pytest.mark.parametrize("axis", [-1, 0])
 @pytest.mark.parametrize(
     "array,expected,ignore_nodata",
     [
-        ([5, 0], 0, True),
-        ([-2, 4, 2.5], -20, True),
-        ([1, np.nan], "nan", False),
-        ([-1], -1, True),
-        ([np.nan], "nan", False),
-        ([], "nan", True),
+        (np.array([5, 0]), 0, True),
+        (np.array([-2, 4, 2.5]), -20, True),
+        (np.array([1, np.nan]), "nan", False),
+        (np.array([-1]), -1, True),
+        (np.array([np.nan]), "nan", False),
+        (np.array([]), "nan", True),
     ],
 )
-def test_product(array, expected, ignore_nodata):
+def test_product(array, expected, ignore_nodata, axis):
     # TODO: Add test for axis keyword
     array = np.array(array)
-    expected = np.array(expected)
-    result_np = product(array, ignore_nodata=ignore_nodata)
+    result_np = product(array, ignore_nodata=ignore_nodata, axis=axis)
     if expected != "nan":
         assert np.array_equal(result_np, expected, equal_nan=True)
     else:
         assert np.isnan(result_np)
 
-    result_dask = product(da.from_array(array), ignore_nodata=ignore_nodata).compute()
+    result_dask = product(
+        da.from_array(array), ignore_nodata=ignore_nodata, axis=axis
+    ).compute()
 
     assert np.array_equal(result_dask, result_np, equal_nan=True)
 
