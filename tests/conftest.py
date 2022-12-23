@@ -13,7 +13,6 @@ from openeo_pg_parser_networkx.pg_schema import (
     BoundingBox,
     TemporalInterval,
 )
-from shapely.geometry import Point, Polygon
 
 from openeo_processes_dask.core import ProcessRegistry
 from openeo_processes_dask.process_implementations.data_model import VectorCube
