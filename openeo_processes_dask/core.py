@@ -15,15 +15,27 @@ logger = logging.getLogger(__name__)
 
 def process(f):
     @wraps(f)
-    def wrapper(*args, parameters: Optional[dict[str]] = None, **kwargs):
-        if parameters is None:
-            parameters = {}
+    def wrapper(
+        *args,
+        positional_parameters: Optional[dict[int]] = None,
+        named_parameters: Optional[dict[str]] = None,
+        **kwargs,
+    ):
+        if positional_parameters is None:
+            positional_parameters = {}
+
+        if named_parameters is None:
+            named_parameters = {}
 
         resolved_args = []
         for arg in args:
             if isinstance(arg, ParameterReference):
-                if arg.from_parameter in parameters:
-                    resolved_args.append(parameters[arg.from_parameter])
+                if arg.from_parameter in positional_parameters:
+                    i = positional_parameters[arg.from_parameter]
+                    # Take the parameter from the provided index of *args and resolve it
+                    resolved_args.append(args[i])
+                elif arg.from_parameter in named_parameters:
+                    resolved_args.append(named_parameters[arg.from_parameter])
                 else:
                     raise ProcessParameterMissing(
                         f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"
@@ -32,16 +44,19 @@ def process(f):
                 resolved_args.append(arg)
 
         resolved_kwargs = {}
-        for k, v in kwargs.items():
-            if isinstance(v, ParameterReference):
-                if v.from_parameter in parameters:
-                    resolved_kwargs[k] = parameters[v.from_parameter]
+        for k, arg in kwargs.items():
+            if isinstance(arg, ParameterReference):
+                if arg.from_parameter in named_parameters:
+                    resolved_kwargs[k] = named_parameters[arg.from_parameter]
+                elif arg.from_parameter in positional_parameters:
+                    # This will have already been passed through from the first loop
+                    pass
                 else:
                     raise ProcessParameterMissing(
-                        f"Error: Process Parameter {v.from_parameter} was missing for process {f.__name__}"
+                        f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"
                     )
             else:
-                resolved_kwargs[k] = v
+                resolved_kwargs[k] = arg
 
         # If necessary, rename dimension names here too!
         for k, v in resolved_kwargs.items():
