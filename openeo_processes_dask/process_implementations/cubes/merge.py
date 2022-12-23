@@ -25,26 +25,6 @@ def merge_cubes(
             f"Provided cubes have incompatible types. cube1: {type(cube1)}, cube2: {type(cube2)}"
         )
 
-    is_geopandas = isinstance(cube1, gpd.geodataframe.GeoDataFrame) and isinstance(
-        cube2, gpd.geodataframe.GeoDataFrame
-    )
-    is_delayed_geopandas = isinstance(
-        cube1, dask_geopandas.core.GeoDataFrame
-    ) and isinstance(cube2, dask_geopandas.core.GeoDataFrame)
-    if is_geopandas or is_delayed_geopandas:
-        if list(cube1.columns) == list(cube2.columns):
-            if is_delayed_geopandas:
-                merged_cube = cube1.append(cube2)
-            if is_geopandas:
-                merged_cube = cube1.append(cube2, ignore_index=True)
-            print(
-                "Warning - Overlap resolver is not implemented for geopandas vector-cubes, cubes are simply appended!"
-            )
-        else:
-            if "geometry" in cube1.columns and "geometry" in cube2.columns:
-                merged_cube = cube1.merge(cube2, on="geometry")
-        return merged_cube
-
     if cube1.dims == cube2.dims:  # Check if the dimensions have the same names
         matching = 0
         not_matching = 0
@@ -75,6 +55,10 @@ def merge_cubes(
             if (
                 not_matching == 1
             ):  # one dimension where some coordinates match, others do not, other dimensions match
+                if overlap_resolver is None or not callable(overlap_resolver):
+                    raise OverlapResolverMissing(
+                        "Overlapping data cubes, but no overlap resolver has been specified."
+                    )
                 if callable(
                     overlap_resolver
                 ):  # Example 2 in https://processes.openeo.org/#merge_cubes: one dim not matching, overlap resolver for same coordinates
@@ -94,12 +78,15 @@ def merge_cubes(
                             same2.append(index)
                         else:
                             diff2.append(index)
-                    parameters = {
-                        "x": cube1.isel(**{dim_not_matching: same1}),
-                        "y": cube2.isel(**{dim_not_matching: same2}),
-                        "context": context,
-                    }
-                    merge = overlap_resolver(parameters=parameters)
+                    stacked_conflicts = xr.concat(
+                        [
+                            cube1.isel(**{dim_not_matching: same1}),
+                            cube2.isel(**{dim_not_matching: same2}),
+                        ],
+                        dim="cubes",
+                    )
+                    merge = stacked_conflicts.reduce(overlap_resolver, dim="cubes")
+
                     if len(diff1) > 0:
                         values_cube1 = cube1.isel(**{dim_not_matching: diff1})
                         merge = xr.concat([merge, values_cube1], dim=dim_not_matching)
