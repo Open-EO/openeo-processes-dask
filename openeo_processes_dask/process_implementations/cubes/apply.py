@@ -11,9 +11,18 @@ __all__ = ["apply"]
 def apply(
     data: RasterCube, process: Callable, context: Optional[dict] = None, **kwargs
 ) -> RasterCube:
-    return NotImplementedError(
-        "apply doesn't currently work with the process implementations in math, etc. Need to migrate to apply_ufunc to enable this!"
+    positional_parameters = {"x": 0}
+    named_parameters = {"context": context}
+    result = xr.apply_ufunc(
+        process,
+        data,
+        dask="allowed",
+        kwargs={
+            "positional_parameters": positional_parameters,
+            "named_parameters": named_parameters,
+        },
     )
+    return result
 
 
 def apply_dimension(

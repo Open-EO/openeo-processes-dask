@@ -11,7 +11,6 @@ from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_
 from tests.mockdata import create_fake_rastercube
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_apply(temporal_interval, bounding_box, random_raster_data):
@@ -20,6 +19,7 @@ def test_apply(temporal_interval, bounding_box, random_raster_data):
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
     )
 
     _process = partial(
@@ -33,4 +33,5 @@ def test_apply(temporal_interval, bounding_box, random_raster_data):
         output_cube=output_cube,
         verify_attrs=True,
         verify_crs=True,
+        expected_results=(input_cube + 1),
     )
