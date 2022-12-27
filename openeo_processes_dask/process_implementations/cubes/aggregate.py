@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, List
+from typing import Callable, Optional
 
 import dask
 import dask_geopandas
@@ -8,7 +8,7 @@ import rasterio
 import xarray as xr
 from datacube.utils.geometry import Geometry
 
-from openeo_processes_dask.exceptions import TooManyDimensions
+from openeo_processes_dask.exceptions import DimensionNotAvailable, TooManyDimensions
 from openeo_processes_dask.process_implementations.data_model import (
     RasterCube,
     VectorCube,
@@ -53,8 +53,31 @@ def aggregate_temporal(
 
 
 def aggregate_temporal_period(
-    data: RasterCube, reducer: Callable, period: str, **kwargs
+    data: RasterCube,
+    reducer: Callable,
+    period: str,
+    dimension: Optional[str] = None,
+    **kwargs,
 ) -> RasterCube:
+
+    temporal_dims = data.openeo.temporal_dims
+
+    if dimension is not None:
+        if dimension not in data.dims:
+            raise DimensionNotAvailable(
+                f"A dimension with the specified name: {dimension} does not exist."
+            )
+        applicable_temporal_dimension = dimension
+    else:
+        if not temporal_dims:
+            raise DimensionNotAvailable(
+                f"No temporal dimension detected on dataset. Available dimensions: {data.dims}"
+            )
+        if len(temporal_dims) > 1:
+            raise TooManyDimensions(
+                f"The data cube contains multiple temporal dimensions: {temporal_dims}. The parameter `dimension` must be specified."
+            )
+        applicable_temporal_dimension = temporal_dims[0]
 
     periods_to_frequency = {
         "hour": "H",
@@ -67,8 +90,12 @@ def aggregate_temporal_period(
 
     if period in periods_to_frequency.keys():
         frequency = periods_to_frequency[period]
+    else:
+        raise NotImplementedError(
+            f"The provided period '{period})' is not implemented yet. The available ones are {list(periods_to_frequency.keys())}."
+        )
 
-    resampled_data = data.resample({data.openeo.time_dim: frequency})
+    resampled_data = data.resample({applicable_temporal_dimension: frequency})
     return reducer(data=resampled_data, **kwargs)
 
 
