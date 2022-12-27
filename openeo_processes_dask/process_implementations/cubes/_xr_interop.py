@@ -12,6 +12,11 @@ class OpenEOExtensionDa:
         self._obj = xarray_obj
 
     @property
+    def spatial_dims(self) -> Optional[str]:
+        spatial_dims = self._obj.odc.spatial_dims
+        return spatial_dims
+
+    @property
     def x_dim(self) -> Optional[str]:
         spatial_dims = self._obj.odc.spatial_dims
         if spatial_dims is not None:
@@ -53,15 +58,15 @@ class OpenEOExtensionDa:
 
         return temporal_dims if temporal_dims else None
 
-    def bands_dim(self):
+    @property
+    def band_dims(self) -> Optional[list]:
         guesses = ["b", "bands"]
 
-        dims = {str(dim) for dim in self._obj.dims}
+        dims = {str(dim).casefold(): str(dim) for dim in self._obj.dims}
 
+        bands_dims = []
         for guess in guesses:
-            if dims.issuperset(guess):
-                return guess
+            if guess in dims:
+                bands_dims.append(dims[guess])
 
-        raise DimensionNotAvailable(
-            f"Unable to identify bands dimension on datacube. Available dimensions: {self._obj.dims}"
-        )
+        return bands_dims if bands_dims else None

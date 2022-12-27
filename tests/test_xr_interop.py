@@ -18,6 +18,7 @@ def test_openeo_accessor(temporal_interval, bounding_box, random_raster_data):
     assert raster_cube.openeo.x_dim == "x"
     assert raster_cube.openeo.y_dim == "y"
     assert raster_cube.openeo.temporal_dims[0] == "t"
+    assert raster_cube.openeo.band_dims[0] == "bands"
 
     with pytest.raises(NotImplementedError):
         raster_cube.openeo.z_dim
@@ -26,4 +27,10 @@ def test_openeo_accessor(temporal_interval, bounding_box, random_raster_data):
     assert raster_cube.openeo.temporal_dims[0] == "month"
 
     raster_cube = raster_cube.rename({"month": "NotATimeDim"})
-    assert not raster_cube.openeo.temporal_dims
+    assert raster_cube.openeo.temporal_dims is None
+
+    raster_cube = raster_cube.rename({"bands": "b"})
+    assert raster_cube.openeo.band_dims[0] == "b"
+
+    raster_cube = raster_cube.rename({"b": "NotABandDim"})
+    assert raster_cube.openeo.band_dims is None
