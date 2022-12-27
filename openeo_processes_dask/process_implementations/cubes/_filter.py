@@ -15,7 +15,7 @@ def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
 
 
 def filter_temporal(
-    data: RasterCube, extent: TemporalInterval, dimension: str = "time"
+    data: RasterCube, extent: TemporalInterval, dimension: str
 ) -> RasterCube:
     raise NotImplementedError()
 
