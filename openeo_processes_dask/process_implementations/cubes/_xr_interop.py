@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import odc.geo.xr  # Required for the .geo accessor on xarrays.
 import xarray as xr
@@ -10,7 +10,7 @@ class OpenEOExtensionDa:
         self._obj = xarray_obj
 
     @property
-    def spatial_dims(self) -> Optional[str]:
+    def spatial_dims(self) -> Optional[tuple[str, str]]:
         spatial_dims = self._obj.odc.spatial_dims
         return spatial_dims
 
@@ -33,7 +33,7 @@ class OpenEOExtensionDa:
         raise NotImplementedError()
 
     @property
-    def temporal_dims(self) -> Optional[list]:
+    def temporal_dims(self) -> Optional[list[str]]:
         """Find and return all temporal dimensions of the datacube as a list."""
         guesses = [
             "time",
@@ -57,7 +57,7 @@ class OpenEOExtensionDa:
         return temporal_dims if temporal_dims else None
 
     @property
-    def band_dims(self) -> Optional[list]:
+    def band_dims(self) -> Optional[list[str]]:
         guesses = ["b", "bands"]
 
         dims = {str(dim).casefold(): str(dim) for dim in self._obj.dims}
