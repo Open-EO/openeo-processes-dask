@@ -3,8 +3,6 @@ from typing import Optional
 import odc.geo.xr  # Required for the .geo accessor on xarrays.
 import xarray as xr
 
-from openeo_processes_dask.exceptions import DimensionNotAvailable
-
 
 @xr.register_dataarray_accessor("openeo")
 class OpenEOExtensionDa:
