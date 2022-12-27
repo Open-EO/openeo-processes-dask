@@ -129,9 +129,9 @@ def aggregate_spatial(
         geom_crop = data.where(xr_mask).drop(["spatial_ref"], errors="ignore")
         crop_list.append(geom_crop)
 
-        total_count = geom_crop.count(dim=[data.openeo.x_dim, data.openeo.y_dim])
+        total_count = geom_crop.count(dim=data.openeo.spatial_dims)
         valid_count = geom_crop.where(~geom_crop.isnull()).count(
-            dim=[data.openeo.x_dim, data.openeo.y_dim]
+            dim=data.openeo.spatial_dims
         )
         valid_count_list.append(valid_count)
         total_count_list.append(total_count)
