@@ -1,5 +1,8 @@
 # OpenEO Processes Dask
 
+![PyPI - Status](https://img.shields.io/pypi/status/openeo-processes-dask)
+![PyPI](https://img.shields.io/pypi/v/openeo-processes-dask)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/openeo-processes-dask)
 [![codecov](https://codecov.io/github/Open-EO/openeo-processes-dask/branch/main/graph/badge.svg?token=RA82MUN9RZ)](https://codecov.io/github/Open-EO/openeo-processes-dask)
 
 ## Development environment
