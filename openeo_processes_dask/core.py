@@ -7,7 +7,6 @@ from typing import Optional
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.exceptions import ProcessParameterMissing
-from openeo_processes_dask.process_implementations.cubes.utils import RENAME_DIMS
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +40,6 @@ def process(f):
                     )
             else:
                 resolved_kwargs[k] = v
-
-        # If necessary, rename dimension names here too!
-        for k, v in resolved_kwargs.items():
-            if k in ["dimension", "dim"] and v in RENAME_DIMS.keys():
-                resolved_kwargs[k] = RENAME_DIMS[v]
 
         pretty_args = {k: type(v) for k, v in resolved_kwargs.items()}
         logger.warning(f"Running process {f.__name__}")

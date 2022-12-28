@@ -15,7 +15,7 @@ def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
 
 
 def filter_temporal(
-    data: RasterCube, extent: TemporalInterval, dimension: str = "time"
+    data: RasterCube, extent: TemporalInterval, dimension: str
 ) -> RasterCube:
     raise NotImplementedError()
 
@@ -25,7 +25,7 @@ def filter_labels(
 ) -> RasterCube:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
-            f"Provided dimension not found in data.dims: {data.dims}"
+            f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
     labels = data[dimension].values

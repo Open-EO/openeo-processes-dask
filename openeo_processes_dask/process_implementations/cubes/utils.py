@@ -5,26 +5,8 @@ from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 logger = logging.getLogger(__name__)
 
-RENAME_DIMS = {
-    "time": "t",
-    "Time": "t",
-    "Bands": "bands",
-    "band": "bands",
-    "latitude": "x",
-    "longitude": "y",
-    "lat": "x",
-    "lon": "y",
-}
-
 
 def _normalise_output_datacube(data) -> RasterCube:
-    # Rename time dimension
-    for old_dim_name, new_dim_name in RENAME_DIMS.items():
-        try:
-            data = data.rename(new_name_or_name_dict={old_dim_name: new_dim_name})
-        except ValueError as e:
-            pass
-
     # Order dimensions for rioxarray
     data = data.transpose("bands", "t", "z", "y", "x", missing_dims="ignore")
 

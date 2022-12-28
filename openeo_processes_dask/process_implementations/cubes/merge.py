@@ -5,6 +5,7 @@ import geopandas as gpd
 import numpy as np
 import xarray as xr
 
+from openeo_processes_dask.exceptions import OverlapResolverMissing
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 __all__ = ["merge_cubes"]
@@ -61,57 +62,57 @@ def merge_cubes(
         if matching == len(relevant_coords):  # all dimensions match
             if (
                 overlap_resolver is None
-            ):  # no overlap resolver, so a new dimension is added
+            ):  # Example 3.1 in https://processes.openeo.org/#merge_cubes: overlapping dims, but no overlap resolver, so a new dimension is added
                 merge = xr.concat([cube1, cube2], dim="cubes")
                 merge["cubes"] = ["Cube01", "Cube02"]
             else:
-                if callable(overlap_resolver):  # overlap resolver, for example add
-                    merge = overlap_resolver(cube1, cube2, **context)
-                elif isinstance(overlap_resolver, xr.core.dataarray.DataArray):
-                    merge = overlap_resolver
-                else:
-                    raise Exception("OverlapResolverMissing")
+                if callable(
+                    overlap_resolver
+                ):  # Example 3.2 in https://processes.openeo.org/#merge_cubes: overlapping dims, overlap resolver for example add
+                    parameters = {"x": cube1, "y": cube2, "context": context}
+                    merge = overlap_resolver(parameters=parameters, dimension=dimension)
         else:  # WIP
             if (
                 not_matching == 1
             ):  # one dimension where some coordinates match, others do not, other dimensions match
-                same1 = []
-                diff1 = []
-                index = 0
-                for t in cube1[dim_not_matching]:  # count matching coordinates
-                    if (t == cube2[dim_not_matching]).any():
-                        same1.append(index)
-                        index += 1
-                    else:  # count different coordinates
-                        diff1.append(index)
-                        index += 1
-                same2 = []
-                diff2 = []
-                index2 = 0
-                for t in cube2[dim_not_matching]:
-                    if (t == cube1[dim_not_matching]).any():
-                        same2.append(index2)
-                        index2 += 1
-                    else:
-                        diff2.append(index2)
-                        index2 += 1
-                if callable(overlap_resolver):
-                    c1 = cube1.transpose(dim_not_matching, ...)
-                    c2 = cube2.transpose(dim_not_matching, ...)
-                    merge = overlap_resolver(c1[same1], c2[same2], **context)
+                if callable(
+                    overlap_resolver
+                ):  # Example 2 in https://processes.openeo.org/#merge_cubes: one dim not matching, overlap resolver for same coordinates
+                    same1 = []
+                    diff1 = []
+                    for index, t in enumerate(
+                        cube1[dim_not_matching]
+                    ):  # count matching coordinates
+                        if (t == cube2[dim_not_matching]).any():
+                            same1.append(index)
+                        else:  # count different coordinates
+                            diff1.append(index)
+                    same2 = []
+                    diff2 = []
+                    for index, t in enumerate(cube2[dim_not_matching]):
+                        if (t == cube1[dim_not_matching]).any():
+                            same2.append(index)
+                        else:
+                            diff2.append(index)
+                    parameters = {
+                        "x": cube1.isel(**{dim_not_matching: same1}),
+                        "y": cube2.isel(**{dim_not_matching: same2}),
+                        "context": context,
+                    }
+                    merge = overlap_resolver(parameters=parameters)
                     if len(diff1) > 0:
-                        values_cube1 = c1[diff1]
+                        values_cube1 = cube1.isel(**{dim_not_matching: diff1})
                         merge = xr.concat([merge, values_cube1], dim=dim_not_matching)
                     if len(diff2) > 0:
-                        values_cube2 = c2[diff2]
+                        values_cube2 = cube2.isel(**{dim_not_matching: diff2})
                         merge = xr.concat([merge, values_cube2], dim=dim_not_matching)
                     merge = merge.sortby(dim_not_matching)
-                    merge = merge.transpose(*cube1.dims)
-                else:
+
+                else:  # Example 1 in https://processes.openeo.org/#merge_cubes: one dim not matching, no overlap resolver
                     merge = xr.concat([cube1, cube2], dim=dim_not_matching)
             else:
                 merge = xr.concat([cube1, cube2], dim=dim_not_matching)
-    else:  # if dims do not match - WIP
+    else:  # Example 4 in https://processes.openeo.org/#merge_cubes: dim in one cube, but missing in other one, overlap resolver
         if len(cube1.dims) < len(cube2.dims):
             c1 = cube1
             c2 = cube2
@@ -120,21 +121,14 @@ def merge_cubes(
             c2 = cube1
         check = []
         for c in c1.dims:
-            check.append(c in c1.dims and c in c2.dims)
-        for c in c2.dims:
-            if not (c in c1.dims):
-                dimension = c
-        if (
-            np.array(check).all()
-            and len(c2[dimension]) == 1
-            and callable(overlap_resolver)
-        ):
-            c2 = c2.transpose(dimension, ...)
-            merge = overlap_resolver(c2[0], c1, **context)
-        elif isinstance(overlap_resolver, xr.core.dataarray.DataArray):
-            merge = overlap_resolver
+            check.append(c in c2.dims)  # dims of smaller cube have to be in larger one
+        if all(check) and callable(overlap_resolver):
+            parameters = {"x": cube1, "y": cube2, "context": context}
+            merge = overlap_resolver(parameters=parameters)
         else:
-            raise Exception("OverlapResolverMissing")
+            raise OverlapResolverMissing(
+                "Datacubes overlap, but no overlap resolver has been specified."
+            )
     for a in cube1.attrs:
         if a in cube2.attrs and (cube1.attrs[a] == cube2.attrs[a]):
             merge.attrs[a] = cube1.attrs[a]
