@@ -3,7 +3,6 @@ from functools import partial
 import numpy as np
 import pytest
 
-from openeo_processes_dask.core import process_registry
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
@@ -11,8 +10,9 @@ from tests.mockdata import create_fake_rastercube
 
 @pytest.mark.parametrize("size", [(30, 30, 20, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
-@pytest.mark.check_dask_friendliness
-def test_reduce_dimension(temporal_interval, bounding_box, random_raster_data):
+def test_reduce_dimension(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
     input_cube = create_fake_rastercube(
         data=random_raster_data,
         spatial_extent=bounding_box,

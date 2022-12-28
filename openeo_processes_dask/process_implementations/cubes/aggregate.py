@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable
+from typing import Callable, Optional
 
 import dask
 import dask_geopandas
@@ -8,7 +8,7 @@ import rasterio
 import xarray as xr
 from datacube.utils.geometry import Geometry
 
-from openeo_processes_dask.exceptions import TooManyDimensions
+from openeo_processes_dask.exceptions import DimensionNotAvailable, TooManyDimensions
 from openeo_processes_dask.process_implementations.data_model import (
     RasterCube,
     VectorCube,
@@ -31,7 +31,7 @@ def aggregate_temporal(
     data: RasterCube, intervals: list, reducer: Callable, **kwargs
 ) -> RasterCube:
     if "dimension" not in kwargs:
-        kwargs["dimension"] = "time"
+        kwargs["dimension"] = data.openeo.time_dim
     if not "labels" in kwargs:
         kwargs["labels"] = np.arange(len(kwargs["intervals"]))
     intervals = np.array(kwargs["intervals"])
@@ -53,8 +53,31 @@ def aggregate_temporal(
 
 
 def aggregate_temporal_period(
-    data: RasterCube, reducer: Callable, period: str, **kwargs
+    data: RasterCube,
+    reducer: Callable,
+    period: str,
+    dimension: Optional[str] = None,
+    **kwargs,
 ) -> RasterCube:
+
+    temporal_dims = data.openeo.temporal_dims
+
+    if dimension is not None:
+        if dimension not in data.dims:
+            raise DimensionNotAvailable(
+                f"A dimension with the specified name: {dimension} does not exist."
+            )
+        applicable_temporal_dimension = dimension
+    else:
+        if not temporal_dims:
+            raise DimensionNotAvailable(
+                f"No temporal dimension detected on dataset. Available dimensions: {data.dims}"
+            )
+        if len(temporal_dims) > 1:
+            raise TooManyDimensions(
+                f"The data cube contains multiple temporal dimensions: {temporal_dims}. The parameter `dimension` must be specified."
+            )
+        applicable_temporal_dimension = temporal_dims[0]
 
     periods_to_frequency = {
         "hour": "H",
@@ -67,8 +90,12 @@ def aggregate_temporal_period(
 
     if period in periods_to_frequency.keys():
         frequency = periods_to_frequency[period]
+    else:
+        raise NotImplementedError(
+            f"The provided period '{period})' is not implemented yet. The available ones are {list(periods_to_frequency.keys())}."
+        )
 
-    resampled_data = data.resample(t=frequency)
+    resampled_data = data.resample({applicable_temporal_dimension: frequency})
 
     return resampled_data.reduce(reducer)
 
@@ -96,12 +123,17 @@ def aggregate_spatial(
         mask = geometry_mask(
             [Geometry(row["geometry"], crs=geometries.crs)], data.geobox, invert=True
         )
-        xr_mask = xr.DataArray(mask, coords=[data.coords["y"], data.coords["x"]])
+        xr_mask = xr.DataArray(
+            mask,
+            coords=[data.coords[data.openeo.y_dim], data.coords[data.openeo.x_dim]],
+        )
         geom_crop = data.where(xr_mask).drop(["spatial_ref"], errors="ignore")
         crop_list.append(geom_crop)
 
-        total_count = geom_crop.count(dim=["x", "y"])
-        valid_count = geom_crop.where(~geom_crop.isnull()).count(dim=["x", "y"])
+        total_count = geom_crop.count(dim=data.openeo.spatial_dims)
+        valid_count = geom_crop.where(~geom_crop.isnull()).count(
+            dim=data.openeo.spatial_dims
+        )
         valid_count_list.append(valid_count)
         total_count_list.append(total_count)
 
@@ -112,7 +144,8 @@ def aggregate_spatial(
 
     xr_crop_list = xr.concat(crop_list, "result")
     xr_crop_list_reduced = reducer(
-        data=reducer(data=xr_crop_list, dimension="x"), dimension="y"
+        data=reducer(data=xr_crop_list, dimension=data.openeo.x_dim),
+        dimension=data.openeo.y_dim,
     )
     xr_crop_list_reduced_ddf = (
         xr_crop_list_reduced.to_dataset(dim="bands")

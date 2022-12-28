@@ -16,6 +16,9 @@ def general_output_checks(
 ):
     assert isinstance(output_cube.data, type(input_cube.data))
 
+    assert input_cube.openeo is not None
+    assert output_cube.openeo is not None
+
     if verify_crs:
         assert input_cube.rio.crs == output_cube.rio.crs
 
