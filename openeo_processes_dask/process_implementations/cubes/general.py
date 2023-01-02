@@ -25,4 +25,4 @@ def dimension_labels(data: RasterCube, dimension: str) -> RasterCube:
         raise DimensionNotAvailable(
             "A dimension with the specified name does not exist."
         )
-    return data.coords[dimension]
+    return data.coords[dimension].values
