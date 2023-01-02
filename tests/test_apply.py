@@ -4,16 +4,14 @@ import numpy as np
 import pytest
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
-from openeo_processes_dask.core import process_registry
 from openeo_processes_dask.process_implementations.cubes.apply import apply
-from openeo_processes_dask.process_implementations.math import add
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
-def test_apply(temporal_interval, bounding_box, random_raster_data):
+def test_apply(temporal_interval, bounding_box, random_raster_data, process_registry):
     input_cube = create_fake_rastercube(
         data=random_raster_data,
         spatial_extent=bounding_box,

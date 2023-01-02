@@ -43,7 +43,9 @@ def resample_cube_spatial(
 
     try:
         # xr_reproject renames the coordinates according to the geobox, this undoes that.
-        resampled_data = resampled_data.rename({"longitude": "x", "latitude": "y"})
+        resampled_data = resampled_data.rename(
+            {"longitude": data.openeo.x_dim, "latitude": data.openeo.y_dim}
+        )
     except ValueError:
         pass
 

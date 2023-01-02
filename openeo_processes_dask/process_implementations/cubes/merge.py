@@ -71,6 +71,11 @@ def merge_cubes(
                 ):  # Example 3.2 in https://processes.openeo.org/#merge_cubes: overlapping dims, overlap resolver for example add
                     parameters = {"x": cube1, "y": cube2, "context": context}
                     merge = overlap_resolver(parameters=parameters, dimension=dimension)
+                if callable(
+                    overlap_resolver
+                ):  # Example 3.2 in https://processes.openeo.org/#merge_cubes: overlapping dims, overlap resolver for example add
+                    parameters = {"x": cube1, "y": cube2, "context": context}
+                    merge = overlap_resolver(parameters=parameters, dimension=dimension)
         else:  # WIP
             if (
                 not_matching == 1
@@ -100,10 +105,37 @@ def merge_cubes(
                         "context": context,
                     }
                     merge = overlap_resolver(parameters=parameters)
+                if callable(
+                    overlap_resolver
+                ):  # Example 2 in https://processes.openeo.org/#merge_cubes: one dim not matching, overlap resolver for same coordinates
+                    same1 = []
+                    diff1 = []
+                    for index, t in enumerate(
+                        cube1[dim_not_matching]
+                    ):  # count matching coordinates
+                        if (t == cube2[dim_not_matching]).any():
+                            same1.append(index)
+                        else:  # count different coordinates
+                            diff1.append(index)
+                    same2 = []
+                    diff2 = []
+                    for index, t in enumerate(cube2[dim_not_matching]):
+                        if (t == cube1[dim_not_matching]).any():
+                            same2.append(index)
+                        else:
+                            diff2.append(index)
+                    parameters = {
+                        "x": cube1.isel(**{dim_not_matching: same1}),
+                        "y": cube2.isel(**{dim_not_matching: same2}),
+                        "context": context,
+                    }
+                    merge = overlap_resolver(parameters=parameters)
                     if len(diff1) > 0:
+                        values_cube1 = cube1.isel(**{dim_not_matching: diff1})
                         values_cube1 = cube1.isel(**{dim_not_matching: diff1})
                         merge = xr.concat([merge, values_cube1], dim=dim_not_matching)
                     if len(diff2) > 0:
+                        values_cube2 = cube2.isel(**{dim_not_matching: diff2})
                         values_cube2 = cube2.isel(**{dim_not_matching: diff2})
                         merge = xr.concat([merge, values_cube2], dim=dim_not_matching)
                     merge = merge.sortby(dim_not_matching)
@@ -121,6 +153,10 @@ def merge_cubes(
             c2 = cube1
         check = []
         for c in c1.dims:
+            check.append(c in c2.dims)  # dims of smaller cube have to be in larger one
+        if all(check) and callable(overlap_resolver):
+            parameters = {"x": cube1, "y": cube2, "context": context}
+            merge = overlap_resolver(parameters=parameters)
             check.append(c in c2.dims)  # dims of smaller cube have to be in larger one
         if all(check) and callable(overlap_resolver):
             parameters = {"x": cube1, "y": cube2, "context": context}
