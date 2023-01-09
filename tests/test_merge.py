@@ -55,6 +55,7 @@ def test_merge_cubes_type_2(
 def test_merge_cubes_type_4(
     temporal_interval, bounding_box, random_raster_data, process_registry
 ):
+    # This is basically broadcasting the smaller datacube and then applying the overlap resolver.
     origin_cube = create_fake_rastercube(
         data=random_raster_data,
         spatial_extent=bounding_box,
@@ -63,7 +64,7 @@ def test_merge_cubes_type_4(
     )
 
     cube_1 = origin_cube
-    cube_2 = origin_cube.drop(["bands", "time"]) + 1
+    cube_2 = origin_cube.drop(["bands", "t"]) + 1
 
     with pytest.raises(OverlapResolverMissing):
         merge_cubes(cube_1, cube_2)
@@ -71,3 +72,29 @@ def test_merge_cubes_type_4(
     overlap_resolver = process_registry["max"]
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     xr.testing.assert_equal(merged_cube, cube_1 + 1)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 4, 3)])
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_merge_cubes_type_3(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    # This is basically broadcasting the smaller datacube and then applying the overlap resolver.
+    origin_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B01", "B02", "B03"],
+    )
+
+    cube_1 = origin_cube
+    cube_2 = origin_cube + 1
+
+    # If an overlap reducer is provided, then reduce per pixel
+    merged_cube = merge_cubes(cube_1, cube_2, process_registry["max"])
+    xr.testing.assert_equal(merged_cube, cube_1)
+
+    # If no overlap reducer is provided, then simply concatenate along a new dimension
+    merged_cube = merge_cubes(cube_1, cube_2)
+    expected_result = xr.concat([cube_1, cube_2], dim="cubes")
+    xr.testing.assert_equal(merged_cube, expected_result)
