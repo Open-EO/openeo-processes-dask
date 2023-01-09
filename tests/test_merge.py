@@ -40,9 +40,34 @@ def test_merge_cubes_type_2(
     cube_1 = origin_cube.drop_sel({"bands": "B03"})
     cube_2 = origin_cube.drop_sel({"bands": "B01"})
 
+    with pytest.raises(OverlapResolverMissing):
+        merge_cubes(cube_1, cube_2)
+
     overlap_resolver = process_registry["mean"]
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
-    # xr.testing.assert_equal(merged_cube.bands["B02"], )
+    xr.testing.assert_equal(
+        merged_cube.sel({"bands": "B02"}), origin_cube.sel({"bands": "B02"})
+    )
+
+
+@pytest.mark.parametrize("size", [(6, 5, 4, 3)])
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_merge_cubes_type_4(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    origin_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B01", "B02", "B03"],
+    )
+
+    cube_1 = origin_cube
+    cube_2 = origin_cube.drop(["bands", "time"]) + 1
 
     with pytest.raises(OverlapResolverMissing):
-        merged_cube = merge_cubes(cube_1, cube_2)
+        merge_cubes(cube_1, cube_2)
+
+    overlap_resolver = process_registry["max"]
+    merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
+    xr.testing.assert_equal(merged_cube, cube_1 + 1)
