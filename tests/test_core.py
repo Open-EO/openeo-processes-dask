@@ -14,7 +14,7 @@ def test_process_decorator():
         ParameterReference(from_parameter="test_param_ref_2"),
         param3=3,
         param4=ParameterReference(from_parameter="test_param_ref_4"),
-        parameters={"test_param_ref_2": 2, "test_param_ref_4": 4},
+        named_parameters={"test_param_ref_2": 2, "test_param_ref_4": 4},
     )
     assert result == (1, 2, 3, 4)
 

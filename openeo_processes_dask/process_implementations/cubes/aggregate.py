@@ -95,7 +95,7 @@ def aggregate_temporal_period(
             f"The provided period '{period})' is not implemented yet. The available ones are {list(periods_to_frequency.keys())}."
         )
 
-    resampled_data = data.resample(t=frequency)
+    resampled_data = data.resample({applicable_temporal_dimension: frequency})
 
     return resampled_data.reduce(reducer)
 
