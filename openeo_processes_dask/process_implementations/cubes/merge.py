@@ -1,7 +1,5 @@
 from typing import Callable, Optional
 
-import dask_geopandas
-import geopandas as gpd
 import numpy as np
 import xarray as xr
 
@@ -10,6 +8,12 @@ from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 __all__ = ["merge_cubes"]
 
+NEW_DIM_NAME = "cubes"
+
+
+def get_dimension_difference(cube1, cube2, dim):
+    return np.setdiff1d(cube1[dim].data, cube2[dim].data, assume_unique=True)
+
 
 def merge_cubes(
     cube1: RasterCube,
@@ -17,13 +21,44 @@ def merge_cubes(
     overlap_resolver: Callable = None,
     context: Optional[dict] = None,
     **kwargs,
-):
+) -> RasterCube:
+
     if context is None:
         context = {}
     if not isinstance(cube1, type(cube2)):
         raise Exception(
             f"Provided cubes have incompatible types. cube1: {type(cube1)}, cube2: {type(cube2)}"
         )
+
+    label_difference_per_shared_dim = {
+        dim: (
+            get_dimension_difference(cube1, cube2, dim),
+            get_dimension_difference(cube2, cube1, dim),
+        )
+        for dim in set(cube1.dims).intersection(set(cube2.dims))
+    }
+
+    # Example 3: All dimensions and their labels are equal
+    if cube1.dims == cube2.dims:
+        if all(
+            [
+                len(v[0]) == 0 and len(v[1]) == 0
+                for _, v in label_difference_per_shared_dim.items()
+            ]
+        ):
+            concat_both_cubes = xr.concat([cube1, cube2], dim=NEW_DIM_NAME)
+            if overlap_resolver is not None:
+                # Elementwise operation
+                merged_cube = concat_both_cubes.reduce(
+                    overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
+                )
+            else:
+                # Concat along new "cubes" dimension
+                merged_cube = concat_both_cubes
+    elif True:
+        pass
+
+    return merged_cube
 
     if cube1.dims == cube2.dims:  # Check if the dimensions have the same names
         matching = 0

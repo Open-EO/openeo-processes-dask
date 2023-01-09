@@ -90,11 +90,11 @@ def test_merge_cubes_type_3(
     cube_1 = origin_cube
     cube_2 = origin_cube + 1
 
-    # If an overlap reducer is provided, then reduce per pixel
-    merged_cube = merge_cubes(cube_1, cube_2, process_registry["max"])
-    xr.testing.assert_equal(merged_cube, cube_1)
-
     # If no overlap reducer is provided, then simply concatenate along a new dimension
     merged_cube = merge_cubes(cube_1, cube_2)
     expected_result = xr.concat([cube_1, cube_2], dim="cubes")
     xr.testing.assert_equal(merged_cube, expected_result)
+
+    # If an overlap reducer is provided, then reduce per pixel
+    merged_cube = merge_cubes(cube_1, cube_2, process_registry["max"])
+    xr.testing.assert_equal(merged_cube, cube_1 + 1)
