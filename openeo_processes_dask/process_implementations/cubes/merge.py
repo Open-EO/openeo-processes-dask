@@ -84,14 +84,14 @@ def merge_cubes(
                 overlapping_dim = differing_dims[0]
                 stacked_conflicts = xr.concat(
                     [
-                        cube1.isel(
+                        cube1.sel(
                             **{
                                 overlapping_dim: overlap_per_shared_dim[
                                     overlapping_dim
                                 ].in_both
                             }
                         ),
-                        cube2.isel(
+                        cube2.sel(
                             **{
                                 overlapping_dim: overlap_per_shared_dim[
                                     overlapping_dim
@@ -105,14 +105,14 @@ def merge_cubes(
                     overlap_resolver, dim="cubes"
                 )
 
-                rest_of_cube_1 = cube1.isel(
+                rest_of_cube_1 = cube1.sel(
                     **{
                         overlapping_dim: overlap_per_shared_dim[
                             overlapping_dim
                         ].only_in_cube1
                     }
                 )
-                rest_of_cube_2 = cube1.isel(
+                rest_of_cube_2 = cube2.sel(
                     **{
                         overlapping_dim: overlap_per_shared_dim[
                             overlapping_dim
