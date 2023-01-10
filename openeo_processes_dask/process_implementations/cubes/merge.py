@@ -11,8 +11,9 @@ __all__ = ["merge_cubes"]
 NEW_DIM_NAME = "cubes"
 
 
-def get_dimension_difference(cube1, cube2, dim):
-    return np.setdiff1d(cube1[dim].data, cube2[dim].data, assume_unique=True)
+from collections import namedtuple
+
+Overlap = namedtuple("Overlap", ["only_in_cube1", "only_in_cube2", "in_both"])
 
 
 def merge_cubes(
@@ -30,33 +31,109 @@ def merge_cubes(
             f"Provided cubes have incompatible types. cube1: {type(cube1)}, cube2: {type(cube2)}"
         )
 
-    label_difference_per_shared_dim = {
-        dim: (
-            get_dimension_difference(cube1, cube2, dim),
-            get_dimension_difference(cube2, cube1, dim),
+    # Key: dimension name
+    # Value: (labels in cube1 not in cube2, labels in cube2 not in cube1)
+    overlap_per_shared_dim = {
+        dim: Overlap(
+            only_in_cube1=np.setdiff1d(cube1[dim].data, cube2[dim].data),
+            only_in_cube2=np.setdiff1d(cube2[dim].data, cube1[dim].data),
+            in_both=np.intersect1d(cube1[dim].data, cube2[dim].data),
         )
         for dim in set(cube1.dims).intersection(set(cube2.dims))
     }
 
-    # Example 3: All dimensions and their labels are equal
     if cube1.dims == cube2.dims:
-        if all(
+        # Check whether all of the shared dims have exactly the same labels
+        dims_have_no_label_diff = all(
             [
-                len(v[0]) == 0 and len(v[1]) == 0
-                for _, v in label_difference_per_shared_dim.items()
+                len(overlap.only_in_cube1) == 0 and len(overlap.only_in_cube2) == 0
+                for overlap in overlap_per_shared_dim.values()
             ]
-        ):
+        )
+        if dims_have_no_label_diff:
+            # Example 3: All dimensions and their labels are equal
             concat_both_cubes = xr.concat([cube1, cube2], dim=NEW_DIM_NAME)
-            if overlap_resolver is not None:
-                # Elementwise operation
+            if overlap_resolver is None:
+                # Example 3.1: Concat along new "cubes" dimension
+                merged_cube = concat_both_cubes
+            else:
+                # Example 3.2: Elementwise operation
                 merged_cube = concat_both_cubes.reduce(
                     overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
                 )
+        else:
+            # Example 1 & 2
+            differing_dims = [
+                dim
+                for dim, overlap in overlap_per_shared_dim.items()
+                if len(overlap.in_both) > 0
+                and (len(overlap.only_in_cube1) > 0 or len(overlap.only_in_cube2) > 0)
+            ]
+
+            if len(differing_dims) == 0:
+                # Example 1: No overlap on any dimensions, can just combine by coords
+                merged_cube = xr.combine_by_coords([cube1, cube2])
+            elif len(differing_dims) == 1:
+                # Example 2: Overlap on one dimension, resolve these pixels with overlap resolver
+
+                if overlap_resolver is None or not callable(overlap_resolver):
+                    raise OverlapResolverMissing(
+                        "Overlapping data cubes, but no overlap resolver has been specified."
+                    )
+
+                overlapping_dim = differing_dims[0]
+                stacked_conflicts = xr.concat(
+                    [
+                        cube1.isel(
+                            **{
+                                overlapping_dim: overlap_per_shared_dim[
+                                    overlapping_dim
+                                ].in_both
+                            }
+                        ),
+                        cube2.isel(
+                            **{
+                                overlapping_dim: overlap_per_shared_dim[
+                                    overlapping_dim
+                                ].in_both
+                            }
+                        ),
+                    ],
+                    dim="cubes",
+                )
+                merge_conflicts = stacked_conflicts.reduce(
+                    overlap_resolver, dim="cubes"
+                )
+
+                rest_of_cube_1 = cube1.isel(
+                    **{
+                        overlapping_dim: overlap_per_shared_dim[
+                            overlapping_dim
+                        ].only_in_cube1
+                    }
+                )
+                rest_of_cube_2 = cube1.isel(
+                    **{
+                        overlapping_dim: overlap_per_shared_dim[
+                            overlapping_dim
+                        ].only_in_cube2
+                    }
+                )
+                merged_cube = xr.combine_by_coords(
+                    [merge_conflicts, rest_of_cube_1, rest_of_cube_2]
+                )
+
             else:
-                # Concat along new "cubes" dimension
-                merged_cube = concat_both_cubes
+                raise ValueError(
+                    "More than one overlapping dimension, merge not possible."
+                )
+
     elif True:
+        # Example 4: broadcast lower dimension cube to higher-dimension cube
         pass
+
+    else:
+        raise ValueError()
 
     return merged_cube
 
