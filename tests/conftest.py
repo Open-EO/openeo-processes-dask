@@ -7,6 +7,7 @@ import dask_geopandas
 import geopandas as gpd
 import numpy as np
 import pytest
+from dask.distributed import Client
 from geopandas.geodataframe import GeoDataFrame
 from openeo_pg_parser_networkx import ProcessRegistry
 from openeo_pg_parser_networkx.pg_schema import (
@@ -21,7 +22,12 @@ from openeo_processes_dask.process_implementations.data_model import VectorCube
 logger = logging.getLogger(__name__)
 
 
-pytest_plugins = ["tests.dask_friendliness"]
+# pytest_plugins = ["tests.dask_friendliness"]
+
+
+@pytest.fixture
+def dask_client():
+    return Client()
 
 
 @pytest.fixture
