@@ -2,6 +2,7 @@ from functools import partial
 
 import numpy as np
 import pytest
+import xarray as xr
 
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from tests.general_checks import general_output_checks
@@ -31,3 +32,5 @@ def test_reduce_dimension(
         verify_attrs=False,
         verify_crs=True,
     )
+
+    xr.testing.assert_equal(output_cube, input_cube.mean(dim="t"))

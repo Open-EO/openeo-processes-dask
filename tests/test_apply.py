@@ -2,6 +2,7 @@ from functools import partial
 
 import numpy as np
 import pytest
+import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.process_implementations.cubes.apply import apply
@@ -33,3 +34,5 @@ def test_apply(temporal_interval, bounding_box, random_raster_data, process_regi
         verify_crs=True,
         expected_results=(input_cube + 1),
     )
+
+    xr.testing.assert_equal(output_cube, input_cube + 1)
