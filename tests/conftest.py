@@ -22,9 +22,6 @@ from openeo_processes_dask.process_implementations.data_model import VectorCube
 logger = logging.getLogger(__name__)
 
 
-# pytest_plugins = ["tests.dask_friendliness"]
-
-
 @pytest.fixture
 def dask_client():
     return Client()
