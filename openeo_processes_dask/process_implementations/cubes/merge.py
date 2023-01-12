@@ -54,7 +54,9 @@ def merge_cubes(
         )
         if dims_have_no_label_diff:
             # Example 3: All dimensions and their labels are equal
-            concat_both_cubes = xr.concat([cube1, cube2], dim=NEW_DIM_NAME)
+            concat_both_cubes = xr.concat([cube1, cube2], dim=NEW_DIM_NAME).chunk(
+                {NEW_DIM_NAME: -1}
+            )
             if overlap_resolver is None:
                 # Example 3.1: Concat along new "cubes" dimension
                 merged_cube = concat_both_cubes
@@ -102,10 +104,10 @@ def merge_cubes(
                             }
                         ),
                     ],
-                    dim="cubes",
-                )
+                    dim=NEW_DIM_NAME,
+                ).chunk({NEW_DIM_NAME: -1})
                 merge_conflicts = stacked_conflicts.reduce(
-                    overlap_resolver, dim="cubes"
+                    overlap_resolver, dim=NEW_DIM_NAME
                 )
 
                 rest_of_cube_1 = cube1.sel(
@@ -145,7 +147,7 @@ def merge_cubes(
         # Stack both cubes and use overlap resolver to resolve each pixel
         both_stacked = xr.concat(
             [higher_dim_cube, lower_dim_cube_broadcast], dim=NEW_DIM_NAME
-        )
+        ).chunk({NEW_DIM_NAME: -1})
         merged_cube = both_stacked.reduce(
             overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
         )
