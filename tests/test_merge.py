@@ -4,6 +4,10 @@ import xarray as xr
 
 from openeo_processes_dask.exceptions import OverlapResolverMissing
 from openeo_processes_dask.process_implementations import merge_cubes
+from openeo_processes_dask.process_implementations.cubes.merge import (
+    NEW_DIM_COORDS,
+    NEW_DIM_NAME,
+)
 from tests.mockdata import create_fake_rastercube
 
 
@@ -68,7 +72,9 @@ def test_merge_cubes_type_3(
 
     # If no overlap reducer is provided, then simply concatenate along a new dimension
     merged_cube = merge_cubes(cube_1, cube_2)
-    expected_result = xr.concat([cube_1, cube_2], dim="cubes")
+    expected_result = xr.concat([cube_1, cube_2], dim=NEW_DIM_NAME).reindex(
+        {NEW_DIM_NAME: NEW_DIM_COORDS}
+    )
     xr.testing.assert_equal(merged_cube, expected_result)
 
     # If an overlap reducer is provided, then reduce per pixel
