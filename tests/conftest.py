@@ -1,7 +1,6 @@
 import importlib
 import inspect
 import logging
-from functools import partial
 
 import dask_geopandas
 import geopandas as gpd
