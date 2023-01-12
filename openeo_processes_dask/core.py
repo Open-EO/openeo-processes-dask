@@ -26,6 +26,9 @@ def process(f):
         named_parameters: Optional[dict[str]] = None,
         **kwargs,
     ):
+        # Need to transform this from a tuple to a list to be able to delete from it.
+        args = list(args)
+
         # Some processes like `apply` cannot pass a parameter for a child-process using kwargs, but only by position.
         # E.g. `apply` passes the data to apply over as a parameter `x`, but the implementation with `apply_ufunc`
         # does not allow naming this parameter `x`.
@@ -37,6 +40,13 @@ def process(f):
             named_parameters = {}
 
         resolved_args = []
+        resolved_kwargs = {}
+
+        # If an arg is specified in positional_parameters, directly resolve it and remove it from *args to avoid double assignment
+        for arg_name, i in positional_parameters.items():
+            resolved_kwargs[arg_name] = args[i]
+            del args[i]
+
         for arg in args:
             if isinstance(arg, ParameterReference):
                 if arg.from_parameter in positional_parameters:
@@ -52,7 +62,6 @@ def process(f):
             else:
                 resolved_args.append(arg)
 
-        resolved_kwargs = {}
         for k, arg in kwargs.items():
             if isinstance(arg, ParameterReference):
                 if arg.from_parameter in named_parameters:
