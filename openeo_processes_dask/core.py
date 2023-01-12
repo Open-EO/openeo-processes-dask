@@ -49,11 +49,7 @@ def process(f):
 
         for arg in args:
             if isinstance(arg, ParameterReference):
-                if arg.from_parameter in positional_parameters:
-                    i = positional_parameters[arg.from_parameter]
-                    # Take the parameter from the provided index of *args and resolve it
-                    resolved_args.append(args[i])
-                elif arg.from_parameter in named_parameters:
+                if arg.from_parameter in named_parameters:
                     resolved_args.append(named_parameters[arg.from_parameter])
                 else:
                     raise ProcessParameterMissing(

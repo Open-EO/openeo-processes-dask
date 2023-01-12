@@ -6,7 +6,7 @@ from openeo_processes_dask.exceptions import ProcessParameterMissing
 
 
 def test_process_decorator():
-    def test_process(param1, param2, param3, param4, param5, **kwarg):
+    def test_process(param1, param2, param3, param4, param5):
         return param1, param2, param3, param4, param5
 
     result = process(test_process)(
