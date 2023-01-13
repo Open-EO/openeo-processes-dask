@@ -12,16 +12,45 @@ logger = logging.getLogger(__name__)
 
 
 def process(f):
+    """
+    The `@process` decorator resolves ParameterReferences and is expected to be wrapped around all processes.
+    This is necessary because openeo_pg_parser_networkx parses and injects raw ParameterReference objects as input to each process node.
+    However the process implementations in openeo-processes-dask cannot handle these and require the actual objects that the ParameterReferences refer to.
+    This decorator ensures that incoming ParameterReferences are resolved to the actual inputs before being passed into the process implementations.
+    """
+
     @wraps(f)
-    def wrapper(*args, parameters: Optional[dict[str]] = None, **kwargs):
-        if parameters is None:
-            parameters = {}
+    def wrapper(
+        *args,
+        positional_parameters: Optional[dict[int]] = None,
+        named_parameters: Optional[dict[str]] = None,
+        **kwargs,
+    ):
+        # Need to transform this from a tuple to a list to be able to delete from it.
+        args = list(args)
+
+        # Some processes like `apply` cannot pass a parameter for a child-process using kwargs, but only by position.
+        # E.g. `apply` passes the data to apply over as a parameter `x`, but the implementation with `apply_ufunc`
+        # does not allow naming this parameter `x`.
+        # The `positional_parameters` dictionary allows parent ("callback") processes to assign names to positional arguments it passes on.
+        if positional_parameters is None:
+            positional_parameters = {}
+
+        if named_parameters is None:
+            named_parameters = {}
 
         resolved_args = []
+        resolved_kwargs = {}
+
+        # If an arg is specified in positional_parameters, directly resolve it and remove it from *args to avoid double assignment
+        for arg_name, i in positional_parameters.items():
+            resolved_kwargs[arg_name] = args[i]
+            del args[i]
+
         for arg in args:
             if isinstance(arg, ParameterReference):
-                if arg.from_parameter in parameters:
-                    resolved_args.append(parameters[arg.from_parameter])
+                if arg.from_parameter in named_parameters:
+                    resolved_args.append(named_parameters[arg.from_parameter])
                 else:
                     raise ProcessParameterMissing(
                         f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"
@@ -29,17 +58,19 @@ def process(f):
             else:
                 resolved_args.append(arg)
 
-        resolved_kwargs = {}
-        for k, v in kwargs.items():
-            if isinstance(v, ParameterReference):
-                if v.from_parameter in parameters:
-                    resolved_kwargs[k] = parameters[v.from_parameter]
+        for k, arg in kwargs.items():
+            if isinstance(arg, ParameterReference):
+                if arg.from_parameter in named_parameters:
+                    resolved_kwargs[k] = named_parameters[arg.from_parameter]
+                elif arg.from_parameter in positional_parameters:
+                    # This will have already been passed through from the first loop
+                    pass
                 else:
                     raise ProcessParameterMissing(
-                        f"Error: Process Parameter {v.from_parameter} was missing for process {f.__name__}"
+                        f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"
                     )
             else:
-                resolved_kwargs[k] = v
+                resolved_kwargs[k] = arg
 
         pretty_args = {k: type(v) for k, v in resolved_kwargs.items()}
         logger.warning(f"Running process {f.__name__}")

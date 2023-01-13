@@ -40,3 +40,11 @@ class DimensionNotAvailable(OpenEOException):
 
 class OverlapResolverMissing(OpenEOException):
     pass
+
+
+class QuantilesParameterMissing(OpenEOException):
+    pass
+
+
+class QuantilesParameterConflict(OpenEOException):
+    pass
