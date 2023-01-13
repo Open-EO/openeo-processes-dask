@@ -8,7 +8,7 @@ from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 __all__ = ["merge_cubes"]
 
-NEW_DIM_NAME = "cubes"
+NEW_DIM_NAME = "__cubes__"
 NEW_DIM_COORDS = ["cube1", "cube2"]
 
 
@@ -55,17 +55,21 @@ def merge_cubes(
         )
         if dims_have_no_label_diff:
             # Example 3: All dimensions and their labels are equal
-            concat_both_cubes = (
-                xr.concat([cube1, cube2], dim=NEW_DIM_NAME)
-                .reindex({NEW_DIM_NAME: NEW_DIM_COORDS})
-                .chunk({NEW_DIM_NAME: -1, "x": "auto", "y": "auto"})
+            concat_both_cubes = xr.concat([cube1, cube2], dim=NEW_DIM_NAME).reindex(
+                {NEW_DIM_NAME: NEW_DIM_COORDS}
+            )
+
+            # Need to rechunk here to ensure that the cube dimension isn't chunked and the chunks for the other dimensions are not too large.
+            concat_both_cubes_rechunked = concat_both_cubes.chunk(
+                {NEW_DIM_NAME: -1}
+                | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
             )
             if overlap_resolver is None:
                 # Example 3.1: Concat along new "cubes" dimension
-                merged_cube = concat_both_cubes
+                merged_cube = concat_both_cubes_rechunked
             else:
                 # Example 3.2: Elementwise operation
-                merged_cube = concat_both_cubes.reduce(
+                merged_cube = concat_both_cubes_rechunked.reduce(
                     overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
                 )
         else:
@@ -90,31 +94,35 @@ def merge_cubes(
                     )
 
                 overlapping_dim = dims_requiring_resolve[0]
-                stacked_conflicts = (
-                    xr.concat(
-                        [
-                            cube1.sel(
-                                **{
-                                    overlapping_dim: overlap_per_shared_dim[
-                                        overlapping_dim
-                                    ].in_both
-                                }
-                            ),
-                            cube2.sel(
-                                **{
-                                    overlapping_dim: overlap_per_shared_dim[
-                                        overlapping_dim
-                                    ].in_both
-                                }
-                            ),
-                        ],
-                        dim=NEW_DIM_NAME,
-                    )
-                    .reindex({NEW_DIM_NAME: NEW_DIM_COORDS})
-                    .chunk({NEW_DIM_NAME: -1, "x": "auto", "y": "auto"})
+
+                stacked_conflicts = xr.concat(
+                    [
+                        cube1.sel(
+                            **{
+                                overlapping_dim: overlap_per_shared_dim[
+                                    overlapping_dim
+                                ].in_both
+                            }
+                        ),
+                        cube2.sel(
+                            **{
+                                overlapping_dim: overlap_per_shared_dim[
+                                    overlapping_dim
+                                ].in_both
+                            }
+                        ),
+                    ],
+                    dim=NEW_DIM_NAME,
+                ).reindex({NEW_DIM_NAME: NEW_DIM_COORDS})
+
+                # Need to rechunk here to ensure that the cube dimension isn't chunked and the chunks for the other dimensions are not too large.
+                stacked_conflicts_rechunked = stacked_conflicts.chunk(
+                    {NEW_DIM_NAME: -1}
+                    | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
                 )
-                merge_conflicts = stacked_conflicts.reduce(
-                    overlap_resolver, dim=NEW_DIM_NAME
+
+                merge_conflicts = stacked_conflicts_rechunked.reduce(
+                    overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
                 )
 
                 rest_of_cube_1 = cube1.sel(
@@ -152,12 +160,16 @@ def merge_cubes(
         lower_dim_cube_broadcast = lower_dim_cube.broadcast_like(higher_dim_cube)
 
         # Stack both cubes and use overlap resolver to resolve each pixel
-        both_stacked = (
-            xr.concat([higher_dim_cube, lower_dim_cube_broadcast], dim=NEW_DIM_NAME)
-            .reindex({NEW_DIM_NAME: NEW_DIM_COORDS})
-            .chunk({NEW_DIM_NAME: -1, "x": "auto", "y": "auto"})
+        both_stacked = xr.concat(
+            [higher_dim_cube, lower_dim_cube_broadcast], dim=NEW_DIM_NAME
+        ).reindex({NEW_DIM_NAME: NEW_DIM_COORDS})
+
+        # Need to rechunk here to ensure that the cube dimension isn't chunked and the chunks for the other dimensions are not too large.
+        both_stacked_rechunked = both_stacked.chunk(
+            {NEW_DIM_NAME: -1}
+            | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
         )
-        merged_cube = both_stacked.reduce(
+        merged_cube = both_stacked_rechunked.reduce(
             overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
         )
     else:
