@@ -15,8 +15,9 @@ def test_process_decorator():
         5,
         param3=3,
         param4=ParameterReference(from_parameter="test_param_ref_4"),
+        param5=ParameterReference(from_parameter="test_param_ref_5"),
         named_parameters={"test_param_ref_2": 2, "test_param_ref_4": 4},
-        positional_parameters={"param5": 2},
+        positional_parameters={"test_param_ref_5": 2},
     )
     assert result == (1, 2, 3, 4, 5)
 
