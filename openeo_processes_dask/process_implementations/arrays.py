@@ -35,8 +35,12 @@ def array_element(
         return element
 
     if index is not None:
-        element = data.isel({dimension: int(index)})
-        return element
+        if dimension is not None: 
+            element = data.isel({dimension: int(index)})
+            return element
+        else: 
+            element = data[int(index)]
+            return element
 
     raise ValueError("Shouldn't have come here!")
 
