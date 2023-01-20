@@ -43,7 +43,7 @@ def test_apply(temporal_interval, bounding_box, random_raster_data, process_regi
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
-def test_apply_dimension(
+def test_apply_dimension_case_1(
     temporal_interval, bounding_box, random_raster_data, process_registry
 ):
     input_cube = create_fake_rastercube(
@@ -58,12 +58,32 @@ def test_apply_dimension(
         process_registry["add"], y=1, x=ParameterReference(from_parameter="data")
     )
 
-    output_cube = apply_dimension(data=input_cube, process=_process, dimension="x")
+    # Target dimension is null and therefore defaults to the source dimension
+    output_cube_same_pixels = apply_dimension(
+        data=input_cube, process=_process, dimension="x"
+    )
 
     general_output_checks(
         input_cube=input_cube,
-        output_cube=output_cube,
+        output_cube=output_cube_same_pixels,
         verify_attrs=True,
         verify_crs=True,
         expected_results=(input_cube + 1),
+    )
+
+    _process = partial(
+        process_registry["mean"], data=ParameterReference(from_parameter="data")
+    )
+
+    # Target dimension is null and therefore defaults to the source dimension
+    output_cube_reduced = apply_dimension(
+        data=input_cube, process=_process, dimension="x"
+    )
+
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube_reduced,
+        verify_attrs=True,
+        verify_crs=True,
+        expected_results=(input_cube.mean(dim="x")),
     )

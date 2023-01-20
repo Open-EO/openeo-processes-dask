@@ -1,5 +1,6 @@
 from typing import Callable, Optional
 
+import numpy as np
 import xarray as xr
 
 from openeo_processes_dask.exceptions import DimensionNotAvailable
@@ -47,7 +48,6 @@ def apply_dimension(
     positional_parameters = {"data": 0}
     named_parameters = {"context": context}
 
-    data.dims
     result = xr.apply_ufunc(
         process,
         data,
@@ -61,4 +61,15 @@ def apply_dimension(
     )
 
     transposed_result = result.transpose(*data.dims)
+    if not np.array_equal(
+        transposed_result.coords[target_dimension].data, data.coords[dimension].data
+    ):
+        transposed_result = transposed_result.assign_coords(
+            {
+                target_dimension: np.arange(
+                    len(transposed_result.coords[target_dimension].data)
+                )
+            }
+        )
+
     return transposed_result
