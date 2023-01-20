@@ -5,7 +5,7 @@ import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
-from openeo_processes_dask.process_implementations.cubes.apply import apply
+from openeo_processes_dask.process_implementations.arrays import array_element
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
 
@@ -21,19 +21,14 @@ def test_array_element(temporal_interval, bounding_box, random_raster_data, proc
         backend="dask",
     )
 
-    _process = partial(
-        process_registry["array_element"], index=1, x=ParameterReference(from_parameter="x")
-    )
-
-    output_cube = apply(data=input_cube, process=_process)
+    output_cube = array_element(data=input_cube, index=0, dimension="bands")
 
     general_output_checks(
         input_cube=input_cube,
         output_cube=output_cube,
         verify_attrs=True,
         verify_crs=True,
-        expected_results=(input_cube[1]),
+        expected_results=(input_cube.sel(bands="B02")),
     )
 
-    xr.testing.assert_equal(output_cube, input_cube[1])
-    print(output_cube)
+    xr.testing.assert_equal(output_cube, input_cube)
