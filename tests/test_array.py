@@ -31,4 +31,11 @@ def test_array_element(temporal_interval, bounding_box, random_raster_data, proc
         expected_results=(input_cube.sel(bands="B02")),
     )
 
-    xr.testing.assert_equal(output_cube, input_cube)
+    xr.testing.assert_equal(output_cube, input_cube.sel(bands="B02"))
+
+    input_array = [0, 1, 2, 3, 4]
+
+    output_array = array_element(data=input_array, index=4)
+
+    assert output_array == 4
+    assert output_array == array_element(data=input_array, index=-1)
