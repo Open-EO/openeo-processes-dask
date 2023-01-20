@@ -12,7 +12,7 @@ __all__ = ["array_element", "array_filter", "count"]
 
 
 def array_element(
-    data: Union[xr.Dataset, xr.DataArray],
+    data: Union[xr.Dataset, xr.DataArray, list],
     index: Optional[int] = None,
     label: Optional[str] = None,
     return_nodata: Optional[bool] = False,
