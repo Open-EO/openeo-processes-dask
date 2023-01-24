@@ -41,6 +41,20 @@ def test_xor():
     ).all()
 
 
+def test_not():
+    assert not not_(True)
+    assert not_(False)
+    assert np.isnan(not_(np.nan))
+
+
+def test_if():
+    assert if_(True, "A", "B") == "A"
+    assert if_(None, "A", "B") == "B"
+    assert all(if_(False, [1, 2, 3], [4, 5, 6]) == [4, 5, 6])
+    assert if_(True, 123) == 123
+    assert np.isnan(if_(False, 1))
+
+
 def test_any():
     assert not any_([False, np.nan])
     assert any_([True, np.nan])
@@ -75,7 +89,3 @@ def test_all():
         [False, np.nan],
         equal_nan=True,
     ).all()
-
-
-print(np.any([False, np.nan], axis=None))
-print(test_any())

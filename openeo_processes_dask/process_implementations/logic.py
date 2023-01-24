@@ -39,13 +39,15 @@ def xor(x, y):
 
 
 def not_(x):
-    return da.logical_not(x)
+    if not hasattr(x, "__array_interface__"):
+        x = np.array(x)
+    not_x = np.logical_not(x)
+    not_x = np.where(~np.isnan(x), not_x, np.nan)
+    return not_x
 
 
 def if_(value, accept, reject=np.nan):
-    p = value.where(value == 0, accept)
-    p = p.where(value == 1, reject)
-    return p
+    return np.where(value, accept, reject)
 
 
 def any_(data, ignore_nodata=True, dimension=None):
