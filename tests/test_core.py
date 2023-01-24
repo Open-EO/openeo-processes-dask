@@ -22,7 +22,7 @@ def test_process_decorator():
 
 
 def test_process_decorator_missing_parameter():
-    def test_process(param1, param2=6, **kwarg):
+    def test_process(param1, param2=6):
         return param1 * param2
 
     with pytest.raises(ProcessParameterMissing):
@@ -36,3 +36,17 @@ def test_process_decorator_missing_parameter():
             ParameterReference(from_parameter="test_param_ref"),
             parameters={"wrong_param": 2},
         )
+
+
+def test_process_decorator_axis():
+    def test_process(param1, param2=6, axis=-1):
+        return param1, param2, axis
+
+    result = process(test_process)(param1=1, param2=2)
+    assert result == (1, 2, -1)
+
+    def test_process_no_axis(param1, param2=6):
+        return param1, param2
+
+    result = process(test_process_no_axis)(param1=1, param2=2, axis=-1)
+    assert result == (1, 2)
