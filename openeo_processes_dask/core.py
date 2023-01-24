@@ -42,7 +42,7 @@ def process(f):
         resolved_args = []
         resolved_kwargs = {}
 
-        # If an arg is specified in positional_parameters, put the correct key-value pair into named_parameters and remove it from *args to avoid double assignment
+        # If an arg is specified in positional_parameters, put the correct key-value pair into named_parameters
         for arg_name, i in positional_parameters.items():
             named_parameters[arg_name] = args[i]
 
@@ -66,7 +66,7 @@ def process(f):
             else:
                 resolved_kwargs[k] = arg
 
-        # Remove axis parameter if not expected in function signature.
+        # Remove 'axis' parameter if not expected in function signature.
         if "axis" not in inspect.signature(f).parameters:
             resolved_kwargs.pop("axis", None)
 
