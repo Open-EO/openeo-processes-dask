@@ -1,16 +1,19 @@
+from typing import Callable, Optional, Union
+
 import dask.array as da
 import numpy as np
 
 __all__ = ["and_", "or_", "xor", "not_", "if_", "any_", "all_"]
 
 
-def and_(x, y):
-    x_nan = x.where(x == True, False)  # Set NaN to False
-    y_nan = y.where(y == True, False)
-    logical_and = da.logical_and(x, y)
-    logical_and = logical_and.where(x == x_nan, np.nan)
-    logical_and = logical_and.where(y == y_nan, np.nan)
-    return logical_and
+def and_(x: Union[np.array, list], y: Union[np.array, list]):
+    if not hasattr(x, "__array_interface__"):
+        x = np.array(x)
+    if not hasattr(y, "__array_interface__"):
+        y = np.array(y)
+    x = np.nan_to_num(x, copy=True, nan=False)
+    y = np.nan_to_num(y, copy=True, nan=False)
+    return np.logical_and(x, y)
 
 
 def or_(x, y):
