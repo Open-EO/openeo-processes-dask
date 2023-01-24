@@ -17,21 +17,25 @@ def and_(x: Union[np.array, list], y: Union[np.array, list]):
 
 
 def or_(x, y):
-    x_nan = x.where(x == True, False)  # Set NaN to False
-    y_nan = y.where(y == True, False)
-    logical_or = da.logical_or(x, y)
-    logical_or = logical_or.where(x == x_nan, np.nan)
-    logical_or = logical_or.where(y == y_nan, np.nan)
-    return logical_or
+    if not hasattr(x, "__array_interface__"):
+        x = np.array(x)
+    if not hasattr(y, "__array_interface__"):
+        y = np.array(y)
+    x = np.nan_to_num(x, copy=True, nan=False)
+    y = np.nan_to_num(y, copy=True, nan=False)
+    return np.logical_or(x, y)
 
 
 def xor(x, y):
-    x_nan = x.where(x == True, False)  # Set NaN to False
-    y_nan = y.where(y == True, False)
-    logical_xor = da.logical_xor(x, y)
-    logical_xor = logical_xor.where(x == x_nan, np.nan)
-    logical_xor = logical_xor.where(y == y_nan, np.nan)
-    return logical_xor
+    if not hasattr(x, "__array_interface__"):
+        x = np.array(x)
+    if not hasattr(y, "__array_interface__"):
+        y = np.array(y)
+    x = np.nan_to_num(x, copy=True, nan=False)
+    y = np.nan_to_num(y, copy=True, nan=False)
+    if x is None or y is None:
+        return None
+    return np.logical_xor(x, y)
 
 
 def not_(x):
