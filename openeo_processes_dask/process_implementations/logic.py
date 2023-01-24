@@ -49,16 +49,17 @@ def if_(value, accept, reject=np.nan):
 
 
 def any_(data, ignore_nodata=True, dimension=None):
-    data_nan = data.where(data == True, False)  # Set NaN to False
-    if ignore_nodata:
-        return data_nan.any(dim=dimension)
-    else:
-        data = data.any(dim=dimension)
-        data_nan = data_nan.any(dim=dimension)
-        if (data == data_nan).all():  # See if there are NaNs, that were set to False
-            return data
-        else:
-            return data.where(data == data_nan, np.nan)
+    if not hasattr(data, "__array_interface__"):
+        data = np.array(data)
+    if len(data) == 0:
+        return np.nan
+    data_any = np.any(np.nan_to_num(data, nan=0), axis=dimension)
+    if not ignore_nodata:
+        nan_ar = np.isnan(data)
+        nan_mask = np.any(nan_ar, axis=dimension)
+        nan_mask = np.logical_and(nan_mask, ~data_any)
+        data_any = np.where(~nan_mask, data_any, np.nan)
+    return data_any
 
 
 def all_(data, ignore_nodata=True, dimension=None):
