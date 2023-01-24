@@ -42,9 +42,9 @@ def process(f):
         resolved_args = []
         resolved_kwargs = {}
 
-        # If an arg is specified in positional_parameters, directly resolve it and remove it from *args to avoid double assignment
+        # If an arg is specified in positional_parameters, put the correct key-value pair into named_parameters and remove it from *args to avoid double assignment
         for arg_name, i in positional_parameters.items():
-            resolved_kwargs[arg_name] = args[i]
+            named_parameters[arg_name] = args[i]
             del args[i]
 
         for arg in args:
@@ -55,22 +55,21 @@ def process(f):
                     raise ProcessParameterMissing(
                         f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"
                     )
-            else:
-                resolved_args.append(arg)
 
         for k, arg in kwargs.items():
             if isinstance(arg, ParameterReference):
                 if arg.from_parameter in named_parameters:
                     resolved_kwargs[k] = named_parameters[arg.from_parameter]
-                elif arg.from_parameter in positional_parameters:
-                    # This will have already been passed through from the first loop
-                    pass
                 else:
                     raise ProcessParameterMissing(
                         f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"
                     )
             else:
                 resolved_kwargs[k] = arg
+
+        # Remove axis parameter if not expected in function signature.
+        if "axis" not in inspect.signature(f).parameters:
+            resolved_kwargs.pop("axis", None)
 
         pretty_args = {k: type(v) for k, v in resolved_kwargs.items()}
         logger.warning(f"Running process {f.__name__}")
