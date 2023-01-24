@@ -45,7 +45,6 @@ def process(f):
         # If an arg is specified in positional_parameters, put the correct key-value pair into named_parameters and remove it from *args to avoid double assignment
         for arg_name, i in positional_parameters.items():
             named_parameters[arg_name] = args[i]
-            del args[i]
 
         for arg in args:
             if isinstance(arg, ParameterReference):
