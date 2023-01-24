@@ -62,13 +62,14 @@ def any_(data, ignore_nodata=True, dimension=None):
 
 
 def all_(data, ignore_nodata=True, dimension=None):
-    data_nan = data.where(data == True, False)
-    if ignore_nodata:
-        return data.all(dim=dimension)  # all ignores NaNs
-    else:
-        data = data.all(dim=dimension)
-        data_nan = data_nan.all(dim=dimension)
-        if (data == data_nan).all():  # See if there are NaNs, that were set to False
-            return data
-        else:
-            return data.where(data == data_nan, np.nan)
+    if not hasattr(data, "__array_interface__"):
+        data = np.array(data)
+    if len(data) == 0:
+        return np.nan
+    data_all = np.all(data, axis=dimension)
+    if not ignore_nodata:
+        nan_ar = np.isnan(data)
+        nan_mask = np.any(nan_ar, axis=dimension)
+        nan_mask = np.logical_and(nan_mask, data_all)
+        data_all = np.where(~nan_mask, data_all, np.nan)
+    return data_all
