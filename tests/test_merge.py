@@ -1,6 +1,9 @@
+from functools import partial
+
 import numpy as np
 import pytest
 import xarray as xr
+from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.exceptions import OverlapResolverMissing
 from openeo_processes_dask.process_implementations import merge_cubes
@@ -47,7 +50,9 @@ def test_merge_cubes_type_2(
     with pytest.raises(OverlapResolverMissing):
         merge_cubes(cube_1, cube_2)
 
-    overlap_resolver = process_registry["mean"]
+    overlap_resolver = partial(
+        process_registry["mean"], data=ParameterReference(from_parameter="data")
+    )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     xr.testing.assert_equal(
         merged_cube.sel({"bands": "B02"}), origin_cube.sel({"bands": "B02"})
@@ -78,7 +83,13 @@ def test_merge_cubes_type_3(
     xr.testing.assert_equal(merged_cube, expected_result)
 
     # If an overlap reducer is provided, then reduce per pixel
-    merged_cube = merge_cubes(cube_1, cube_2, process_registry["max"])
+    merged_cube = merge_cubes(
+        cube_1,
+        cube_2,
+        partial(
+            process_registry["max"], data=ParameterReference(from_parameter="data")
+        ),
+    )
     xr.testing.assert_equal(merged_cube, cube_1 + 1)
 
 
@@ -104,6 +115,8 @@ def test_merge_cubes_type_4(
     with pytest.raises(OverlapResolverMissing):
         merge_cubes(cube_1, cube_2)
 
-    overlap_resolver = process_registry["sum"]
+    overlap_resolver = partial(
+        process_registry["sum"], data=ParameterReference(from_parameter="data")
+    )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     xr.testing.assert_equal(merged_cube, cube_1 + 1)
