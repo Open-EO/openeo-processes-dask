@@ -35,10 +35,10 @@ def array_element(
         return element
 
     if index is not None:
-        if dimension is not None: 
+        if dimension is not None:
             element = data.isel({dimension: int(index)})
             return element
-        else: 
+        else:
             element = data[int(index)]
             return element
 

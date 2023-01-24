@@ -12,7 +12,9 @@ from tests.mockdata import create_fake_rastercube
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
-def test_array_element(temporal_interval, bounding_box, random_raster_data, process_registry):
+def test_array_element(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
     input_cube = create_fake_rastercube(
         data=random_raster_data,
         spatial_extent=bounding_box,
