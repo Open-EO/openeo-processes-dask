@@ -11,22 +11,22 @@ from openeo_processes_dask.exceptions import (
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 __all__ = [
-    "array_element", 
-    "array_filter", 
-    "count", 
-    "array_create", 
-    "array_modify", 
-    "array_concat", 
-    "array_contains", 
-    "array_apply", 
-    "array_find", 
-    "array_labels", 
-    "first", 
-    "last", 
-    "order", 
-    "rearrange", 
+    "array_element",
+    "array_filter",
+    "count",
+    "array_create",
+    "array_modify",
+    "array_concat",
+    "array_contains",
+    "array_apply",
+    "array_find",
+    "array_labels",
+    "first",
+    "last",
+    "order",
+    "rearrange",
     "sort",
-    ]
+]
 
 
 def array_element(
@@ -53,10 +53,10 @@ def array_element(
         return element
 
     if index is not None:
-        if dimension is not None: 
+        if dimension is not None:
             element = data.isel({dimension: int(index)})
             return element
-        else: 
+        else:
             element = data[int(index)]
             return element
 
@@ -81,13 +81,11 @@ def count(data: RasterCube, condition: Callable, **kwargs):
 
 
 def array_create(
-    data: Union[np.array, list, float, int], 
-    repeat: Optional[int] = 1,
-    **kwargs
-    ):
+    data: Union[np.array, list, float, int], repeat: Optional[int] = 1, **kwargs
+):
     if type(data) in [int, float]:
         data = [data]
-    if not hasattr(data,"__array_interface__"):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if len(data) == 0:
         return np.array([])
@@ -95,68 +93,63 @@ def array_create(
 
 
 def array_modify(
-    data: Union[np.array, list], 
-    values: Union[np.array, list], 
-    index: int, 
+    data: Union[np.array, list],
+    values: Union[np.array, list],
+    index: int,
     length: Optional[int] = 1,
     **kwargs
-    ):
-    if not hasattr(data,"__array_interface__"):
+):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
-    if not hasattr(values,"__array_interface__"):
+    if not hasattr(values, "__array_interface__"):
         values = np.array(values)
     if index == 0:
         modified = values
     else:
         first = data[:index]
         modified = np.append(first, values)
-    if index+length < len(data):
-        modified = np.append(modified, data[index+length:])
+    if index + length < len(data):
+        modified = np.append(modified, data[index + length :])
     return modified
 
 
 def array_concat(
-    array1: Union[np.array, list], 
-    array2: Union[np.array, list], 
-    **kwargs
-    ):
-    if not hasattr(array1,"__array_interface__"):
+    array1: Union[np.array, list], array2: Union[np.array, list], **kwargs
+):
+    if not hasattr(array1, "__array_interface__"):
         array1 = np.array(array1)
-    if not hasattr(array2,"__array_interface__"):
+    if not hasattr(array2, "__array_interface__"):
         array2 = np.array(array2)
     concat = np.append(array1, array2)
     return concat
 
 
-def array_contains(
-    data: Union[np.array, list], 
-    value: Union[int, float, str, list]
-    ):
+def array_contains(data: Union[np.array, list], value: Union[int, float, str, list]):
     if np.array(pd.isnull(value)).all():
         return np.isnan(data).any()
-    else: 
+    else:
         return np.isin(data, value).any()
 
 
 def array_apply(
-    data: Union[np.array, list], 
-    process: Callable, 
+    data: Union[np.array, list],
+    process: Callable,
     context: Optional[dict] = None,
     **kwargs
-    ):
+):
     context = context if context is not None else {}
-    if not hasattr(data,"__array_interface__"):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     return process(data, **context)
 
 
 def array_find(
-    data: Union[np.array, list], 
-    value: float, 
+    data: Union[np.array, list],
+    value: float,
     reverse: Optional[bool] = False,
-    dimension: Optional[int] = None
-    ):
-    if not hasattr(data,"__array_interface__"):
+    dimension: Optional[int] = None,
+):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if np.isnan(value) or len(data) == 0:
         return np.nan
@@ -168,11 +161,8 @@ def array_find(
     return idxs
 
 
-def array_labels(
-    data: Union[np.array, list], 
-    dimension: Optional[int] = None
-    ):
-    if not hasattr(data,"__array_interface__"):
+def array_labels(data: Union[np.array, list], dimension: Optional[int] = None):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if dimension is None:
         n_vals = len(data)
@@ -182,13 +172,13 @@ def array_labels(
 
 
 def first(
-    data: Union[np.array, list], 
-    ignore_nodata: Optional[bool] = True, 
-    dimension: Optional[str] = None
-    ):
-    if not hasattr(data,"__array_interface__"):
+    data: Union[np.array, list],
+    ignore_nodata: Optional[bool] = True,
+    dimension: Optional[str] = None,
+):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
-    if len(data) == 0: 
+    if len(data) == 0:
         return np.nan
     if dimension is None:
         dimension = 0
@@ -196,7 +186,9 @@ def first(
     if ignore_nodata:  # skip np.nan values
         nan_mask = ~pd.isnull(data)  # create mask for valid values (not np.nan)
         idx_first = np.argmax(nan_mask, axis=dimension)
-        first_elem = np.take_along_axis(data, np.expand_dims(idx_first, axis=dimension), axis=dimension)
+        first_elem = np.take_along_axis(
+            data, np.expand_dims(idx_first, axis=dimension), axis=dimension
+        )
     else:  # take the first element, no matter np.nan values are in the array
         slices = [slice(None)] * n_dims
         slices[dimension] = 0
@@ -207,19 +199,21 @@ def first(
 
 
 def last(
-    data: Union[np.array, list], 
-    ignore_nodata: Optional[bool] = True, 
-    dimension: Optional[str] = None
-    ):
-    if not hasattr(data,"__array_interface__"):
+    data: Union[np.array, list],
+    ignore_nodata: Optional[bool] = True,
+    dimension: Optional[str] = None,
+):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
-    if len(data) == 0: 
+    if len(data) == 0:
         return np.nan
     if dimension is None:
         dimension = 0
     n_dims = len(data.shape)
     if ignore_nodata:  # skip np.nan values
-        data = np.flip(data, axis=dimension)  # flip data to retrieve the first valid element (thats the only way it works with argmax)
+        data = np.flip(
+            data, axis=dimension
+        )  # flip data to retrieve the first valid element (thats the only way it works with argmax)
         last_elem = first(data, ignore_nodata=ignore_nodata, dimension=dimension)
     else:  # take the first element, no matter np.nan values are in the array
         slices = [slice(None)] * n_dims
@@ -231,28 +225,30 @@ def last(
 
 
 def order(
-    data: Union[np.array, list], 
-    asc: Optional[bool] = True, 
-    nodata: Optional[bool] = True, 
-    dimension: Optional[int] = None
-    ):
-    if not hasattr(data,"__array_interface__"):
+    data: Union[np.array, list],
+    asc: Optional[bool] = True,
+    nodata: Optional[bool] = True,
+    dimension: Optional[int] = None,
+):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
-    if len(data) == 0: 
+    if len(data) == 0:
         return np.nan
-    if dimension is None: 
+    if dimension is None:
         dimension = 0
     if asc:
-        permutation_idxs = np.argsort(data, kind='mergesort', axis=dimension)
+        permutation_idxs = np.argsort(data, kind="mergesort", axis=dimension)
     else:  # [::-1] not possible
-        permutation_idxs = np.argsort(-data, kind='mergesort', axis=dimension)  # to get the indizes in descending order, the sign of the data is changed
+        permutation_idxs = np.argsort(
+            -data, kind="mergesort", axis=dimension
+        )  # to get the indizes in descending order, the sign of the data is changed
 
     if nodata is None:  # ignore np.nan values
         # sort the original data first, to get correct position of no data values
         sorted_data = data[permutation_idxs]
         return permutation_idxs[~pd.isnull(sorted_data)]
     elif nodata is False:  # put location/index of np.nan values first
-        # sort the original data first, to get correct position of no data values 
+        # sort the original data first, to get correct position of no data values
         sorted_data = data[permutation_idxs]
         nan_idxs = pd.isnull(sorted_data)
 
@@ -273,31 +269,30 @@ def order(
         raise Exception(err_msg)
 
 
-def rearrange(
-    data: Union[np.array, list], 
-    order
-    ):
-    if not hasattr(data,"__array_interface__"):
+def rearrange(data: Union[np.array, list], order):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
-    if len(data) == 0: 
+    if len(data) == 0:
         return np.nan
     return data[order]
 
 
 def sort(
-    data: Union[np.array, list]  , 
+    data: Union[np.array, list],
     asc: Optional[bool] = True,
     nodata: Optional[bool] = None,
-    dimension: Optional[int] = None
-    ):
-    if not hasattr(data,"__array_interface__"):
+    dimension: Optional[int] = None,
+):
+    if not hasattr(data, "__array_interface__"):
         data = np.array(data)
-    if len(data) == 0: 
+    if len(data) == 0:
         return np.nan
     if asc:
         data_sorted = np.sort(data, axis=dimension)
     else:  # [::-1] not possible
-        data_sorted = -np.sort(-data, axis=dimension)  # to get the indexes in descending order, the sign of the data is changed
+        data_sorted = -np.sort(
+            -data, axis=dimension
+        )  # to get the indexes in descending order, the sign of the data is changed
 
     if nodata is None:  # ignore np.nan values
         nan_idxs = pd.isnull(data_sorted)
