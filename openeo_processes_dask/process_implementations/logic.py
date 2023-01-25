@@ -16,7 +16,7 @@ def and_(x: Union[np.array, list], y: Union[np.array, list]):
     return da.logical_and(x, y)
 
 
-def or_(x, y):
+def or_(x: Union[np.array, list], y: Union[np.array, list]):
     if not hasattr(x, "__array_interface__"):
         x = np.array(x)
     if not hasattr(y, "__array_interface__"):
@@ -26,7 +26,7 @@ def or_(x, y):
     return da.logical_or(x, y)
 
 
-def xor(x, y):
+def xor(x: Union[np.array, list], y: Union[np.array, list]):
     if not hasattr(x, "__array_interface__"):
         x = np.array(x)
     if not hasattr(y, "__array_interface__"):
@@ -38,7 +38,7 @@ def xor(x, y):
     return da.logical_xor(x, y)
 
 
-def not_(x):
+def not_(x: Union[np.array, list]):
     if not hasattr(x, "__array_interface__"):
         x = np.array(x)
     not_x = da.logical_not(x)
@@ -46,11 +46,19 @@ def not_(x):
     return not_x
 
 
-def if_(value, accept, reject=np.nan):
+def if_(
+    value: Union[np.array, list],
+    accept: Union[np.array, list, str, float, int],
+    reject: Optional[Union[np.array, list, str, float, int]] = np.nan,
+):
     return da.where(value, accept, reject)
 
 
-def any_(data, ignore_nodata=True, axis=-1):
+def any_(
+    data: Union[np.array, list],
+    ignore_nodata: Optional[bool] = True,
+    axis: Optional[int] = -1,
+):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if len(data) == 0:
@@ -64,7 +72,11 @@ def any_(data, ignore_nodata=True, axis=-1):
     return data_any
 
 
-def all_(data, ignore_nodata=True, axis=None):
+def all_(
+    data: Union[np.array, list],
+    ignore_nodata: Optional[bool] = True,
+    axis: Optional[int] = -1,
+):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if len(data) == 0:
