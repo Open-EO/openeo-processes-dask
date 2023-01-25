@@ -87,62 +87,62 @@ def constant(x):
     return x
 
 
-def divide(x, y, **kwargs):
+def divide(x, y):
     result = x / y
     return result
 
 
-def subtract(x, y, **kwargs):
+def subtract(x, y):
     result = x - y
     return result
 
 
-def multiply(x, y, **kwargs):
+def multiply(x, y):
     result = x * y
     return result
 
 
-def add(x, y, **kwargs):
+def add(x, y):
     result = x + y
     return result
 
 
-def _min(data, ignore_nodata=True, axis=-1, **kwargs):
+def _min(data, ignore_nodata=True, axis=-1):
     if ignore_nodata:
         return np.nanmin(data, axis=axis)
     else:
         return np.min(data, axis=axis)
 
 
-def _max(data, ignore_nodata=True, axis=-1, **kwargs):
+def _max(data, ignore_nodata=True, axis=-1):
     if ignore_nodata:
         return np.nanmax(data, axis=axis)
     else:
         return np.max(data, axis=axis)
 
 
-def median(data, ignore_nodata=True, axis=-1, **kwargs):
+def median(data, ignore_nodata=True, axis=-1):
     if ignore_nodata:
         return np.nanmedian(data, axis=axis)
     else:
         return np.median(data, axis=axis)
 
 
-def mean(data, ignore_nodata=False, axis=-1, **kwargs):
+def mean(data, ignore_nodata=False, axis=-1):
     if ignore_nodata:
         return np.nanmean(data, axis=axis)
     else:
         return np.mean(data, axis=axis)
 
 
-def sd(data, ignore_nodata=False, axis=-1, **kwargs):
+def sd(data, ignore_nodata=False, axis=-1):
     if ignore_nodata:
         return np.nanstd(data, axis=axis, ddof=1)
     else:
         return np.std(data, axis=axis, ddof=1)
 
 
-def variance(data, ignore_nodata=False, axis=-1, **kwargs):
+def variance(data, ignore_nodata=False, axis=-1):
     if ignore_nodata:
         return np.nanvar(data, axis=axis, ddof=1)
     else:
