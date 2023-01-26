@@ -3,6 +3,7 @@ from functools import partial
 import numpy as np
 import pytest
 import xarray as xr
+from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.process_implementations.arrays import *
 from openeo_processes_dask.process_implementations.cubes import *
@@ -182,8 +183,34 @@ def test_sort():
     ).all()
 
 
-import dask.array as da
+@pytest.mark.parametrize("size", [(30, 30, 20, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_reduce_dimension(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
 
-# print(da.flip(np.array([1,2,3])).compute())
-
-print(da.clip(np.array([-3, 1, 10, 1, 7]), a_min=0, a_max=8))
+    input_cube[
+        :, :, :, 1
+    ] = 1  # set all values in the first band to True - any() over bands will return True (ones_like)
+    _process = partial(
+        process_registry["array_find"],
+        data=ParameterReference(from_parameter="data"),
+        value=1,
+        reverse=False,
+    )
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))

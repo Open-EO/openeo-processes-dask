@@ -150,15 +150,13 @@ def array_find(
     reverse: Optional[bool] = False,
     axis: Optional[int] = -1,
 ):
-    if not hasattr(data, "__array_interface__"):
-        data = np.array(data)
     if np.isnan(value) or len(data) == 0:
         return np.nan
     else:
-        idxs = da.argmax((data == value), axis=axis)
+        idxs = np.argmax((data == value), axis=axis)
     if reverse:
-        b = da.flip(data, axis=axis)
-        idxs = np.shape(b)[axis] - da.argmax((b == value), axis=axis) - 1
+        b = np.flip(data, axis=axis)
+        idxs = np.shape(b)[axis] - np.argmax((b == value), axis=axis) - 1
     return idxs
 
 
@@ -186,8 +184,8 @@ def first(
     n_dims = len(data.shape)
     if ignore_nodata:  # skip np.nan values
         nan_mask = ~pd.isnull(data)  # create mask for valid values (not np.nan)
-        idx_first = da.argmax(nan_mask, axis=axis)
-        first_elem = da.take_along_axis(
+        idx_first = np.argmax(nan_mask, axis=axis)
+        first_elem = np.take_along_axis(
             data, np.expand_dims(idx_first, axis=axis), axis=axis
         )
     else:  # take the first element, no matter np.nan values are in the array
@@ -212,7 +210,7 @@ def last(
         axis = 0
     n_dims = len(data.shape)
     if ignore_nodata:  # skip np.nan values
-        data = da.flip(
+        data = np.flip(
             data, axis=axis
         )  # flip data to retrieve the first valid element (thats the only way it works with argmax)
         last_elem = first(data, ignore_nodata=ignore_nodata, axis=axis)
@@ -255,7 +253,7 @@ def order(
 
         # flip permutation and nan mask
         permutation_idxs_flip = np.flip(permutation_idxs, axis=axis)
-        nan_idxs_flip = da.flip(nan_idxs, axis=axis)
+        nan_idxs_flip = np.flip(nan_idxs, axis=axis)
 
         # flip causes the nan.values to be first, however the order of all other values is also flipped
         # therefore the non np.nan values (i.e. the wrong flipped order) is replaced by the right order given by
