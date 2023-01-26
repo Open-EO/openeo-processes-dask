@@ -269,7 +269,8 @@ def extrema(data, ignore_nodata=True, axis=-1):
 
 
 def clip(x, min, max):
-    return np.clip(x, a_min=min, a_max=max)
+    # Cannot use positional arguments to pass min and max into np.clip, this will not work with dask.
+    return np.clip(x, min, max)
 
 
 def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=-1):
