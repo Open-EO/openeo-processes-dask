@@ -3,6 +3,7 @@ from typing import Callable, Optional, Union
 
 import numpy as np
 import xarray as xr
+from numpy.typing import ArrayLike
 
 from openeo_processes_dask.exceptions import (
     ArrayElementNotAvailable,
@@ -18,7 +19,7 @@ __all__ = ["array_element", "array_filter", "count"]
 
 
 def array_element(
-    data: Union[xr.Dataset, xr.DataArray],
+    data: ArrayLike,
     index: Optional[int] = None,
     label: Optional[str] = None,
     return_nodata: Optional[bool] = False,
