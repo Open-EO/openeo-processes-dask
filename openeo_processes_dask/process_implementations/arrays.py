@@ -1,6 +1,7 @@
 import logging
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
+import dask.array as da
 import numpy as np
 import xarray as xr
 from numpy.typing import ArrayLike
@@ -10,6 +11,7 @@ from openeo_processes_dask.exceptions import (
     ArrayElementParameterConflict,
     ArrayElementParameterMissing,
 )
+from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 logger = logging.getLogger(__name__)
@@ -49,7 +51,13 @@ def array_element(
             logger.warning(
                 f"Could not find index <{index}>, but return_nodata=True, so returning None."
             )
-            return None
+            output_shape = data.shape[0:axis] + data.shape[axis + 1 :]
+            if _is_dask_array(data):
+                result = da.empty(output_shape)
+            else:
+                result = np.empty(output_shape)
+            result[:] = np.nan
+            return result
         else:
             raise ArrayElementNotAvailable(
                 f"The array has no element with the specified index or label: {index if index is not None else label}"
