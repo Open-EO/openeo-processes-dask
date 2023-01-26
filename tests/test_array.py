@@ -3,13 +3,9 @@ from functools import partial
 import numpy as np
 import pytest
 import xarray as xr
-from openeo_pg_parser_networkx.pg_schema import (
-    BoundingBox,
-    ParameterReference,
-    TemporalInterval,
-)
 
 from openeo_processes_dask.process_implementations.arrays import *
+from openeo_processes_dask.process_implementations.cubes import *
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
 
@@ -100,8 +96,8 @@ def test_array_find():
     assert array_find([1, 0, 3, 2], value=3) == 2
     assert np.isnan(array_find([1, 0, 3, 2, np.nan, 3], value=np.nan))
     data = np.array([[2, 8, 2, 4], [0, np.nan, 2, 2]])
-    assert (array_find(data, value=2, dimension=1) == [0, 2]).all()
-    assert (array_find(data, value=2, reverse=True, dimension=1) == [2, 3]).all()
+    assert (array_find(data, value=2, axis=1) == [0, 2]).all()
+    assert (array_find(data, value=2, reverse=True, axis=1) == [2, 3]).all()
 
 
 def test_array_labels():
@@ -184,3 +180,10 @@ def test_sort():
         [9, 9, 8, 7, 6, 4, 3, 2, -1, np.nan, np.nan],
         equal_nan=True,
     ).all()
+
+
+import dask.array as da
+
+# print(da.flip(np.array([1,2,3])).compute())
+
+print(da.clip(np.array([-3, 1, 10, 1, 7]), a_min=0, a_max=8))

@@ -1,5 +1,6 @@
 from typing import Callable, Optional, Union
 
+import dask.array as da
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -147,17 +148,17 @@ def array_find(
     data: Union[np.array, list],
     value: float,
     reverse: Optional[bool] = False,
-    dimension: Optional[int] = None,
+    axis: Optional[int] = -1,
 ):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if np.isnan(value) or len(data) == 0:
         return np.nan
     else:
-        idxs = np.argmax((data == value), axis=dimension)
+        idxs = da.argmax((data == value), axis=axis)
     if reverse:
-        b = np.flip(data, axis=dimension)
-        idxs = np.shape(b)[dimension] - np.argmax((b == value), axis=dimension) - 1
+        b = da.flip(data, axis=axis)
+        idxs = np.shape(b)[axis] - da.argmax((b == value), axis=axis) - 1
     return idxs
 
 
@@ -174,24 +175,24 @@ def array_labels(data: Union[np.array, list], dimension: Optional[int] = None):
 def first(
     data: Union[np.array, list],
     ignore_nodata: Optional[bool] = True,
-    dimension: Optional[str] = None,
+    axis: Optional[str] = None,
 ):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if len(data) == 0:
         return np.nan
-    if dimension is None:
-        dimension = 0
+    if axis is None:
+        axis = 0
     n_dims = len(data.shape)
     if ignore_nodata:  # skip np.nan values
         nan_mask = ~pd.isnull(data)  # create mask for valid values (not np.nan)
-        idx_first = np.argmax(nan_mask, axis=dimension)
-        first_elem = np.take_along_axis(
-            data, np.expand_dims(idx_first, axis=dimension), axis=dimension
+        idx_first = da.argmax(nan_mask, axis=axis)
+        first_elem = da.take_along_axis(
+            data, np.expand_dims(idx_first, axis=axis), axis=axis
         )
     else:  # take the first element, no matter np.nan values are in the array
         slices = [slice(None)] * n_dims
-        slices[dimension] = 0
+        slices[axis] = 0
         idx_first = tuple(slices)
         first_elem = data[idx_first]
 
@@ -201,23 +202,23 @@ def first(
 def last(
     data: Union[np.array, list],
     ignore_nodata: Optional[bool] = True,
-    dimension: Optional[str] = None,
+    axis: Optional[str] = None,
 ):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if len(data) == 0:
         return np.nan
-    if dimension is None:
-        dimension = 0
+    if axis is None:
+        axis = 0
     n_dims = len(data.shape)
     if ignore_nodata:  # skip np.nan values
-        data = np.flip(
-            data, axis=dimension
+        data = da.flip(
+            data, axis=axis
         )  # flip data to retrieve the first valid element (thats the only way it works with argmax)
-        last_elem = first(data, ignore_nodata=ignore_nodata, dimension=dimension)
+        last_elem = first(data, ignore_nodata=ignore_nodata, axis=axis)
     else:  # take the first element, no matter np.nan values are in the array
         slices = [slice(None)] * n_dims
-        slices[dimension] = -1
+        slices[axis] = -1
         idx_last = tuple(slices)
         last_elem = data[idx_last]
 
@@ -228,19 +229,19 @@ def order(
     data: Union[np.array, list],
     asc: Optional[bool] = True,
     nodata: Optional[bool] = True,
-    dimension: Optional[int] = None,
+    axis: Optional[int] = None,
 ):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if len(data) == 0:
         return np.nan
-    if dimension is None:
-        dimension = 0
+    if axis is None:
+        axis = 0
     if asc:
-        permutation_idxs = np.argsort(data, kind="mergesort", axis=dimension)
+        permutation_idxs = np.argsort(data, kind="mergesort", axis=axis)
     else:  # [::-1] not possible
         permutation_idxs = np.argsort(
-            -data, kind="mergesort", axis=dimension
+            -data, kind="mergesort", axis=axis
         )  # to get the indizes in descending order, the sign of the data is changed
 
     if nodata is None:  # ignore np.nan values
@@ -253,8 +254,8 @@ def order(
         nan_idxs = pd.isnull(sorted_data)
 
         # flip permutation and nan mask
-        permutation_idxs_flip = np.flip(permutation_idxs, axis=dimension)
-        nan_idxs_flip = np.flip(nan_idxs, axis=dimension)
+        permutation_idxs_flip = np.flip(permutation_idxs, axis=axis)
+        nan_idxs_flip = da.flip(nan_idxs, axis=axis)
 
         # flip causes the nan.values to be first, however the order of all other values is also flipped
         # therefore the non np.nan values (i.e. the wrong flipped order) is replaced by the right order given by
@@ -281,17 +282,17 @@ def sort(
     data: Union[np.array, list],
     asc: Optional[bool] = True,
     nodata: Optional[bool] = None,
-    dimension: Optional[int] = None,
+    axis: Optional[int] = None,
 ):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if len(data) == 0:
         return np.nan
     if asc:
-        data_sorted = np.sort(data, axis=dimension)
+        data_sorted = np.sort(data, axis=axis)
     else:  # [::-1] not possible
         data_sorted = -np.sort(
-            -data, axis=dimension
+            -data, axis=axis
         )  # to get the indexes in descending order, the sign of the data is changed
 
     if nodata is None:  # ignore np.nan values
@@ -299,7 +300,7 @@ def sort(
         return data_sorted[~nan_idxs]
     elif nodata == False:  # put np.nan values first
         nan_idxs = pd.isnull(data_sorted)
-        data_sorted_flip = np.flip(data_sorted, axis=dimension)
+        data_sorted_flip = np.flip(data_sorted, axis=axis)
         nan_idxs_flip = pd.isnull(data_sorted_flip)
         data_sorted_flip[~nan_idxs_flip] = data_sorted[~nan_idxs]
         return data_sorted_flip
