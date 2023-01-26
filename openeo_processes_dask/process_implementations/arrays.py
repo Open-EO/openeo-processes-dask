@@ -1,12 +1,18 @@
+import logging
 from typing import Callable, Optional, Union
 
+import numpy as np
 import xarray as xr
 
 from openeo_processes_dask.exceptions import (
+    ArrayElementNotAvailable,
     ArrayElementParameterConflict,
     ArrayElementParameterMissing,
 )
 from openeo_processes_dask.process_implementations.data_model import RasterCube
+
+logger = logging.getLogger(__name__)
+
 
 __all__ = ["array_element", "array_filter", "count"]
 
@@ -16,10 +22,8 @@ def array_element(
     index: Optional[int] = None,
     label: Optional[str] = None,
     return_nodata: Optional[bool] = False,
-    dimension: Optional[str] = None,
-    **kwargs
+    axis=-1,
 ):
-
     if index is None and label is None:
         raise ArrayElementParameterMissing(
             "The process `array_element` requires either the `index` or `labels` parameter to be set."
@@ -31,12 +35,24 @@ def array_element(
         )
 
     if label is not None:
-        element = data.sel({dimension: label})
-        return element
+        raise NotImplementedError(
+            "labelled arrays are currently not implemented. Please use index instead."
+        )
 
-    if index is not None:
-        element = data.isel({dimension: int(index)})
-        return element
+    try:
+        if index is not None:
+            element = np.take(data, index, axis=axis)
+            return element
+    except IndexError:
+        if return_nodata:
+            logger.warning(
+                f"Could not find index <{index}>, but return_nodata=True, so returning None."
+            )
+            return None
+        else:
+            raise ArrayElementNotAvailable(
+                f"The array has no element with the specified index or label: {index if index is not None else label}"
+            )
 
     raise ValueError("Shouldn't have come here!")
 

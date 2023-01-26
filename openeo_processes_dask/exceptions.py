@@ -48,3 +48,7 @@ class QuantilesParameterMissing(OpenEOException):
 
 class QuantilesParameterConflict(OpenEOException):
     pass
+
+
+class ArrayNotLabeled(OpenEOException):
+    pass
