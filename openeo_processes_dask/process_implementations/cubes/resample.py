@@ -39,6 +39,14 @@ def resample_cube_spatial(
             f"[{', '.join(methods_list)}]"
         )
 
+    # xr_reproject requires the dimensions to be ordered in this order.
+    required_dim_order = (
+        data.openeo.band_dims + data.openeo.temporal_dims + data.openeo.spatial_dims
+    )
+
+    data = data.transpose(*required_dim_order, missing_dims="ignore")
+    target = target.transpose(*required_dim_order, missing_dims="ignore")
+
     resampled_data = odc.algo._warp.xr_reproject(data, target.geobox, resampling=method)
 
     try:
