@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import odc.geo.xr  # Required for the .geo accessor on xarrays.
 import xarray as xr
