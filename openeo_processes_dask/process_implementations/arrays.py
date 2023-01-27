@@ -18,9 +18,6 @@ from openeo_processes_dask.process_implementations.data_model import RasterCube
 logger = logging.getLogger(__name__)
 
 
-logger = logging.getLogger(__name__)
-
-
 __all__ = [
     "array_element",
     "array_filter",
@@ -103,29 +100,21 @@ def count(data: RasterCube, condition: Callable, **kwargs):
     return data
 
 
-def array_create(
-    data: Union[np.array, list, float, int], repeat: Optional[int] = 1, **kwargs
-):
+def array_create(data: ArrayLike, repeat: Optional[int] = 1, **kwargs):
     if type(data) in [int, float]:
         data = [data]
-    if not hasattr(data, "__array_interface__"):
-        data = np.array(data)
     if len(data) == 0:
         return np.array([])
     return np.tile(data, reps=repeat)
 
 
 def array_modify(
-    data: Union[np.array, list],
-    values: Union[np.array, list],
+    data: ArrayLike,
+    values: ArrayLike,
     index: int,
     length: Optional[int] = 1,
     **kwargs,
 ):
-    if not hasattr(data, "__array_interface__"):
-        data = np.array(data)
-    if not hasattr(values, "__array_interface__"):
-        values = np.array(values)
     if index == 0:
         modified = values
     else:
@@ -136,18 +125,12 @@ def array_modify(
     return modified
 
 
-def array_concat(
-    array1: Union[np.array, list], array2: Union[np.array, list], **kwargs
-):
-    if not hasattr(array1, "__array_interface__"):
-        array1 = np.array(array1)
-    if not hasattr(array2, "__array_interface__"):
-        array2 = np.array(array2)
+def array_concat(array1: ArrayLike, array2: ArrayLike, **kwargs):
     concat = np.append(array1, array2)
     return concat
 
 
-def array_contains(data: Union[np.array, list], value: Union[int, float, str, list]):
+def array_contains(data: ArrayLike, value: Union[int, float, str, list]):
     if np.array(pd.isnull(value)).all():
         return np.isnan(data).any()
     else:
@@ -155,7 +138,7 @@ def array_contains(data: Union[np.array, list], value: Union[int, float, str, li
 
 
 def array_apply(
-    data: Union[np.array, list],
+    data: ArrayLike,
     process: Callable,
     context: Optional[dict] = None,
     **kwargs,
@@ -167,7 +150,7 @@ def array_apply(
 
 
 def array_find(
-    data: Union[np.array, list],
+    data: ArrayLike,
     value: float,
     reverse: Optional[bool] = False,
     axis: Optional[int] = None,
@@ -182,9 +165,7 @@ def array_find(
     return idxs
 
 
-def array_labels(data: Union[np.array, list], dimension: Optional[int] = None):
-    if not hasattr(data, "__array_interface__"):
-        data = np.array(data)
+def array_labels(data: ArrayLike, dimension: Optional[int] = None):
     if dimension is None:
         n_vals = len(data)
     if isinstance(dimension, int):
@@ -193,7 +174,7 @@ def array_labels(data: Union[np.array, list], dimension: Optional[int] = None):
 
 
 def first(
-    data: Union[np.array, list],
+    data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
     axis: Optional[str] = None,
 ):
@@ -214,7 +195,7 @@ def first(
 
 
 def last(
-    data: Union[np.array, list],
+    data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
     axis: Optional[str] = None,
 ):
@@ -228,7 +209,7 @@ def last(
 
 
 def order(
-    data: Union[np.array, list],
+    data: ArrayLike,
     asc: Optional[bool] = True,
     nodata: Optional[bool] = True,
     axis: Optional[int] = None,
@@ -272,7 +253,7 @@ def order(
         raise Exception(err_msg)
 
 
-def rearrange(data: Union[np.array, list], order):
+def rearrange(data: ArrayLike, order):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
     if len(data) == 0:
@@ -281,7 +262,7 @@ def rearrange(data: Union[np.array, list], order):
 
 
 def sort(
-    data: Union[np.array, list],
+    data: ArrayLike,
     asc: Optional[bool] = True,
     nodata: Optional[bool] = None,
     axis: Optional[int] = None,
