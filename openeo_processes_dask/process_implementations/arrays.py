@@ -148,7 +148,7 @@ def array_find(
     data: Union[np.array, list],
     value: float,
     reverse: Optional[bool] = False,
-    axis: Optional[int] = -1,
+    axis: Optional[int] = None,
 ):
     if np.isnan(value) or len(data) == 0:
         return np.nan
@@ -175,25 +175,19 @@ def first(
     ignore_nodata: Optional[bool] = True,
     axis: Optional[str] = None,
 ):
-    if not hasattr(data, "__array_interface__"):
-        data = np.array(data)
     if len(data) == 0:
         return np.nan
     if axis is None:
         axis = 0
-    n_dims = len(data.shape)
     if ignore_nodata:  # skip np.nan values
-        nan_mask = ~pd.isnull(data)  # create mask for valid values (not np.nan)
+        nan_mask = ~np.isnan(data)  # create mask for valid values (not np.nan)
         idx_first = np.argmax(nan_mask, axis=axis)
-        first_elem = np.take_along_axis(
-            data, np.expand_dims(idx_first, axis=axis), axis=axis
-        )
+        first_elem = np.take(data, indices=0, axis=axis)
+        if np.isnan(first_elem).any():
+            for i in range(np.max(idx_first) + 1):
+                first_elem = np.nan_to_num(first_elem, True, np.take(data, i, axis))
     else:  # take the first element, no matter np.nan values are in the array
-        slices = [slice(None)] * n_dims
-        slices[axis] = 0
-        idx_first = tuple(slices)
-        first_elem = data[idx_first]
-
+        first_elem = np.take(data, indices=0, axis=axis)
     return first_elem
 
 
@@ -202,24 +196,12 @@ def last(
     ignore_nodata: Optional[bool] = True,
     axis: Optional[str] = None,
 ):
-    if not hasattr(data, "__array_interface__"):
-        data = np.array(data)
     if len(data) == 0:
         return np.nan
     if axis is None:
         axis = 0
-    n_dims = len(data.shape)
-    if ignore_nodata:  # skip np.nan values
-        data = np.flip(
-            data, axis=axis
-        )  # flip data to retrieve the first valid element (thats the only way it works with argmax)
-        last_elem = first(data, ignore_nodata=ignore_nodata, axis=axis)
-    else:  # take the first element, no matter np.nan values are in the array
-        slices = [slice(None)] * n_dims
-        slices[axis] = -1
-        idx_last = tuple(slices)
-        last_elem = data[idx_last]
-
+    data = np.flip(data, axis=axis)  # flip data to retrieve the first valid element
+    last_elem = first(data, ignore_nodata=ignore_nodata, axis=axis)
     return last_elem
 
 

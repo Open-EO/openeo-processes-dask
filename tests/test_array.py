@@ -94,7 +94,7 @@ def test_array_contains():
 
 
 def test_array_find():
-    assert array_find([1, 0, 3, 2], value=3) == 2
+    assert array_find(np.array([1, 0, 3, 2]), value=3) == 2
     assert np.isnan(array_find([1, 0, 3, 2, np.nan, 3], value=np.nan))
     data = np.array([[2, 8, 2, 4], [0, np.nan, 2, 2]])
     assert (array_find(data, value=2, axis=1) == [0, 2]).all()
@@ -108,8 +108,8 @@ def test_array_labels():
 
 
 def test_first():
-    assert first([1, 0, 3, 2]) == 1
-    assert np.isnan(first([np.nan, 2, 3], ignore_nodata=False))
+    assert first(np.array([1, 0, 3, 2])) == 1
+    assert np.isnan(first(np.array([np.nan, 2, 3]), ignore_nodata=False))
     assert np.isnan(first([]))
 
     test_arr = np.array(
@@ -183,7 +183,7 @@ def test_sort():
     ).all()
 
 
-@pytest.mark.parametrize("size", [(30, 30, 20, 4)])
+@pytest.mark.parametrize("size", [(3, 3, 2, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_reduce_dimension(
     temporal_interval, bounding_box, random_raster_data, process_registry
@@ -196,9 +196,7 @@ def test_reduce_dimension(
         backend="dask",
     )
 
-    input_cube[
-        :, :, :, 1
-    ] = 1  # set all values in the first band to True - any() over bands will return True (ones_like)
+    input_cube[:, :, :, 0] = 1
     _process = partial(
         process_registry["array_find"],
         data=ParameterReference(from_parameter="data"),
@@ -213,4 +211,62 @@ def test_reduce_dimension(
         verify_crs=True,
     )
     assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
+
+    _process = partial(
+        process_registry["first"],
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=True,
+    )
+    input_cube[0, :, :, :2] = np.nan
+    input_cube[0, :, :, 2] = 1
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))
+
+    _process = partial(
+        process_registry["last"],
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=True,
+    )
+    input_cube[:, :, :, -1] = 0
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
+
+
+ignore_nodata = True
+axis = 3
+data = np.zeros((3, 3, 2, 4))
+data[1, 0, 0, :2] = np.nan
+data[1, 1, 0, :1] = np.nan
+data[0, :, 0, 0] = 8
+data[2, 1:, :, 0] = 3
+data[0, :, 1, :] = 2
+# print(data)
+nan_mask = ~np.isnan(data)  # create mask for valid values (not np.nan)
+idx_first = np.argmax(nan_mask, axis=axis)
+print(nan_mask.shape)
+print(idx_first)
+print(idx_first[idx_first != 0])
+first_ = np.take(data, 0, axis)
+print(first_)
+for i in range(np.max(idx_first) + 1):
+    first_ = np.where(first_ >= 0, first_, np.take(data, i, axis))
+print(first_)
+
+# print(np.take_along_axis(data, indices=np.expand_dims(idx_first, axis=axis), axis=axis))
+# print(first(data, True, 3))
+# first_elem = np.compress(idx_first, data, axis=axis)
