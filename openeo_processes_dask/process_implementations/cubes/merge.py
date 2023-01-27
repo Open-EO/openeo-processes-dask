@@ -22,7 +22,6 @@ def merge_cubes(
     cube2: RasterCube,
     overlap_resolver: Callable = None,
     context: Optional[dict] = None,
-    **kwargs,
 ) -> RasterCube:
 
     if context is None:
@@ -31,6 +30,12 @@ def merge_cubes(
         raise Exception(
             f"Provided cubes have incompatible types. cube1: {type(cube1)}, cube2: {type(cube2)}"
         )
+
+    # TODO: "spatial_ref" isn't guaranteed to be updated correctly throughout all the processes
+    # Therefore ignore it here completely. Get rid of this once we've settled on a mechanism for keeping
+    # track of spatial_ref throughout the process graph.
+    cube1 = cube1.drop("spatial_ref", errors="ignore")
+    cube2 = cube2.drop("spatial_ref", errors="ignore")
 
     # Key: dimension name
     # Value: (labels in cube1 not in cube2, labels in cube2 not in cube1)
