@@ -30,6 +30,14 @@ def resample_cube_spatial(
         "q1",
         "q3",
     ]
+
+    required_dim_order = (
+        data.openeo.band_dims + data.openeo.temporal_dims + data.openeo.spatial_dims
+    )
+
+    data_reordered = data.transpose(*required_dim_order, missing_dims="ignore")
+    target_reordered = target.transpose(*required_dim_order, missing_dims="ignore")
+
     if method == "near":
         method = "nearest"
 
@@ -39,18 +47,10 @@ def resample_cube_spatial(
             f"[{', '.join(methods_list)}]"
         )
 
-    # xr_reproject requires the dimensions to be ordered in this order.
-    required_dim_order = (
-        data.openeo.band_dims + data.openeo.temporal_dims + data.openeo.spatial_dims
+    resampled_data = odc.algo._warp.xr_reproject(
+        data_reordered, target_reordered.geobox, resampling=method
     )
-
-    data = data.transpose(*required_dim_order, missing_dims="ignore")
-    target = target.transpose(*required_dim_order, missing_dims="ignore")
-
-    resampled_data = odc.algo._warp.xr_reproject(data, target.geobox, resampling=method)
-
-    # odc.algo loses the crs info from rioxarray, so need to rewrite that here.
-    resampled_data.rio.write_crs(target.rio.crs, inplace=True)
+    resampled_data.rio.write_crs(target_reordered.rio.crs, inplace=True)
 
     try:
         # xr_reproject renames the coordinates according to the geobox, this undoes that.
@@ -59,6 +59,9 @@ def resample_cube_spatial(
         )
     except ValueError:
         pass
+
+    # Order axes back to how they were before
+    resampled_data = resampled_data.transpose(*data.dims)
 
     # Ensure that attrs except crs are copied over
     for k, v in data.attrs.items():
