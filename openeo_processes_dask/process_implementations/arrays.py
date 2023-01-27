@@ -1,15 +1,25 @@
+import logging
 from typing import Callable, Optional, Union
 
 import dask.array as da
 import numpy as np
 import pandas as pd
 import xarray as xr
+from numpy.typing import ArrayLike
 
 from openeo_processes_dask.exceptions import (
+    ArrayElementNotAvailable,
     ArrayElementParameterConflict,
     ArrayElementParameterMissing,
 )
+from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 from openeo_processes_dask.process_implementations.data_model import RasterCube
+
+logger = logging.getLogger(__name__)
+
+
+logger = logging.getLogger(__name__)
+
 
 __all__ = [
     "array_element",
@@ -31,14 +41,12 @@ __all__ = [
 
 
 def array_element(
-    data: Union[xr.Dataset, xr.DataArray, list],
+    data: ArrayLike,
     index: Optional[int] = None,
     label: Optional[str] = None,
     return_nodata: Optional[bool] = False,
-    dimension: Optional[str] = None,
-    **kwargs
+    axis=-1,
 ):
-
     if index is None and label is None:
         raise ArrayElementParameterMissing(
             "The process `array_element` requires either the `index` or `labels` parameter to be set."
@@ -50,16 +58,30 @@ def array_element(
         )
 
     if label is not None:
-        element = data.sel({dimension: label})
-        return element
+        raise NotImplementedError(
+            "labelled arrays are currently not implemented. Please use index instead."
+        )
 
-    if index is not None:
-        if dimension is not None:
-            element = data.isel({dimension: int(index)})
+    try:
+        if index is not None:
+            element = np.take(data, index, axis=axis)
             return element
+    except IndexError:
+        if return_nodata:
+            logger.warning(
+                f"Could not find index <{index}>, but return_nodata=True, so returning None."
+            )
+            output_shape = data.shape[0:axis] + data.shape[axis + 1 :]
+            if _is_dask_array(data):
+                result = da.empty(output_shape)
+            else:
+                result = np.empty(output_shape)
+            result[:] = np.nan
+            return result
         else:
-            element = data[int(index)]
-            return element
+            raise ArrayElementNotAvailable(
+                f"The array has no element with the specified index or label: {index if index is not None else label}"
+            )
 
     raise ValueError("Shouldn't have come here!")
 
@@ -98,7 +120,7 @@ def array_modify(
     values: Union[np.array, list],
     index: int,
     length: Optional[int] = 1,
-    **kwargs
+    **kwargs,
 ):
     if not hasattr(data, "__array_interface__"):
         data = np.array(data)
@@ -136,7 +158,7 @@ def array_apply(
     data: Union[np.array, list],
     process: Callable,
     context: Optional[dict] = None,
-    **kwargs
+    **kwargs,
 ):
     context = context if context is not None else {}
     if not hasattr(data, "__array_interface__"):
