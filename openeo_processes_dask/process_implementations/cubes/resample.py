@@ -49,6 +49,9 @@ def resample_cube_spatial(
 
     resampled_data = odc.algo._warp.xr_reproject(data, target.geobox, resampling=method)
 
+    # odc.algo loses the crs info from rioxarray, so need to rewrite that here.
+    resampled_data.rio.write_crs(target.rio.crs, inplace=True)
+
     try:
         # xr_reproject renames the coordinates according to the geobox, this undoes that.
         resampled_data = resampled_data.rename(

@@ -23,7 +23,7 @@ def test_merge_cubes_type_1(temporal_interval, bounding_box, random_raster_data)
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B02", "B03", "B04", "B08"],
-    ).drop("spatial_ref")
+    )
 
     cube_1 = origin_cube.drop_sel({"bands": ["B04", "B08"]})
     cube_2 = origin_cube.drop_sel({"bands": ["B02", "B03"]})
@@ -42,7 +42,7 @@ def test_merge_cubes_type_2(
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B01", "B02", "B03"],
-    ).drop("spatial_ref")
+    )
 
     cube_1 = origin_cube.drop_sel({"bands": "B03"})
     cube_2 = origin_cube.drop_sel({"bands": "B01"})
@@ -70,7 +70,7 @@ def test_merge_cubes_type_3(
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B01", "B02", "B03"],
-    ).drop("spatial_ref")
+    )
 
     cube_1 = origin_cube
     cube_2 = origin_cube + 1
@@ -104,7 +104,7 @@ def test_merge_cubes_type_4(
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B01", "B02", "B03"],
-    ).drop("spatial_ref")
+    )
 
     cube_2 = xr.DataArray(
         np.ones((len(cube_1["x"]), len(cube_1["y"]))),
