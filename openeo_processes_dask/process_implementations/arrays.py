@@ -34,6 +34,7 @@ __all__ = [
     "order",
     "rearrange",
     "sort",
+    "array_interpolate_linear",
 ]
 
 
@@ -294,19 +295,16 @@ def sort(
         raise Exception(err_msg)
 
 
-def array_interpolate_linear(data: ArrayLike):
-    data_flat = np.reshape(data, -1)
+def array_interpolate_linear(data: ArrayLike, axis: Optional[int] = -1):
+    data_move = np.moveaxis(data, axis, -1)
+    data_flat = np.reshape(data_move, -1)
     xp = np.arange(len(data_flat))
     interp_flat = np.interp(
         x=xp, xp=xp[~np.isnan(data_flat)], fp=data_flat[~np.isnan(data_flat)]
     )
-    return np.reshape(interp_flat, np.shape(data))
-
-
-print(
-    array_interpolate_linear(
-        np.array(
-            [[[1, 4, 7, np.nan, 13, np.nan, 19], [1, 3, 5, np.nan, 9, np.nan, 13]]]
-        )
-    )
-)
+    interpolated = np.moveaxis(np.reshape(interp_flat, np.shape(data_move)), -1, 0)
+    if np.isnan(np.take(data, indices=0, axis=axis)).any():
+        interpolated[0, :] = np.take(data, indices=0, axis=axis)
+    if np.isnan(np.take(data, indices=-1, axis=axis)).any():
+        interpolated[-1, :] = np.take(data, indices=-1, axis=axis)
+    return np.moveaxis(interpolated, 0, axis)

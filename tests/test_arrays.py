@@ -216,6 +216,30 @@ def test_sort():
     ).all()
 
 
+def test_array_interpolate_linear():
+    """Tests `array_interpolate_linear` function."""
+    assert (
+        array_interpolate_linear(
+            np.array([6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9]), axis=0
+        )
+        == [6, -1, 2, 4.5, 7, 4, 6, 8, 3, 9, 9]
+    ).all()
+    assert (
+        array_interpolate_linear(
+            np.array([[2, np.nan, 7, 4, np.nan, 8], [2, np.nan, 7, 4, np.nan, 8]]),
+            axis=1,
+        )
+        == [2, 4.5, 7, 4, 6, 8]
+    ).all()
+    assert np.isclose(
+        array_interpolate_linear(
+            np.array([[np.nan, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9]]), axis=1
+        ),
+        [np.nan, -1, 2, 4.5, 7, 4, 6, 8, 3, 9, 9],
+        equal_nan=True,
+    ).all()
+
+
 @pytest.mark.parametrize("size", [(3, 3, 2, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_reduce_dimension(
