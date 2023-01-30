@@ -76,3 +76,13 @@ def test_normalized_difference(x, y, expected):
 
     result_dask = normalized_difference(da.from_array(x), da.from_array(y))
     assert np.array_equal(result_np, result_dask.compute(), equal_nan=True)
+
+
+def test_clip():
+    array = np.array([5, 0])
+    result_np = clip(array, min=0, max=2)
+
+    dask_array = da.from_array(array)
+    result_dask = clip(dask_array, min=0, max=2)
+    assert np.array_equal(result_np, result_dask.compute(), equal_nan=True)
+    assert np.array_equal(result_np, np.array([2, 0]))
