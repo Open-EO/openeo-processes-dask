@@ -292,3 +292,21 @@ def sort(
     else:
         err_msg = "Data type of 'nodata' argument is not supported."
         raise Exception(err_msg)
+
+
+def array_interpolate_linear(data: ArrayLike):
+    data_flat = np.reshape(data, -1)
+    xp = np.arange(len(data_flat))
+    interp_flat = np.interp(
+        x=xp, xp=xp[~np.isnan(data_flat)], fp=data_flat[~np.isnan(data_flat)]
+    )
+    return np.reshape(interp_flat, np.shape(data))
+
+
+print(
+    array_interpolate_linear(
+        np.array(
+            [[[1, 4, 7, np.nan, 13, np.nan, 19], [1, 3, 5, np.nan, 9, np.nan, 13]]]
+        )
+    )
+)
