@@ -31,7 +31,7 @@ datacube = "^1.8.4"
 xgboost = "^1.5.1"
 rioxarray = ">=0.12.0,<1"
 odc-algo = ">=0.2.3,<1"
-openeo-pg-parser-networkx = ">=2023.1.0"
+openeo-pg-parser-networkx = ">=2023.1.2"
 odc-geo = "^0.3.2"
 
 [tool.poetry.group.dev.dependencies]
