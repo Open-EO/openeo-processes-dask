@@ -1,4 +1,4 @@
-__version__ = "2023.1.1-rc.3"
+__version__ = "2023.1.1"
 
 import rioxarray as rio  # Required for the .rio accessor on xarrays.
 
