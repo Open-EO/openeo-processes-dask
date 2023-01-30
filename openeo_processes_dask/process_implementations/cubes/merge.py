@@ -22,7 +22,6 @@ def merge_cubes(
     cube2: RasterCube,
     overlap_resolver: Callable = None,
     context: Optional[dict] = None,
-    **kwargs,
 ) -> RasterCube:
 
     if context is None:
