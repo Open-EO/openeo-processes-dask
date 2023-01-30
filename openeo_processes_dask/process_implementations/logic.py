@@ -8,23 +8,36 @@ __all__ = ["and_", "or_", "xor", "not_", "if_", "any_", "all_"]
 
 
 def and_(x: ArrayLike, y: ArrayLike):
-    x = np.nan_to_num(x)
-    y = np.nan_to_num(y)
-    return np.logical_and(x, y)
+    nan_x = np.isnan(x)
+    nan_y = np.isnan(y)
+    xy = np.logical_and(x, y)
+    nan_mask = np.logical_and(nan_x, xy)
+    xy = np.where(~nan_mask, xy, np.nan)
+    nan_mask = np.logical_and(nan_y, xy)
+    xy = np.where(~nan_mask, xy, np.nan)
+    return xy
 
 
 def or_(x: ArrayLike, y: ArrayLike):
+    nan_x = np.isnan(x)
+    nan_y = np.isnan(y)
     x = np.nan_to_num(x)
     y = np.nan_to_num(y)
-    return np.logical_or(x, y)
+    xy = np.logical_or(x, y)
+    nan_mask = np.logical_and(nan_x, np.logical_not(xy))
+    xy = np.where(~nan_mask, xy, np.nan)
+    nan_mask = np.logical_and(nan_y, np.logical_not(xy))
+    xy = np.where(~nan_mask, xy, np.nan)
+    return xy
 
 
 def xor(x: ArrayLike, y: ArrayLike):
-    x = np.nan_to_num(x)
-    y = np.nan_to_num(y)
-    if x is None or y is None:
-        return None
-    return np.logical_xor(x, y)
+    nan_x = np.isnan(x)
+    nan_y = np.isnan(y)
+    xy = np.logical_xor(x, y)
+    xy = np.where(~nan_x, xy, np.nan)
+    xy = np.where(~nan_y, xy, np.nan)
+    return xy
 
 
 def not_(x: ArrayLike):

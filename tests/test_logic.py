@@ -15,31 +15,36 @@ from tests.mockdata import create_fake_rastercube
 def test_and_():
     assert and_(True, True)
     assert not and_(True, False)
-    assert and_(True, None) is None
-    assert (
-        and_(x=[True, True, False, False], y=[True, False, False, np.nan])
-        == [True, False, False, False]
+    assert np.isnan(and_(True, np.nan))
+    assert np.isclose(
+        and_(
+            x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]
+        ),
+        [True, False, False, False, np.nan],
+        equal_nan=True,
     ).all()
 
 
 def test_or_():
     assert or_(True, True)
     assert or_(True, False)
-    assert or_(True, None)
-    assert or_(False, None) is None
-    assert (
-        or_(x=[True, True, False, False], y=[True, False, False, np.nan])
-        == [True, True, False, False]
+    assert or_(True, np.nan)
+    assert np.isnan(or_(False, np.nan))
+    assert np.isclose(
+        or_(x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]),
+        [True, True, False, np.nan, True],
+        equal_nan=True,
     ).all()
 
 
 def test_xor():
     assert not xor(True, True)
     assert xor(True, False)
-    assert not xor(False, None)
-    assert (
-        xor(x=[True, True, False, False], y=[True, False, False, np.nan])
-        == [False, True, False, False]
+    assert np.isnan(xor(False, np.nan))
+    assert np.isclose(
+        xor(x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]),
+        [False, True, False, np.nan, np.nan],
+        equal_nan=True,
     ).all()
 
 
