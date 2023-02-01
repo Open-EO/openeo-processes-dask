@@ -8,14 +8,14 @@ import numpy as np
 import pytest
 from dask.distributed import Client
 from geopandas.geodataframe import GeoDataFrame
+from openeo_pg_parser_networkx import ProcessRegistry
 from openeo_pg_parser_networkx.pg_schema import (
     DEFAULT_CRS,
     BoundingBox,
     TemporalInterval,
 )
-from shapely.geometry import Point, Polygon
 
-from openeo_processes_dask.core import ProcessRegistry
+from openeo_processes_dask.core import process
 from openeo_processes_dask.process_implementations.data_model import VectorCube
 
 logger = logging.getLogger(__name__)
@@ -63,10 +63,10 @@ def process_registry() -> ProcessRegistry:
         )
     ]
 
-    registry = ProcessRegistry()
+    registry = ProcessRegistry(wrap_funcs=[process])
 
-    for process in standard_processes:
-        registry[process.__name__] = process
+    for func in standard_processes:
+        registry[func.__name__] = func
 
     return registry
 

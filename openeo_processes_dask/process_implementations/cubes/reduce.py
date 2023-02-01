@@ -13,14 +13,22 @@ def reduce_dimension(
     reducer: Callable,
     dimension: str,
     context: Optional[dict] = None,
-    **kwargs,
 ) -> RasterCube:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
-    parameters = {"data": data, "context": context}
-    reduced_data = reducer(parameters=parameters, dimension=dimension)
+
+    positional_parameters = {"data": 0}
+    named_parameters = {"context": context}
+
+    reduced_data = data.reduce(
+        reducer,
+        dim=dimension,
+        keep_attrs=True,
+        positional_parameters=positional_parameters,
+        named_parameters=named_parameters,
+    )
 
     # Preset
     if "reduced_dimensions_min_values" not in data.attrs:
@@ -36,7 +44,17 @@ def reduce_dimension(
 
 
 def reduce_spatial(
-    data: RasterCube, reducer: Callable, context: Optional[dict] = None, **kwargs
+    data: RasterCube, reducer: Callable, context: Optional[dict] = None
 ) -> RasterCube:
-    parameters = {"data": data, "context": context}
-    return reducer(parameters=parameters, dimension=["x", "y"])
+    positional_parameters = {"data": 0}
+    named_parameters = {"context": context}
+
+    spatial_dims = data.openeo.spatial_dims if data.openeo.spatial_dims else None
+    return data.reduce(
+        reducer,
+        dimension=spatial_dims,
+        keep_attrs=True,
+        context=context,
+        positional_parameters=positional_parameters,
+        named_parameters=named_parameters,
+    )
