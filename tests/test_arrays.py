@@ -1,6 +1,7 @@
 from functools import partial
 
 import dask
+import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
@@ -77,14 +78,16 @@ def test_array_element(
     xr.testing.assert_equal(output_cube_no_data_dask, output_cube_no_data_numpy)
 
 
-def test_array_create():
-    assert (array_create(2, 3) == np.array([2, 2, 2])).all()
-    assert len(array_create([])) == 0
-    assert (
-        array_create(np.array([1, 2, 3]), repeat=2) == np.array([1, 2, 3, 1, 2, 3])
-    ).all()
-    assert (array_create(["A", "B", "C"]) == np.array(["A", "B", "C"])).all()
-    assert len(array_create([np.nan, 1], 2)) == 4
+@pytest.mark.parametrize(
+    "data, repeat",
+    [([2], 3), ([], 10), ([1, 2, 3], 2), (["A", "B", "C"], 1), ([2, 1], 2)],
+)
+def test_array_create(data, repeat):
+    assert (array_create(data, repeat) == np.tile(data, repeat)).all()
+    assert len(array_create(data, repeat)) == len(data) * repeat
+    data_dask = da.from_array(data, chunks=-1)
+    assert isinstance(array_create(data_dask, 1), da.Array)
+    assert (array_create(data_dask, 1).compute() == np.array(data)).all()
 
 
 def test_array_modify():
@@ -120,10 +123,10 @@ def test_array_contains():
     assert not array_contains(["A", "B", "C"], value="b")
     assert not array_contains([1, 2, 3], value="2")
     assert array_contains([1, 2, 3], value=2)
-    assert array_contains([1, 2, np.nan], value=np.nan)
-    assert array_contains([[1, 2], [3, 4]], value=[1, 2])
-    assert array_contains([[1, 2], [3, 4]], value=2)
-    assert array_contains([{"a": "b"}, {"c": "d"}], value={"a": "b"})
+    assert not array_contains([1, 2, np.nan], value=np.nan)
+    assert not array_contains([[1, 2], [3, 4]], value=[1, 2])
+    assert not array_contains([[1, 2], [3, 4]], value=2)
+    assert not array_contains([{"a": "b"}, {"c": "d"}], value={"a": "b"})
 
 
 def test_array_find():
@@ -216,30 +219,6 @@ def test_sort():
     ).all()
 
 
-def test_array_interpolate_linear():
-    """Tests `array_interpolate_linear` function."""
-    assert (
-        array_interpolate_linear(
-            np.array([6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9]), axis=0
-        )
-        == [6, -1, 2, 4.5, 7, 4, 6, 8, 3, 9, 9]
-    ).all()
-    assert (
-        array_interpolate_linear(
-            np.array([[2, np.nan, 7, 4, np.nan, 8], [2, np.nan, 7, 4, np.nan, 8]]),
-            axis=1,
-        )
-        == [2, 4.5, 7, 4, 6, 8]
-    ).all()
-    assert np.isclose(
-        array_interpolate_linear(
-            np.array([[np.nan, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9]]), axis=1
-        ),
-        [np.nan, -1, 2, 4.5, 7, 4, 6, 8, 3, 9, 9],
-        equal_nan=True,
-    ).all()
-
-
 @pytest.mark.parametrize("size", [(3, 3, 2, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_reduce_dimension(
@@ -302,3 +281,25 @@ def test_reduce_dimension(
     )
     assert output_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
+
+
+# def array_contains(data, value):
+#     if type(value) not in [int, float, str]:
+#         return False
+#     if len(np.shape(data)) != 1:
+#         return False
+#     return np.isin(data, value).any()
+
+# print(array_contains([1,2,3], value = 2))
+# print(array_contains([[1, 2], [3, 4]], value=[1, 2]))
+# print(array_contains([[1, 2], [3, 4]], value=2))
+# print(array_contains([{"a": "b"}, {"c": "d"}], value={"a": "b"}))
+
+import dask.array as da
+
+x = da.random.random((10000, 10000), chunks=(1000, 1000))
+print(type(np.array([1])))
+
+
+x = da.random.random((10000, 10000), chunks=(1000, 1000))
+print(type(array_create(x, 1)))

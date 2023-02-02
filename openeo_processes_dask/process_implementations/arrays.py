@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import dask.array as da
 import numpy as np
@@ -34,7 +34,6 @@ __all__ = [
     "order",
     "rearrange",
     "sort",
-    "array_interpolate_linear",
 ]
 
 
@@ -101,11 +100,9 @@ def count(data: RasterCube, condition: Callable, **kwargs):
     return data
 
 
-def array_create(data: ArrayLike, repeat: Optional[int] = 1, **kwargs):
-    if type(data) in [int, float]:
-        data = [data]
-    if len(data) == 0:
-        return np.array([])
+def array_create(data: Optional[ArrayLike] = None, repeat: Optional[int] = 1):
+    if data is None:
+        data = np.array([])
     return np.tile(data, reps=repeat)
 
 
@@ -114,26 +111,28 @@ def array_modify(
     values: ArrayLike,
     index: int,
     length: Optional[int] = 1,
-    **kwargs,
 ):
-    if index == 0:
-        modified = values
-    else:
-        first = data[:index]
-        modified = np.append(first, values)
+    if index > len(data):
+        raise ArrayElementNotAvailable(
+            "The array can't be modified as the given index is larger than the number of elements in the array."
+        )
+    first = data[:index]
+    modified = np.append(first, values)
     if index + length < len(data):
         modified = np.append(modified, data[index + length :])
     return modified
 
 
-def array_concat(array1: ArrayLike, array2: ArrayLike, **kwargs):
+def array_concat(array1: ArrayLike, array2: ArrayLike):
     concat = np.append(array1, array2)
     return concat
 
 
-def array_contains(data: ArrayLike, value: Union[int, float, str, list]):
-    if np.array(pd.isnull(value)).all():
-        return np.isnan(data).any()
+def array_contains(data: ArrayLike, value: Any):
+    if type(value) not in [int, float, str] or pd.isnull(value):
+        return False
+    if len(np.shape(data)) != 1:
+        return False
     else:
         return np.isin(data, value).any()
 
@@ -142,7 +141,6 @@ def array_apply(
     data: ArrayLike,
     process: Callable,
     context: Optional[dict] = None,
-    **kwargs,
 ):
     context = context if context is not None else {}
     if not hasattr(data, "__array_interface__"):
@@ -293,18 +291,3 @@ def sort(
     else:
         err_msg = "Data type of 'nodata' argument is not supported."
         raise Exception(err_msg)
-
-
-def array_interpolate_linear(data: ArrayLike, axis: Optional[int] = -1):
-    data_move = np.moveaxis(data, axis, -1)
-    data_flat = np.reshape(data_move, -1)
-    xp = np.arange(len(data_flat))
-    interp_flat = np.interp(
-        x=xp, xp=xp[~np.isnan(data_flat)], fp=data_flat[~np.isnan(data_flat)]
-    )
-    interpolated = np.moveaxis(np.reshape(interp_flat, np.shape(data_move)), -1, 0)
-    if np.isnan(np.take(data, indices=0, axis=axis)).any():
-        interpolated[0, :] = np.take(data, indices=0, axis=axis)
-    if np.isnan(np.take(data, indices=-1, axis=axis)).any():
-        interpolated[-1, :] = np.take(data, indices=-1, axis=axis)
-    return np.moveaxis(interpolated, 0, axis)
