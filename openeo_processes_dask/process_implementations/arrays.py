@@ -142,15 +142,12 @@ def array_apply(
     process: Callable,
     context: Optional[dict] = None,
 ):
-    context = context if context is not None else {}
-    if not hasattr(data, "__array_interface__"):
-        data = np.array(data)
-    return process(data, **context)
+    raise NotImplementedError("array_apply isn't supported yet!")
 
 
 def array_find(
     data: ArrayLike,
-    value: float,
+    value: Any,
     reverse: Optional[bool] = False,
     axis: Optional[int] = None,
 ):

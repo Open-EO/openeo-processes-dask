@@ -281,25 +281,3 @@ def test_reduce_dimension(
     )
     assert output_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
-
-
-# def array_contains(data, value):
-#     if type(value) not in [int, float, str]:
-#         return False
-#     if len(np.shape(data)) != 1:
-#         return False
-#     return np.isin(data, value).any()
-
-# print(array_contains([1,2,3], value = 2))
-# print(array_contains([[1, 2], [3, 4]], value=[1, 2]))
-# print(array_contains([[1, 2], [3, 4]], value=2))
-# print(array_contains([{"a": "b"}, {"c": "d"}], value={"a": "b"}))
-
-import dask.array as da
-
-x = da.random.random((10000, 10000), chunks=(1000, 1000))
-print(type(np.array([1])))
-
-
-x = da.random.random((10000, 10000), chunks=(1000, 1000))
-print(type(array_create(x, 1)))
