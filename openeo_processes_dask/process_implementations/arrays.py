@@ -83,21 +83,12 @@ def array_element(
     raise ValueError("Shouldn't have come here!")
 
 
-def array_filter(data: RasterCube, condition: Callable, **kwargs):
-    mask = condition(x=data, **kwargs)
-    data = data[mask]
-    return data
+def array_filter(data: RasterCube, condition: Callable):
+    raise NotImplementedError("count isn't supported yet!")
 
 
-def count(data: RasterCube, condition: Callable, **kwargs):
-    data = condition(x=data, **kwargs)
-    if "dimension" in kwargs:
-        if kwargs["dimension"] == "t":
-            kwargs["dimension"] = "time"
-        data = data.sum(dim=kwargs["dimension"])
-    else:
-        data = data.sum()
-    return data
+def count(data: RasterCube, condition: Callable):
+    raise NotImplementedError("count isn't supported yet!")
 
 
 def array_create(data: Optional[ArrayLike] = None, repeat: Optional[int] = 1):
