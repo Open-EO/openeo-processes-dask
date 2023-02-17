@@ -118,23 +118,34 @@ def test_array_concat():
     ).all()
 
 
-def test_array_contains():
-    assert array_contains([1, 2, 3], value=2)
-    assert not array_contains(["A", "B", "C"], value="b")
-    assert not array_contains([1, 2, 3], value="2")
-    assert array_contains([1, 2, 3], value=2)
-    assert not array_contains([1, 2, np.nan], value=np.nan)
-    assert not array_contains([[1, 2], [3, 4]], value=[1, 2])
-    assert not array_contains([[1, 2], [3, 4]], value=2)
-    assert not array_contains([{"a": "b"}, {"c": "d"}], value={"a": "b"})
+@pytest.mark.parametrize(
+    "data, value, expected",
+    [
+        ([1, 2, 3], 2, True),
+        (["A", "B", "C"], "b", False),
+        ([1, 2, 3], "2", False),
+        ([1, 2, np.nan], np.nan),
+        ([[2, 1], [3, 4]], [1, 2], False),
+        ([[2, 1], [3, 4]], 2, False),
+        ([{"a": "b"}, {"c": "d"}], {"a": "b"}, False),
+    ],
+)
+def test_array_contains(data, value, expected):
+    assert array_contains(data, value) is expected
+    assert array_contains(np.array(data), value) is expected
+    assert array_contains(da.from_array(np.array(data)), value) is expected
 
 
-def test_array_find():
+@pytest.mark.parametrize("data, value", [([[2, 8, 2, 4], [0, np.nan, 2, 2]], 2)])
+def test_array_find(data, value):
     assert array_find(np.array([1, 0, 3, 2]), value=3) == 2
     assert np.isnan(array_find([1, 0, 3, 2, np.nan, 3], value=np.nan))
-    data = np.array([[2, 8, 2, 4], [0, np.nan, 2, 2]])
-    assert (array_find(data, value=2, axis=1) == [0, 2]).all()
-    assert (array_find(data, value=2, reverse=True, axis=1) == [2, 3]).all()
+    assert (array_find(np.array(data), value, axis=1) == [0, 2]).all()
+    assert (array_find(np.array(data), value, reverse=True, axis=1) == [2, 3]).all()
+    assert (array_find(da.from_array(np.array(data)), value, axis=1) == [0, 2]).all()
+    assert (
+        array_find(da.from_array(np.array(data)), value, reverse=True, axis=1) == [2, 3]
+    ).all()
 
 
 def test_array_labels():

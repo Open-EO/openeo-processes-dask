@@ -84,7 +84,7 @@ def array_element(
 
 
 def array_filter(data: RasterCube, condition: Callable):
-    raise NotImplementedError("count isn't supported yet!")
+    raise NotImplementedError("array_filter isn't supported yet!")
 
 
 def count(data: RasterCube, condition: Callable):
