@@ -5,9 +5,48 @@ import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
+from openeo_processes_dask.process_implementations.comparison import between, eq, neq
 from openeo_processes_dask.process_implementations.cubes.apply import apply
+from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
+
+
+@pytest.mark.parametrize(
+    "x, y, delta, case_sensitive",
+    [
+        (1, 1, None, True),
+        (-1, -1.001, 0.01, None),
+        (115, 110, 10, None),
+        ("Test", "test", None, False),
+    ],
+)
+def test_eq(x, y, delta, case_sensitive):
+    assert eq(x=x, y=y, delta=delta, case_sensitive=case_sensitive)
+
+
+@pytest.mark.parametrize(
+    "x, y, delta, case_sensitive",
+    [(1, "1", None, True), (1.02, 1, 0.01, True), ("Test", "test", None, True)],
+)
+def test_neq(x, y, delta, case_sensitive):
+    assert neq(x=x, y=y, delta=delta, case_sensitive=case_sensitive)
+
+
+@pytest.mark.parametrize(
+    "x, min, max, exclude_max, expected",
+    [
+        (1, 0, 1, False, True),
+        (1, 0, 1, True, False),
+        (0.5, 1, 0, False, False),
+        (-0.5, -1, 0, False, True),
+    ],
+)
+def test_between(x, min, max, exclude_max, expected):
+    if expected:
+        assert between(x, min, max, exclude_max)
+    else:
+        assert not between(x, min, max, exclude_max)
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
@@ -60,7 +99,7 @@ def test_is(temporal_interval, bounding_box, random_raster_data, process_registr
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
-def test_eq(temporal_interval, bounding_box, random_raster_data, process_registry):
+def test_compare(temporal_interval, bounding_box, random_raster_data, process_registry):
     # TODO: Add test with merge_cubes
     input_cube = create_fake_rastercube(
         data=random_raster_data,
@@ -140,3 +179,35 @@ def test_eq(temporal_interval, bounding_box, random_raster_data, process_registr
         verify_crs=True,
     )
     xr.testing.assert_equal(output_cube, xr.zeros_like(input_cube))
+
+
+@pytest.mark.parametrize("size", [(30, 30, 20, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_reduce_dimension(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process = partial(
+        process_registry["eq"],
+        y=-9999,
+        x=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
+
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+
+    assert (output_cube == False).all()
+    assert output_cube.dims == ("x", "y", "bands")
