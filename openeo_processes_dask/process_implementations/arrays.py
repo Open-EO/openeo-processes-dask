@@ -120,10 +120,12 @@ def array_concat(array1: ArrayLike, array2: ArrayLike):
 
 
 def array_contains(data: ArrayLike, value: Any):
-    if type(value) not in [int, float, str] or pd.isnull(value):
+    if type(value) not in [int, float, str]:
         return False
     if len(np.shape(data)) != 1:
         return False
+    if pd.isnull(value):
+        return np.isnan(data).any()
     else:
         return np.isin(data, value).any()
 

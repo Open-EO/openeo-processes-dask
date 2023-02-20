@@ -124,16 +124,26 @@ def test_array_concat():
         ([1, 2, 3], 2, True),
         (["A", "B", "C"], "b", False),
         ([1, 2, 3], "2", False),
-        ([1, 2, np.nan], np.nan),
+        ([1, 2, np.nan], np.nan, True),
         ([[2, 1], [3, 4]], [1, 2], False),
         ([[2, 1], [3, 4]], 2, False),
-        ([{"a": "b"}, {"c": "d"}], {"a": "b"}, False),
     ],
 )
 def test_array_contains(data, value, expected):
-    assert array_contains(data, value) is expected
-    assert array_contains(np.array(data), value) is expected
-    assert array_contains(da.from_array(np.array(data)), value) is expected
+    if expected:
+        assert array_contains(data, value)
+        assert array_contains(np.array(data), value)
+        assert array_contains(da.from_array(np.array(data)), value)
+    else:
+        assert not array_contains(data, value)
+        assert not array_contains(np.array(data), value)
+        assert not array_contains(da.from_array(np.array(data)), value)
+    assert not array_contains([{"a": "b"}, {"c": "d"}], {"a": "b"})
+    assert not array_contains(np.array([{"a": "b"}, {"c": "d"}]), {"a": "b"})
+    with pytest.raises(NotImplementedError):
+        assert not array_contains(
+            da.from_array(np.array([{"a": "b"}, {"c": "d"}])), {"a": "b"}
+        )
 
 
 @pytest.mark.parametrize("data, value", [([[2, 8, 2, 4], [0, np.nan, 2, 2]], 2)])
