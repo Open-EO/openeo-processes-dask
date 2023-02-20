@@ -62,14 +62,9 @@ def test_neq(x, y, delta, case_sensitive):
     ],
 )
 def test_between(x, min, max, exclude_max, expected):
-    if expected:
-        assert between(x, min, max, exclude_max)
-        assert between(np.array([x]), min, max, exclude_max)
-        assert between(da.from_array(np.array([x])), min, max, exclude_max)
-    else:
-        assert not between(x, min, max, exclude_max)
-        assert not between(np.array([x]), min, max, exclude_max)
-        assert not between(da.from_array(np.array([x])), min, max, exclude_max)
+    assert between(x, min, max, exclude_max) == expected
+    assert between(np.array([x]), min, max, exclude_max) == expected
+    assert between(da.from_array(np.array([x])), min, max, exclude_max) == expected
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
