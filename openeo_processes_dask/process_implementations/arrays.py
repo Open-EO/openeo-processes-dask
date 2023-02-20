@@ -20,13 +20,10 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "array_element",
-    "array_filter",
-    "count",
     "array_create",
     "array_modify",
     "array_concat",
     "array_contains",
-    "array_apply",
     "array_find",
     "array_labels",
     "first",
@@ -81,14 +78,6 @@ def array_element(
             )
 
     raise ValueError("Shouldn't have come here!")
-
-
-def array_filter(data: RasterCube, condition: Callable):
-    raise NotImplementedError("array_filter isn't supported yet!")
-
-
-def count(data: RasterCube, condition: Callable):
-    raise NotImplementedError("count isn't supported yet!")
 
 
 def array_create(data: Optional[ArrayLike] = None, repeat: Optional[int] = 1):
@@ -151,14 +140,6 @@ def array_contains(data: ArrayLike, value: Any) -> bool:
         return np.isnan(data).any()
     else:
         return np.isin(data, value).any()
-
-
-def array_apply(
-    data: ArrayLike,
-    process: Callable,
-    context: Optional[dict] = None,
-):
-    raise NotImplementedError("array_apply isn't supported yet!")
 
 
 def array_find(
