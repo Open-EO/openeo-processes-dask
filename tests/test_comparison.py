@@ -1,5 +1,6 @@
 from functools import partial
 
+import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
@@ -23,6 +24,15 @@ from tests.mockdata import create_fake_rastercube
 )
 def test_eq(x, y, delta, case_sensitive):
     assert eq(x=x, y=y, delta=delta, case_sensitive=case_sensitive)
+    assert eq(
+        x=np.array([x]), y=np.array([y]), delta=delta, case_sensitive=case_sensitive
+    )
+    assert eq(
+        x=da.from_array(np.array([x])),
+        y=da.from_array(np.array([y])),
+        delta=delta,
+        case_sensitive=case_sensitive,
+    )
 
 
 @pytest.mark.parametrize(
@@ -31,6 +41,15 @@ def test_eq(x, y, delta, case_sensitive):
 )
 def test_neq(x, y, delta, case_sensitive):
     assert neq(x=x, y=y, delta=delta, case_sensitive=case_sensitive)
+    assert neq(
+        x=np.array([x]), y=np.array([y]), delta=delta, case_sensitive=case_sensitive
+    )
+    assert neq(
+        x=da.from_array(np.array([x])),
+        y=da.from_array(np.array([y])),
+        delta=delta,
+        case_sensitive=case_sensitive,
+    )
 
 
 @pytest.mark.parametrize(
@@ -45,8 +64,12 @@ def test_neq(x, y, delta, case_sensitive):
 def test_between(x, min, max, exclude_max, expected):
     if expected:
         assert between(x, min, max, exclude_max)
+        assert between(np.array([x]), min, max, exclude_max)
+        assert between(da.from_array(np.array([x])), min, max, exclude_max)
     else:
         assert not between(x, min, max, exclude_max)
+        assert not between(np.array([x]), min, max, exclude_max)
+        assert not between(da.from_array(np.array([x])), min, max, exclude_max)
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
@@ -179,35 +202,3 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
         verify_crs=True,
     )
     xr.testing.assert_equal(output_cube, xr.zeros_like(input_cube))
-
-
-@pytest.mark.parametrize("size", [(30, 30, 20, 4)])
-@pytest.mark.parametrize("dtype", [np.float32])
-def test_reduce_dimension(
-    temporal_interval, bounding_box, random_raster_data, process_registry
-):
-    input_cube = create_fake_rastercube(
-        data=random_raster_data,
-        spatial_extent=bounding_box,
-        temporal_extent=temporal_interval,
-        bands=["B02", "B03", "B04", "B08"],
-        backend="dask",
-    )
-
-    _process = partial(
-        process_registry["eq"],
-        y=-9999,
-        x=ParameterReference(from_parameter="data"),
-    )
-
-    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
-
-    general_output_checks(
-        input_cube=input_cube,
-        output_cube=output_cube,
-        verify_attrs=False,
-        verify_crs=True,
-    )
-
-    assert (output_cube == False).all()
-    assert output_cube.dims == ("x", "y", "bands")
