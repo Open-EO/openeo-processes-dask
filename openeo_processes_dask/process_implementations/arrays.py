@@ -80,7 +80,9 @@ def array_element(
     raise ValueError("Shouldn't have come here!")
 
 
-def array_create(data: Optional[ArrayLike] = None, repeat: Optional[int] = 1):
+def array_create(
+    data: Optional[ArrayLike] = None, repeat: Optional[int] = 1
+) -> ArrayLike:
     if data is None:
         data = np.array([])
     return np.tile(data, reps=repeat)
