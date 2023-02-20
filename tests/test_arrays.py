@@ -83,11 +83,14 @@ def test_array_element(
     [([2], 3), ([], 10), ([1, 2, 3], 2), (["A", "B", "C"], 1), ([2, 1], 2)],
 )
 def test_array_create(data, repeat):
-    assert (array_create(data, repeat) == np.tile(data, repeat)).all()
-    assert len(array_create(data, repeat)) == len(data) * repeat
+    result_np = array_create(data, repeat)
+    np.testing.assert_array_equal(result_np, np.tile(data, repeat))
+    assert len(result_np) == len(data) * repeat
+
     data_dask = da.from_array(data, chunks=-1)
-    assert isinstance(array_create(data_dask, 1), da.Array)
-    assert (array_create(data_dask, 1).compute() == np.array(data)).all()
+    result_dask = array_create(data_dask, repeat)
+    assert isinstance(result_dask, da.Array)
+    np.testing.assert_array_equal(result_dask, result_np)
 
 
 def test_array_modify():
