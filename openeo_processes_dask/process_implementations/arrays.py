@@ -93,7 +93,7 @@ def array_modify(
     values: ArrayLike,
     index: int,
     length: Optional[int] = 1,
-):
+) -> ArrayLike:
     if index > len(data):
         raise ArrayElementNotAvailable(
             "The array can't be modified as the given index is larger than the number of elements in the array."
@@ -105,7 +105,7 @@ def array_modify(
     return modified
 
 
-def array_concat(array1: ArrayLike, array2: ArrayLike):
+def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
     if isinstance(array1, list):
         array1 = np.asarray(array1)
     if isinstance(array2, list):
