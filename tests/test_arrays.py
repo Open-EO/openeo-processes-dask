@@ -7,7 +7,7 @@ import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
-from openeo_processes_dask.exceptions import ArrayElementNotAvailable
+from openeo_processes_dask.exceptions import ArrayElementNotAvailable, TooManyDimensions
 from openeo_processes_dask.process_implementations.arrays import *
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from tests.general_checks import general_output_checks
@@ -177,8 +177,9 @@ def test_array_find(data, value):
 
 def test_array_labels():
     """Tests `array_labels` function."""
-    assert (array_labels([1, 0, 3, 2]) == np.array([0, 1, 2, 3])).all()
-    assert array_labels([[1, 0, 3, 2]], dimension=0) == np.array([0])
+    np.testing.assert_array_equal(array_labels([1, 0, 3, 2]), [0, 1, 2, 3])
+    with pytest.raises(TooManyDimensions):
+        array_labels(np.array([[1, 0, 3, 2], [5, 0, 6, 4]]))
 
 
 def test_first():

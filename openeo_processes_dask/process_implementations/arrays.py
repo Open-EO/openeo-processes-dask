@@ -11,6 +11,7 @@ from openeo_processes_dask.exceptions import (
     ArrayElementNotAvailable,
     ArrayElementParameterConflict,
     ArrayElementParameterMissing,
+    TooManyDimensions,
 )
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 from openeo_processes_dask.process_implementations.data_model import RasterCube
@@ -160,12 +161,15 @@ def array_find(
     return idxs
 
 
-def array_labels(data: ArrayLike, dimension: Optional[int] = None):
-    if dimension is None:
-        n_vals = len(data)
-    if isinstance(dimension, int):
-        n_vals = np.shape(data)[dimension]
-    return np.arange(n_vals)
+def array_labels(data: ArrayLike) -> ArrayLike:
+    logger.warning(
+        "Labelled arrays are currently not supported, array_labels will only return indices."
+    )
+    if isinstance(data, list):
+        data = np.asarray(data)
+    if len(data.shape) > 1:
+        raise TooManyDimensions("array_labels is only implemented for 1D arrays.")
+    return np.arange(len(data))
 
 
 def first(
