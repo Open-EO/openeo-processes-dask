@@ -127,19 +127,24 @@ def test_array_concat():
         ([1, 2, np.nan], np.nan, True),
         ([[2, 1], [3, 4]], [1, 2], False),
         ([[2, 1], [3, 4]], 2, False),
+        ([1, 2, 3], np.int64(2), True),
+        ([1.1, 2.2, 3.3], np.float64(2.2), True),
+        ([True, False, False], np.bool_(True), True),
     ],
 )
 def test_array_contains(data, value, expected):
-    if expected:
-        assert array_contains(data, value)
-        assert array_contains(np.array(data), value)
-        assert array_contains(da.from_array(np.array(data)), value)
-    else:
-        assert not array_contains(data, value)
-        assert not array_contains(np.array(data), value)
-        assert not array_contains(da.from_array(np.array(data)), value)
+    assert array_contains(data, value) == expected
+    assert array_contains(np.array(data), value) == expected
+
+    dask_result = array_contains(da.from_array(np.array(data)), value)
+    assert dask_result == expected or dask_result.compute() == expected
+
+
+def test_array_contains_object_dtype():
     assert not array_contains([{"a": "b"}, {"c": "d"}], {"a": "b"})
     assert not array_contains(np.array([{"a": "b"}, {"c": "d"}]), {"a": "b"})
+
+    # Dask doesn't understand the `object` dtype and will error if encountered
     with pytest.raises(NotImplementedError):
         assert not array_contains(
             da.from_array(np.array([{"a": "b"}, {"c": "d"}])), {"a": "b"}

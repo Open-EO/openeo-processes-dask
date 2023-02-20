@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional
 
 import dask.array as da
 import numpy as np
@@ -119,9 +119,18 @@ def array_concat(array1: ArrayLike, array2: ArrayLike):
     return concat
 
 
-def array_contains(data: ArrayLike, value: Any):
-    if type(value) not in [int, float, str]:
+def array_contains(data: ArrayLike, value: Any) -> bool:
+    # TODO: Contrary to the process spec, our implementation does interpret temporal strings before checking them here
+    # This is somewhat implicit in how we currently parse parameters, so cannot be easily changed.
+
+    value_is_valid = False
+    valid_dtypes = [np.number, np.bool_, np.str_]
+    for dtype in valid_dtypes:
+        if np.issubdtype(type(value), dtype):
+            value_is_valid = True
+    if not value_is_valid:
         return False
+
     if len(np.shape(data)) != 1:
         return False
     if pd.isnull(value):
