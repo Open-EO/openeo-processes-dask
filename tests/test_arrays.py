@@ -108,14 +108,23 @@ def test_array_modify():
     assert array_modify(data=["a", "b", "c"], values=[], index=1, length=10) == ["a"]
 
 
-def test_array_concat():
-    assert (
-        array_concat(np.array([2, 3]), np.array([4, 7])) == np.array([2, 3, 4, 7])
-    ).all()
-    assert (
-        array_concat(array1=["a", "b"], array2=[1, 2])
-        == np.array(["a", "b", "1", "2"], dtype=object)
-    ).all()
+@pytest.mark.parametrize(
+    "array1, array2, expected",
+    [
+        ([2, 3], [4, 7], [2, 3, 4, 7]),
+        (["a", "b"], [1, 2], ["a", "b", 1, 2]),
+    ],
+)
+def test_array_concat(array1, array2, expected):
+    np.testing.assert_array_equal(array_concat(array1, array2), expected, strict=True)
+    np.testing.assert_array_equal(
+        array_concat(np.array(array1), np.array(array2)), expected, strict=True
+    )
+
+    dask_result = array_concat(
+        da.from_array(np.array(array1)), da.from_array(np.array(array2))
+    )
+    np.testing.assert_array_equal(dask_result, np.array(expected), strict=True)
 
 
 @pytest.mark.parametrize(

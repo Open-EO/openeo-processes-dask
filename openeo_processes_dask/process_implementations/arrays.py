@@ -115,7 +115,21 @@ def array_modify(
 
 
 def array_concat(array1: ArrayLike, array2: ArrayLike):
-    concat = np.append(array1, array2)
+    if isinstance(array1, list):
+        array1 = np.asarray(array1)
+    if isinstance(array2, list):
+        array2 = np.asarray(array2)
+
+    concat = np.concatenate([array1, array2])
+
+    # e.g. concating int32 and str arrays results in the result being cast to a Unicode dtype of a certain length (e.g. <U22).
+    # There isn't really anything better to do as numpy does not support heterogenuous arrays.
+    # Best we can do at this point is to at least make the user aware that this is what has happened.
+    if array1.dtype.kind != array2.dtype.kind:
+        logger.warning(
+            f"array_concat: different datatypes for array1 ({array1.dtype}) and array2 ({array2.dtype}), cast to {concat.dtype}"
+        )
+
     return concat
 
 
