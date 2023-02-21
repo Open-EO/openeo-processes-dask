@@ -201,6 +201,89 @@ def test_array_labels():
         array_labels(np.array([[1, 0, 3, 2], [5, 0, 6, 4]]))
 
 
+@pytest.mark.parametrize(
+    "data, asc, nodata, expected",
+    [
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            None,
+            [1, 2, 8, 5, 0, 4, 7, 9, 10],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            True,
+            [1, 2, 8, 5, 0, 4, 7, 9, 10, 3, 6],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            True,
+            [9, 10, 7, 4, 0, 5, 8, 2, 1, 3, 6],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            False,
+            [3, 6, 9, 10, 7, 4, 0, 5, 8, 2, 1],
+        ),
+    ],
+)
+def test_order(data, asc, nodata, expected):
+    assert (order(data=data, asc=asc, nodata=nodata) == expected).all()
+    assert (
+        order(data=np.array(data), asc=asc, nodata=nodata) == np.array(expected)
+    ).all()
+    assert (
+        order(data=da.from_array(np.array(data)), asc=asc, nodata=nodata)
+        == da.from_array(np.array(expected))
+    ).all()
+
+
+@pytest.mark.parametrize(
+    "data, order, expected",
+    [
+        ([5, 4, 3], [2, 1, 0], [3, 4, 5]),
+        ([5, 4, 3, 2], [0, 2, 1, 3], [5, 3, 4, 2]),
+        ([5, 4, 3, 2], [1, 3], [4, 2]),
+    ],
+)
+def test_rearrange(data, order, expected):
+    assert (rearrange(data=data, order=order) == expected).all()
+    assert (rearrange(data=np.array(data), order=order) == np.array(expected)).all()
+    assert (
+        rearrange(data=da.from_array(np.array(data)), order=order)
+        == da.from_array(np.array(expected))
+    ).all()
+
+
+@pytest.mark.parametrize(
+    "data, asc, nodata, expected",
+    [
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            None,
+            [-1, 2, 3, 4, 6, 7, 8, 9, 9],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            True,
+            [9, 9, 8, 7, 6, 4, 3, 2, -1, np.nan, np.nan],
+        ),
+    ],
+)
+def test_sort(data, asc, nodata, expected):
+    """Tests `sort` function."""
+    assert np.isclose(
+        sort(data=data, asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+
+
 @pytest.mark.parametrize("size", [(3, 3, 2, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_reduce_dimension(
