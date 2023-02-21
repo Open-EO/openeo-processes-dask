@@ -38,7 +38,7 @@ def array_element(
     index: Optional[int] = None,
     label: Optional[str] = None,
     return_nodata: Optional[bool] = False,
-    axis=-1,
+    axis=None,
 ):
     if index is None and label is None:
         raise ArrayElementParameterMissing(
