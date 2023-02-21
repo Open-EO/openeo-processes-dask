@@ -163,6 +163,9 @@ def array_find(
     if np.isnan(value):
         mask = True
 
+    logger.warning(
+        "array_find: numpy has no sentinel value for missing data in integer arrays, therefore np.masked_array is used to return the indices of found elements. Further operations might fail if not defined for masked arrays."
+    )
     if isinstance(idxs, da.Array):
         idxs = idxs.compute_chunk_sizes()
         masked_idxs = np.atleast_1d(da.ma.masked_array(idxs, mask=mask))
