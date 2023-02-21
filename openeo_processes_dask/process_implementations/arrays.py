@@ -182,3 +182,38 @@ def array_labels(data: ArrayLike) -> ArrayLike:
     if len(data.shape) > 1:
         raise TooManyDimensions("array_labels is only implemented for 1D arrays.")
     return np.arange(len(data))
+
+
+def first(
+    data: ArrayLike,
+    ignore_nodata: Optional[bool] = True,
+    axis: Optional[str] = None,
+):
+    if len(data) == 0:
+        return np.nan
+    if axis is None:
+        axis = 0
+    if ignore_nodata:  # skip np.nan values
+        nan_mask = ~np.isnan(data)  # create mask for valid values (not np.nan)
+        idx_first = np.argmax(nan_mask, axis=axis)
+        first_elem = np.take(data, indices=0, axis=axis)
+        if np.isnan(first_elem).any():
+            for i in range(np.max(idx_first) + 1):
+                first_elem = np.nan_to_num(first_elem, True, np.take(data, i, axis))
+    else:  # take the first element, no matter np.nan values are in the array
+        first_elem = np.take(data, indices=0, axis=axis)
+    return first_elem
+
+
+def last(
+    data: ArrayLike,
+    ignore_nodata: Optional[bool] = True,
+    axis: Optional[str] = None,
+):
+    if len(data) == 0:
+        return np.nan
+    if axis is None:
+        axis = 0
+    data = np.flip(data, axis=axis)  # flip data to retrieve the first valid element
+    last_elem = first(data, ignore_nodata=ignore_nodata, axis=axis)
+    return last_elem
