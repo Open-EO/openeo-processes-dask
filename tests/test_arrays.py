@@ -93,22 +93,25 @@ def test_array_create(data, repeat):
     np.testing.assert_array_equal(result_dask, result_np)
 
 
-def test_array_modify():
-    assert (
-        array_modify(np.array([2, 3]), np.array([4, 7]), 1, 0) == np.array([2, 4, 7, 3])
-    ).all()
-    assert (
-        array_modify(data=["a", "d", "c"], values=["b"], index=1) == ["a", "b", "c"]
-    ).all()
-    assert (
-        array_modify(data=["a", "c"], values=["b"], index=1, length=0)
-        == ["a", "b", "c"]
-    ).all()
-    assert (
-        array_modify(data=[np.nan, np.nan, "a", "b", "c"], values=[], index=0, length=2)
-        == ["a", "b", "c"]
-    ).all()
-    assert array_modify(data=["a", "b", "c"], values=[], index=1, length=10) == ["a"]
+@pytest.mark.parametrize(
+    "data, values, index, length, expected",
+    [
+        ([2, 3], [4, 7], 1, 0, [2, 4, 7, 3]),
+        (["a", "d", "c"], ["b"], 1, 1, ["a", "b", "c"]),
+        (["a", "c"], ["b"], 1, 0, ["a", "b", "c"]),
+        ([np.nan, np.nan, "a", "b", "c"], [], 0, 2, ["a", "b", "c"]),
+        (["a", "b", "c"], [], 1, 10, ["a"]),
+    ],
+)
+def test_array_modify(data, values, index, length, expected):
+    np.testing.assert_equal(array_modify(data, values, index, length), expected)
+    np.testing.assert_equal(
+        array_modify(np.array(data), values, index, length), expected
+    )
+
+    dask_result = array_modify(da.from_array(np.array(data)), values, index, length)
+    assert isinstance(dask_result, da.Array)
+    np.testing.assert_equal(dask_result.compute(), expected)
 
 
 @pytest.mark.parametrize(
