@@ -163,16 +163,31 @@ def test_array_contains_object_dtype():
         )
 
 
-@pytest.mark.parametrize("data, value", [([[2, 8, 2, 4], [0, np.nan, 2, 2]], 2)])
-def test_array_find(data, value):
-    assert array_find(np.array([1, 0, 3, 2]), value=3) == 2
-    assert np.isnan(array_find([1, 0, 3, 2, np.nan, 3], value=np.nan))
-    assert (array_find(np.array(data), value, axis=1) == [0, 2]).all()
-    assert (array_find(np.array(data), value, reverse=True, axis=1) == [2, 3]).all()
-    assert (array_find(da.from_array(np.array(data)), value, axis=1) == [0, 2]).all()
-    assert (
-        array_find(da.from_array(np.array(data)), value, reverse=True, axis=1) == [2, 3]
-    ).all()
+@pytest.mark.parametrize(
+    "data, value, expected, axis, reverse",
+    [
+        ([1, 0, 3, 2], 3, 2, None, False),
+        ([1, 0, 3, 2, np.nan, 3], np.nan, 999999, None, False),
+        ([1, 0, 3, 2], 3, 2, None, False),
+        ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [999999, 1, 0, 999999], 0, False),
+        ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [2, 1], 1, False),
+        ([1, 0, 3, 2], 3, 1, None, True),
+        ([1, 0, 3, 2, np.nan, 3], np.nan, 999999, None, True),
+        ([1, 0, 3, 2], 3, 1, None, True),
+        ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [999999, 0, 1, 999999], 0, True),
+        ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [1, 2], 1, True),
+    ],
+)
+def test_array_find(data, value, expected, axis, reverse):
+    result_list = array_find(data, value=value, axis=axis, reverse=reverse)
+    result_np = array_find(np.array(data), value=value, axis=axis, reverse=reverse)
+    result_dask = array_find(
+        da.from_array(np.array(data)), value, axis=axis, reverse=reverse
+    )
+
+    np.testing.assert_array_equal(result_list, expected)
+    np.testing.assert_array_equal(result_np, expected)
+    np.testing.assert_array_equal(result_dask, expected)
 
 
 def test_array_labels():

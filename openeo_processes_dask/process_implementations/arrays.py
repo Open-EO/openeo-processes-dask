@@ -150,15 +150,26 @@ def array_find(
     value: Any,
     reverse: Optional[bool] = False,
     axis: Optional[int] = None,
-):
-    if np.isnan(value) or len(data) == 0:
-        return np.nan
-    else:
-        idxs = np.argmax((data == value), axis=axis)
+) -> np.number:
+    if isinstance(data, list):
+        data = np.asarray(data)
+
     if reverse:
-        b = np.flip(data, axis=axis)
-        idxs = np.shape(b)[axis] - np.argmax((b == value), axis=axis) - 1
-    return idxs
+        data = np.flip(data, axis=axis)
+
+    idxs = (data == value).argmax(axis=axis)
+
+    mask = ~np.array((data == value).any(axis=axis))
+    if np.isnan(value):
+        mask = True
+
+    if isinstance(idxs, da.Array):
+        idxs = idxs.compute_chunk_sizes()
+        masked_idxs = np.atleast_1d(da.ma.masked_array(idxs, mask=mask))
+    else:
+        masked_idxs = np.atleast_1d(np.ma.masked_array(idxs, mask=mask))
+
+    return masked_idxs
 
 
 def array_labels(data: ArrayLike) -> ArrayLike:
