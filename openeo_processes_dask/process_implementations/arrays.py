@@ -182,3 +182,89 @@ def array_labels(data: ArrayLike) -> ArrayLike:
     if len(data.shape) > 1:
         raise TooManyDimensions("array_labels is only implemented for 1D arrays.")
     return np.arange(len(data))
+
+
+def order(
+    data: ArrayLike,
+    asc: Optional[bool] = True,
+    nodata: Optional[bool] = True,
+    axis: Optional[int] = None,
+):
+    if not hasattr(data, "__array_interface__"):
+        data = np.array(data)
+    if len(data) == 0:
+        return np.nan
+    if axis is None:
+        axis = 0
+    if asc:
+        permutation_idxs = np.argsort(data, kind="mergesort", axis=axis)
+    else:  # [::-1] not possible
+        permutation_idxs = np.argsort(
+            -data, kind="mergesort", axis=axis
+        )  # to get the indizes in descending order, the sign of the data is changed
+
+    if nodata is None:  # ignore np.nan values
+        # sort the original data first, to get correct position of no data values
+        sorted_data = data[permutation_idxs]
+        return permutation_idxs[~pd.isnull(sorted_data)]
+    elif nodata is False:  # put location/index of np.nan values first
+        # sort the original data first, to get correct position of no data values
+        sorted_data = data[permutation_idxs]
+        nan_idxs = pd.isnull(sorted_data)
+
+        # flip permutation and nan mask
+        permutation_idxs_flip = np.flip(permutation_idxs, axis=axis)
+        nan_idxs_flip = np.flip(nan_idxs, axis=axis)
+
+        # flip causes the nan.values to be first, however the order of all other values is also flipped
+        # therefore the non np.nan values (i.e. the wrong flipped order) is replaced by the right order given by
+        # the original permutation values
+        permutation_idxs_flip[~nan_idxs_flip] = permutation_idxs[~nan_idxs]
+
+        return permutation_idxs_flip
+    elif nodata is True:  # default argsort behaviour, np.nan values are put last
+        return permutation_idxs
+    else:
+        err_msg = "Data type of 'nodata' argument is not supported."
+        raise Exception(err_msg)
+
+
+def rearrange(data: ArrayLike, order):
+    if not hasattr(data, "__array_interface__"):
+        data = np.array(data)
+    if len(data) == 0:
+        return np.nan
+    return data[order]
+
+
+def sort(
+    data: ArrayLike,
+    asc: Optional[bool] = True,
+    nodata: Optional[bool] = None,
+    axis: Optional[int] = None,
+):
+    if not hasattr(data, "__array_interface__"):
+        data = np.array(data)
+    if len(data) == 0:
+        return np.nan
+    if asc:
+        data_sorted = np.sort(data, axis=axis)
+    else:  # [::-1] not possible
+        data_sorted = -np.sort(
+            -data, axis=axis
+        )  # to get the indexes in descending order, the sign of the data is changed
+
+    if nodata is None:  # ignore np.nan values
+        nan_idxs = pd.isnull(data_sorted)
+        return data_sorted[~nan_idxs]
+    elif nodata == False:  # put np.nan values first
+        nan_idxs = pd.isnull(data_sorted)
+        data_sorted_flip = np.flip(data_sorted, axis=axis)
+        nan_idxs_flip = pd.isnull(data_sorted_flip)
+        data_sorted_flip[~nan_idxs_flip] = data_sorted[~nan_idxs]
+        return data_sorted_flip
+    elif nodata == True:  # default sort behaviour, np.nan values are put last
+        return data_sorted
+    else:
+        err_msg = "Data type of 'nodata' argument is not supported."
+        raise Exception(err_msg)
