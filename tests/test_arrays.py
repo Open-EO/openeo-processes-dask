@@ -187,6 +187,7 @@ def test_array_find(data, value, expected, axis, reverse):
 
     np.testing.assert_array_equal(result_list, expected)
     np.testing.assert_array_equal(result_np, expected)
+    assert isinstance(result_dask, da.Array)
     np.testing.assert_array_equal(result_dask, expected)
 
 
