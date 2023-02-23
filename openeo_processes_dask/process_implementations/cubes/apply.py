@@ -43,8 +43,6 @@ def apply_dimension(
 
     if target_dimension is None:
         target_dimension = dimension
-    else:
-        data = data.expand_dims(target_dimension)
 
     positional_parameters = {"data": 0}
     named_parameters = {"context": context}
@@ -55,7 +53,7 @@ def apply_dimension(
         process,
         reordered_data,
         input_core_dims=[[dimension]],
-        output_core_dims=[[target_dimension]],
+        output_core_dims=[[dimension]],
         dask="allowed",
         kwargs={
             "positional_parameters": positional_parameters,
@@ -66,7 +64,9 @@ def apply_dimension(
         exclude_dims={dimension},
     )
 
-    reordered_result = result.transpose(*data.dims, ...)
+    reordered_result = result.transpose(*data.dims, ...).rename(
+        {dimension: target_dimension}
+    )
 
     if len(data[dimension]) == len(reordered_result[target_dimension]):
         reordered_result.rio.write_crs(data.rio.crs, inplace=True)
