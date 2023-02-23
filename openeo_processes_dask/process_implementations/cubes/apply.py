@@ -47,6 +47,8 @@ def apply_dimension(
     positional_parameters = {"data": 0}
     named_parameters = {"context": context}
 
+    # This transpose (and back later) is needed because apply_ufunc automatically moves
+    # input_core_dimensions to the last axes
     reordered_data = data.transpose(..., dimension)
 
     result = xr.apply_ufunc(
