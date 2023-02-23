@@ -87,62 +87,62 @@ def constant(x):
     return x
 
 
-def divide(x, y, **kwargs):
+def divide(x, y):
     result = x / y
     return result
 
 
-def subtract(x, y, **kwargs):
+def subtract(x, y):
     result = x - y
     return result
 
 
-def multiply(x, y, **kwargs):
+def multiply(x, y):
     result = x * y
     return result
 
 
-def add(x, y, **kwargs):
+def add(x, y):
     result = x + y
     return result
 
 
-def _min(data, ignore_nodata=True, axis=-1, **kwargs):
+def _min(data, ignore_nodata=True, axis=None):
     if ignore_nodata:
         return np.nanmin(data, axis=axis)
     else:
         return np.min(data, axis=axis)
 
 
-def _max(data, ignore_nodata=True, axis=-1, **kwargs):
+def _max(data, ignore_nodata=True, axis=None):
     if ignore_nodata:
         return np.nanmax(data, axis=axis)
     else:
         return np.max(data, axis=axis)
 
 
-def median(data, ignore_nodata=True, axis=-1, **kwargs):
+def median(data, ignore_nodata=True, axis=None):
     if ignore_nodata:
         return np.nanmedian(data, axis=axis)
     else:
         return np.median(data, axis=axis)
 
 
-def mean(data, ignore_nodata=False, axis=-1, **kwargs):
+def mean(data, ignore_nodata=False, axis=None):
     if ignore_nodata:
         return np.nanmean(data, axis=axis)
     else:
         return np.mean(data, axis=axis)
 
 
-def sd(data, ignore_nodata=False, axis=-1, **kwargs):
+def sd(data, ignore_nodata=False, axis=None):
     if ignore_nodata:
         return np.nanstd(data, axis=axis, ddof=1)
     else:
         return np.std(data, axis=axis, ddof=1)
 
 
-def variance(data, ignore_nodata=False, axis=-1, **kwargs):
+def variance(data, ignore_nodata=False, axis=None):
     if ignore_nodata:
         return np.nanvar(data, axis=axis, ddof=1)
     else:
@@ -260,7 +260,7 @@ def power(base, p):
     return e
 
 
-def extrema(data, ignore_nodata=True, axis=-1):
+def extrema(data, ignore_nodata=True, axis=None):
     # TODO: Could be sped up by only iterating over array once
     minimum = _min(data, skipna=ignore_nodata, axis=axis)
     maximum = _max(data, skipna=ignore_nodata, axis=axis)
@@ -269,10 +269,11 @@ def extrema(data, ignore_nodata=True, axis=-1):
 
 
 def clip(x, min, max):
-    return np.clip(x, a_min=min, a_max=max)
+    # Cannot use positional arguments to pass min and max into np.clip, this will not work with dask.
+    return np.clip(x, min, max)
 
 
-def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=-1):
+def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=None):
     if probabilities is not None and q is not None:
         raise QuantilesParameterConflict(
             "The process `quantiles` requires either the `probabilities` or `q` parameter to be set."
@@ -304,7 +305,7 @@ def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=-1):
     return result
 
 
-def _sum(data, ignore_nodata=True, axis=-1):
+def _sum(data, ignore_nodata=True, axis=None):
     if len(data) == 0:
         return nan(data=data)
 
@@ -315,7 +316,7 @@ def _sum(data, ignore_nodata=True, axis=-1):
     return result
 
 
-def product(data, ignore_nodata=True, axis=-1):
+def product(data, ignore_nodata=True, axis=None):
     if len(data) == 0:
         return nan(data=data)
 

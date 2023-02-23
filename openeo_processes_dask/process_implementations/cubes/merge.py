@@ -22,7 +22,6 @@ def merge_cubes(
     cube2: RasterCube,
     overlap_resolver: Callable = None,
     context: Optional[dict] = None,
-    **kwargs,
 ) -> RasterCube:
 
     if context is None:
@@ -69,8 +68,15 @@ def merge_cubes(
                 merged_cube = concat_both_cubes_rechunked
             else:
                 # Example 3.2: Elementwise operation
+                positional_parameters = {"data": 0}
+                named_parameters = {"context": context}
+
                 merged_cube = concat_both_cubes_rechunked.reduce(
-                    overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
+                    overlap_resolver,
+                    dim=NEW_DIM_NAME,
+                    keep_attrs=True,
+                    positional_parameters=positional_parameters,
+                    named_parameters=named_parameters,
                 )
         else:
             # Example 1 & 2
@@ -121,8 +127,15 @@ def merge_cubes(
                     | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
                 )
 
+                positional_parameters = {"data": 0}
+                named_parameters = {"context": context}
+
                 merge_conflicts = stacked_conflicts_rechunked.reduce(
-                    overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
+                    overlap_resolver,
+                    dim=NEW_DIM_NAME,
+                    keep_attrs=True,
+                    positional_parameters=positional_parameters,
+                    named_parameters=named_parameters,
                 )
 
                 rest_of_cube_1 = cube1.sel(
@@ -169,8 +182,15 @@ def merge_cubes(
             {NEW_DIM_NAME: -1}
             | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
         )
+
+        positional_parameters = {"data": 0}
+        named_parameters = {"context": context}
         merged_cube = both_stacked_rechunked.reduce(
-            overlap_resolver, dim=NEW_DIM_NAME, keep_attrs=True
+            overlap_resolver,
+            dim=NEW_DIM_NAME,
+            keep_attrs=True,
+            positional_parameters=positional_parameters,
+            named_parameters=named_parameters,
         )
     else:
         raise ValueError("Number of differing dimensions is >2, merge not possible.")

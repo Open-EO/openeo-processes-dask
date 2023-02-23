@@ -72,52 +72,21 @@ def fit_regr_random_forest(
 
 def predict_random_forest(
     data: RasterCube,
-    dimension: str,
     model: xgb.Booster,
+    axis: int = -1,
 ) -> RasterCube:
-
-    # Detect whether all features that the model was trained with are present in this data.
-    model_features = np.array(model.feature_names, dtype=object)
-    data_features = data.get_index(dimension).values
-    missing_features = np.setdiff1d(model_features, data_features)
-    if missing_features.size > 0:
+    n_features = len(model.feature_names)
+    if n_features != data.shape[axis]:
         raise Exception(
-            f"Provided predictors are missing the following features: {missing_features.tolist()}"
+            f"Number of predictors does not match number of features that were trained with."
         )
-
-    # Drop any feature columns that the original model wasn't trained on
-    idx_to_drop = np.setdiff1d(data_features, model_features)
-    data = data.drop_sel({dimension: idx_to_drop})
-
-    # Stack xarray to produce correct shape for xgb.dask.inplace_predict
-    non_feature_dims = set(data.dims)
-    non_feature_dims.remove(dimension)
-
-    X = dask.array.reshape(data.data, (len(model_features), -1)).transpose()
+    # move feature axis to first position and flatten other dimensions
+    X = np.moveaxis(data, axis, 0).reshape((n_features, -1)).transpose()
 
     # Run prediction
     client = dask.distributed.default_client()
     preds_flat = xgb.dask.inplace_predict(client, model, X)
 
-    # Construct the output rastercube
-    output_coords = {
-        coord_name: data.coords[coord_name] for coord_name in non_feature_dims
-    }
-
-    # Output shape needs to be (1, data.x, data.y)
-    output_shape = tuple([1] + [len(data[coord]) for coord in output_coords])
-    output_array = dask.array.reshape(preds_flat, output_shape)
-
-    # We call this coord "bands" because the save_result logic expects it to be "bands"
-    output_coords["bands"] = np.array(["result"])
-
-    preds_xr = xr.DataArray(
-        data=output_array,
-        coords=output_coords,
-        dims=["bands"] + [dim for dim in output_coords.keys() if not dim == "bands"],
-        attrs=data.attrs,
-    )
-
-    preds_xr = preds_xr.rio.write_crs(data.rio.crs)
-
-    return preds_xr
+    output_shape = data.shape[0:axis] + data.shape[axis + 1 :]
+    preds = preds_flat.reshape(output_shape)
+    return preds

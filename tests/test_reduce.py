@@ -3,6 +3,7 @@ from functools import partial
 import numpy as np
 import pytest
 import xarray as xr
+from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from tests.general_checks import general_output_checks
@@ -22,7 +23,11 @@ def test_reduce_dimension(
         backend="dask",
     )
 
-    _process = partial(process_registry["mean"], ignore_nodata=True)
+    _process = partial(
+        process_registry["mean"],
+        ignore_nodata=True,
+        data=ParameterReference(from_parameter="data"),
+    )
 
     output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
 

@@ -5,6 +5,8 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/openeo-processes-dask)
 [![codecov](https://codecov.io/github/Open-EO/openeo-processes-dask/branch/main/graph/badge.svg?token=RA82MUN9RZ)](https://codecov.io/github/Open-EO/openeo-processes-dask)
 
+`openeo-processes-dask` is a collection of Python implementations of [OpenEO processes](https://processes.openeo.org/) based on the [xarray](https://github.com/pydata/xarray)/[dask](https://github.com/dask/dask) ecosystem. It is intended to be used alongside with [openeo-pg-parser-networkx](https://github.com/Open-EO/openeo-pg-parser-networkx), which handles the parsing and execution of [OpenEO process graphs](https://openeo.org/documentation/1.0/developers/api/reference.html#section/Processes/Process-Graphs). There you'll also find a tutorial on how to register process implementations from an arbitrary source (e.g. this repo) to the registry of available processes.
+
 ## Development environment
 openeo-processes-dask requires poetry >1.2, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
 
