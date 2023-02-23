@@ -10,7 +10,7 @@ __all__ = ["apply", "apply_dimension"]
 
 
 def apply(
-    data: RasterCube, process: Callable, context: Optional[dict] = None, **kwargs
+    data: RasterCube, process: Callable, context: Optional[dict] = None
 ) -> RasterCube:
     positional_parameters = {"x": 0}
     named_parameters = {"context": context}
@@ -32,7 +32,6 @@ def apply_dimension(
     dimension: str,
     target_dimension: Optional[str] = None,
     context: Optional[dict] = None,
-    **kwargs,
 ) -> RasterCube:
     if context is None:
         context = {}
@@ -44,32 +43,32 @@ def apply_dimension(
 
     if target_dimension is None:
         target_dimension = dimension
+    else:
+        data = data.expand_dims(target_dimension)
 
     positional_parameters = {"data": 0}
     named_parameters = {"context": context}
 
+    reordered_data = data.transpose(..., dimension)
+
     result = xr.apply_ufunc(
         process,
-        data,
+        reordered_data,
         input_core_dims=[[dimension]],
         output_core_dims=[[target_dimension]],
         dask="allowed",
         kwargs={
             "positional_parameters": positional_parameters,
             "named_parameters": named_parameters,
+            "axis": reordered_data.get_axis_num(dimension),
+            "keepdims": True,
         },
+        exclude_dims={dimension},
     )
 
-    transposed_result = result.transpose(*data.dims)
-    if not np.array_equal(
-        transposed_result.coords[target_dimension].data, data.coords[dimension].data
-    ):
-        transposed_result = transposed_result.assign_coords(
-            {
-                target_dimension: np.arange(
-                    len(transposed_result.coords[target_dimension].data)
-                )
-            }
-        )
+    reordered_result = result.transpose(*data.dims, ...)
 
-    return transposed_result
+    if len(data[dimension]) == len(reordered_result[target_dimension]):
+        reordered_result.rio.write_crs(data.rio.crs, inplace=True)
+
+    return reordered_result

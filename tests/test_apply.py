@@ -71,6 +71,20 @@ def test_apply_dimension_case_1(
         expected_results=(input_cube + 1),
     )
 
+
+@pytest.mark.parametrize("size", [(6, 5, 4, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_reduce_dimension(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
     _process = partial(
         process_registry["mean"], data=ParameterReference(from_parameter="data")
     )
@@ -80,10 +94,12 @@ def test_apply_dimension_case_1(
         data=input_cube, process=_process, dimension="x"
     )
 
+    expected_output = (input_cube.mean(dim="x")).expand_dims("x")
+
     general_output_checks(
         input_cube=input_cube,
         output_cube=output_cube_reduced,
         verify_attrs=True,
-        verify_crs=True,
-        expected_results=(input_cube.mean(dim="x")),
+        verify_crs=False,
+        expected_results=expected_output,
     )

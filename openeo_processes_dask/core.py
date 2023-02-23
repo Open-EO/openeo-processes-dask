@@ -66,9 +66,11 @@ def process(f):
             else:
                 resolved_kwargs[k] = arg
 
-        # Remove 'axis' parameter if not expected in function signature.
-        if "axis" not in inspect.signature(f).parameters:
-            resolved_kwargs.pop("axis", None)
+        special_args = ["axis", "keepdims"]
+        # Remove 'axis' and keepdims parameter if not expected in function signature.
+        for arg in special_args:
+            if arg not in inspect.signature(f).parameters:
+                resolved_kwargs.pop(arg, None)
 
         pretty_args = {k: type(v) for k, v in resolved_kwargs.items()}
         logger.warning(f"Running process {f.__name__}")
