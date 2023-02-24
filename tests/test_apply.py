@@ -1,5 +1,6 @@
 from functools import partial
 
+import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
@@ -182,6 +183,38 @@ def test_apply_dimension_ordering_processes(
     )
 
     expected_output = np.argsort(input_cube.data, kind="mergesort", axis=0)
+
+    np.testing.assert_array_equal(output_cube_reduced.data, expected_output)
+    # This is to remind us that currently dask arrays don't support sorting and notify us should that change in a future version.
+    assert isinstance(output_cube_reduced.data, np.ndarray)
+
+    _process = partial(
+        process_registry["rearrange"],
+        data=ParameterReference(from_parameter="data"),
+        order=[5, 4, 3, 2, 1, 0],
+    )
+
+    output_cube_reduced = apply_dimension(
+        data=input_cube, process=_process, dimension="x", target_dimension="x"
+    )
+
+    expected_output = np.take(input_cube.data, indices=[5, 4, 3, 2, 1, 0], axis=0)
+
+    np.testing.assert_array_equal(output_cube_reduced.data, expected_output)
+    # This is to remind us that currently dask arrays don't support sorting and notify us should that change in a future version.
+    assert isinstance(output_cube_reduced.data, da.Array)
+
+    _process = partial(
+        process_registry["sort"],
+        data=ParameterReference(from_parameter="data"),
+        nodata=True,
+    )
+
+    output_cube_reduced = apply_dimension(
+        data=input_cube, process=_process, dimension="x", target_dimension="target"
+    )
+
+    expected_output = np.sort(input_cube.data, axis=0)
 
     np.testing.assert_array_equal(output_cube_reduced.data, expected_output)
     # This is to remind us that currently dask arrays don't support sorting and notify us should that change in a future version.
