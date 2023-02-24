@@ -156,3 +156,33 @@ def test_apply_dimension_target_dimension(
         verify_crs=False,
         expected_results=expected_output,
     )
+
+
+@pytest.mark.parametrize("size", [(6, 5, 4, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_ordering_processes(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process = partial(
+        process_registry["order"],
+        data=ParameterReference(from_parameter="data"),
+        nodata=True,
+    )
+
+    output_cube_reduced = apply_dimension(
+        data=input_cube, process=_process, dimension="x", target_dimension="target"
+    )
+
+    expected_output = np.argsort(input_cube.data, kind="mergesort", axis=0)
+
+    np.testing.assert_array_equal(output_cube_reduced.data, expected_output)
+    # This is to remind us that currently dask arrays don't support sorting and notify us should that change in a future version.
+    assert isinstance(output_cube_reduced.data, np.ndarray)

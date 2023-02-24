@@ -231,14 +231,14 @@ def test_array_labels():
     ],
 )
 def test_order(data, asc, nodata, expected):
-    assert (order(data=data, asc=asc, nodata=nodata) == expected).all()
-    assert (
-        order(data=np.array(data), asc=asc, nodata=nodata) == np.array(expected)
-    ).all()
-    assert (
-        order(data=da.from_array(np.array(data)), asc=asc, nodata=nodata)
-        == da.from_array(np.array(expected))
-    ).all()
+    np.testing.assert_array_equal(order(data=data, asc=asc, nodata=nodata), expected)
+    np.testing.assert_array_equal(
+        order(data=np.array(data), asc=asc, nodata=nodata), np.array(expected)
+    )
+    np.testing.assert_array_equal(
+        order(data=da.from_array(np.array(data)), asc=asc, nodata=nodata),
+        da.from_array(np.array(expected)),
+    )
 
 
 @pytest.mark.parametrize(

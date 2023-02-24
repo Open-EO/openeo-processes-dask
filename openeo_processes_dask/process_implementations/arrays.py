@@ -194,8 +194,12 @@ def order(
         data = np.asarray(data)
     if len(data) == 0:
         return np.nan
-    if axis is None:
-        axis = 0
+
+    # See https://github.com/dask/dask/issues/4368
+    logger.warning(
+        "order: Dask does not support lazy sorting of arrays, therefore the array is loaded into memory here. This might fail for arrays that don't fit into memory."
+    )
+
     if asc:
         permutation_idxs = np.argsort(data, kind="mergesort", axis=axis)
     else:  # [::-1] not possible
@@ -204,8 +208,12 @@ def order(
         )  # to get the indizes in descending order, the sign of the data is changed
 
     if nodata is None:  # ignore np.nan values
+        if len(data.shape) > 1:
+            raise ValueError(
+                "order with nodata=None is not supported for arrays with more than one dimension, as this would result in sparse multi-dimensional arrays."
+            )
         # sort the original data first, to get correct position of no data values
-        sorted_data = data[permutation_idxs]
+        sorted_data = np.take_along_axis(data, permutation_idxs, axis=axis)
         return permutation_idxs[~pd.isnull(sorted_data)]
     elif nodata is False:  # put location/index of np.nan values first
         # sort the original data first, to get correct position of no data values
