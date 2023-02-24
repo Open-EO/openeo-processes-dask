@@ -172,50 +172,57 @@ def test_apply_dimension_ordering_processes(
         backend="dask",
     )
 
-    _process = partial(
+    _process_order = partial(
         process_registry["order"],
         data=ParameterReference(from_parameter="data"),
         nodata=True,
     )
 
-    output_cube_reduced = apply_dimension(
-        data=input_cube, process=_process, dimension="x", target_dimension="target"
+    output_cube_order = apply_dimension(
+        data=input_cube,
+        process=_process_order,
+        dimension="x",
+        target_dimension="target",
     )
 
-    expected_output = np.argsort(input_cube.data, kind="mergesort", axis=0)
+    expected_output_order = np.argsort(input_cube.data, kind="mergesort", axis=0)
 
-    np.testing.assert_array_equal(output_cube_reduced.data, expected_output)
+    np.testing.assert_array_equal(output_cube_order.data, expected_output_order)
     # This is to remind us that currently dask arrays don't support sorting and notify us should that change in a future version.
-    assert isinstance(output_cube_reduced.data, np.ndarray)
+    assert isinstance(output_cube_order.data, np.ndarray)
 
-    _process = partial(
+    _process_rearrange = partial(
         process_registry["rearrange"],
         data=ParameterReference(from_parameter="data"),
-        order=[5, 4, 3, 2, 1, 0],
+        order=da.from_array(expected_output_order),
     )
 
-    output_cube_reduced = apply_dimension(
-        data=input_cube, process=_process, dimension="x", target_dimension="x"
+    output_cube_rearrange = apply_dimension(
+        data=input_cube, process=_process_rearrange, dimension="x", target_dimension="x"
     )
 
-    expected_output = np.take(input_cube.data, indices=[5, 4, 3, 2, 1, 0], axis=0)
+    expected_output_rearrange = np.take_along_axis(
+        input_cube.data, indices=expected_output_order, axis=0
+    )
 
-    np.testing.assert_array_equal(output_cube_reduced.data, expected_output)
+    np.testing.assert_array_equal(output_cube_rearrange.data, expected_output_rearrange)
     # This is to remind us that currently dask arrays don't support sorting and notify us should that change in a future version.
-    assert isinstance(output_cube_reduced.data, da.Array)
+    assert isinstance(output_cube_rearrange.data, np.ndarray)
 
-    _process = partial(
+    _process_sort = partial(
         process_registry["sort"],
         data=ParameterReference(from_parameter="data"),
         nodata=True,
     )
 
-    output_cube_reduced = apply_dimension(
-        data=input_cube, process=_process, dimension="x", target_dimension="target"
+    output_cube_sort = apply_dimension(
+        data=input_cube, process=_process_sort, dimension="x", target_dimension="target"
     )
 
-    expected_output = np.sort(input_cube.data, axis=0)
+    expected_output_sort = np.sort(input_cube.data, axis=0)
 
-    np.testing.assert_array_equal(output_cube_reduced.data, expected_output)
+    np.testing.assert_array_equal(output_cube_sort.data, expected_output_sort)
     # This is to remind us that currently dask arrays don't support sorting and notify us should that change in a future version.
-    assert isinstance(output_cube_reduced.data, np.ndarray)
+    assert isinstance(output_cube_sort.data, np.ndarray)
+
+    np.testing.assert_array_equal(output_cube_sort.data, output_cube_rearrange.data)
