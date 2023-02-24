@@ -247,7 +247,7 @@ def test_order(data, asc, nodata, expected):
         ([5, 4, 3], [2, 1, 0], None, [3, 4, 5]),
         ([5, 4, 3, 2], [0, 2, 1, 3], 0, [5, 3, 4, 2]),
         ([5, 4, 3, 2], [1, 3], 0, [4, 2]),
-        ([[5, 4, 3, 2], [5, 4, 3, 2]], [1, 3], 1, [[4, 2], [4, 2]]),
+        ([[5, 4, 3, 2], [5, 4, 3, 2]], [[1, 3]], 1, [[4, 2], [4, 2]]),
     ],
 )
 def test_rearrange(data, order, axis, expected):
@@ -261,6 +261,11 @@ def test_rearrange(data, order, axis, expected):
         rearrange(data=da.from_array(np.array(data)), order=order, axis=axis),
         da.from_array(np.array(expected)),
     )
+
+
+def test_rearrange_mismatched_shape():
+    with pytest.raises(ValueError):
+        rearrange(data=[[5, 4, 3, 2], [5, 4, 3, 2]], order=[1, 3], axis=1)
 
 
 @pytest.mark.parametrize(

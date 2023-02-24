@@ -227,13 +227,18 @@ def order(
 
 
 def rearrange(data: ArrayLike, order: ArrayLike, axis: Optional[int] = None):
-    if axis is None:
-        axis = 0
-    if isinstance(data, list):
-        data = np.asarray(data)
     if len(data) == 0:
         return data
-    return np.take(data, indices=order, axis=axis)
+    if isinstance(data, list):
+        data = np.asarray(data)
+    if isinstance(order, list):
+        order = np.asarray(order)
+
+    if len(data.shape) != len(order.shape):
+        raise ValueError(
+            f"rearrange: number of axes on data ({len(data.shape)}) != number of axes ({len(order.shape)}) on order. rearrange does not support broadcasting in this case."
+        )
+    return np.take_along_axis(data, indices=order, axis=axis)
 
 
 def sort(
