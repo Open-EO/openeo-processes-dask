@@ -193,7 +193,7 @@ def order(
     if isinstance(data, list):
         data = np.asarray(data)
     if len(data) == 0:
-        return np.nan
+        return data
 
     # See https://github.com/dask/dask/issues/4368
     logger.warning(
@@ -232,7 +232,7 @@ def rearrange(data: ArrayLike, order: ArrayLike, axis: Optional[int] = None):
     if isinstance(data, list):
         data = np.asarray(data)
     if len(data) == 0:
-        return np.nan
+        return data
     return np.take(data, indices=order, axis=axis)
 
 
@@ -245,7 +245,7 @@ def sort(
     if isinstance(data, list):
         data = np.asarray(data)
     if len(data) == 0:
-        return np.nan
+        return data
     if asc:
         data_sorted = np.sort(data, axis=axis)
     else:  # [::-1] not possible

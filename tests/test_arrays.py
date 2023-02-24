@@ -251,14 +251,16 @@ def test_order(data, asc, nodata, expected):
     ],
 )
 def test_rearrange(data, order, axis, expected):
-    assert (rearrange(data=data, order=order, axis=axis) == expected).all()
-    assert (
-        rearrange(data=np.array(data), order=order, axis=axis) == np.array(expected)
-    ).all()
-    assert (
-        rearrange(data=da.from_array(np.array(data)), order=order, axis=axis)
-        == da.from_array(np.array(expected))
-    ).all()
+    np.testing.assert_array_equal(
+        rearrange(data=data, order=order, axis=axis), expected
+    )
+    np.testing.assert_array_equal(
+        rearrange(data=np.array(data), order=order, axis=axis), np.array(expected)
+    )
+    np.testing.assert_array_equal(
+        rearrange(data=da.from_array(np.array(data)), order=order, axis=axis),
+        da.from_array(np.array(expected)),
+    )
 
 
 @pytest.mark.parametrize(
@@ -282,6 +284,16 @@ def test_sort(data, asc, nodata, expected):
     """Tests `sort` function."""
     assert np.isclose(
         sort(data=data, asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+    assert np.isclose(
+        sort(data=np.array(data), asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+    assert np.isclose(
+        sort(data=da.from_array(np.array(data)), asc=asc, nodata=nodata),
         expected,
         equal_nan=True,
     ).all()
