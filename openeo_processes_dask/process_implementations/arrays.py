@@ -226,7 +226,12 @@ def order(
         return permutation_idxs
 
 
-def rearrange(data: ArrayLike, order: ArrayLike, axis: Optional[int] = None):
+def rearrange(
+    data: ArrayLike,
+    order: ArrayLike,
+    axis: Optional[int] = None,
+    source_transposed_axis: int = None,
+):
     if len(data) == 0:
         return data
     if isinstance(data, list):
@@ -238,6 +243,15 @@ def rearrange(data: ArrayLike, order: ArrayLike, axis: Optional[int] = None):
         raise ValueError(
             f"rearrange: number of axes on data ({len(data.shape)}) != number of axes ({len(order.shape)}) on order. rearrange does not support broadcasting in this case."
         )
+
+    # This is to allow for the fact that apply_dimension can rearrange dimensions to put core dimensions in the back
+    if source_transposed_axis is not None:
+        order = np.moveaxis(order, source_transposed_axis, -1)
+
+    logger.warning(
+        "rearrange: This operation cannot be performed lazily, therefore the array will be loaded into memory here. This might fail for arrays that don't fit into memory."
+    )
+
     return np.take_along_axis(data, indices=order, axis=axis)
 
 

@@ -66,7 +66,7 @@ def process(f):
             else:
                 resolved_kwargs[k] = arg
 
-        special_args = ["axis", "keepdims"]
+        special_args = ["axis", "keepdims", "source_transposed_axis"]
         # Remove 'axis' and keepdims parameter if not expected in function signature.
         for arg in special_args:
             if arg not in inspect.signature(f).parameters:
