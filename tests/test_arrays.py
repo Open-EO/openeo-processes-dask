@@ -242,18 +242,21 @@ def test_order(data, asc, nodata, expected):
 
 
 @pytest.mark.parametrize(
-    "data, order, expected",
+    "data, order, axis, expected",
     [
-        ([5, 4, 3], [2, 1, 0], [3, 4, 5]),
-        ([5, 4, 3, 2], [0, 2, 1, 3], [5, 3, 4, 2]),
-        ([5, 4, 3, 2], [1, 3], [4, 2]),
+        ([5, 4, 3], [2, 1, 0], None, [3, 4, 5]),
+        ([5, 4, 3, 2], [0, 2, 1, 3], 0, [5, 3, 4, 2]),
+        ([5, 4, 3, 2], [1, 3], 0, [4, 2]),
+        ([[5, 4, 3, 2], [5, 4, 3, 2]], [1, 3], 1, [[4, 2], [4, 2]]),
     ],
 )
-def test_rearrange(data, order, expected):
-    assert (rearrange(data=data, order=order) == expected).all()
-    assert (rearrange(data=np.array(data), order=order) == np.array(expected)).all()
+def test_rearrange(data, order, axis, expected):
+    assert (rearrange(data=data, order=order, axis=axis) == expected).all()
     assert (
-        rearrange(data=da.from_array(np.array(data)), order=order)
+        rearrange(data=np.array(data), order=order, axis=axis) == np.array(expected)
+    ).all()
+    assert (
+        rearrange(data=da.from_array(np.array(data)), order=order, axis=axis)
         == da.from_array(np.array(expected))
     ).all()
 
