@@ -218,12 +218,14 @@ def order(
         return permutation_idxs
 
 
-def rearrange(data: ArrayLike, order):
+def rearrange(data: ArrayLike, order: ArrayLike, axis: Optional[int] = None):
+    if axis is None:
+        axis = 0
     if isinstance(data, list):
         data = np.asarray(data)
     if len(data) == 0:
         return np.nan
-    return data[order]
+    return np.take(data, indices=order, axis=axis)
 
 
 def sort(
