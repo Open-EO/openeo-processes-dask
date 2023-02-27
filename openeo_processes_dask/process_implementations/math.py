@@ -107,46 +107,46 @@ def add(x, y):
     return result
 
 
-def _min(data, ignore_nodata=True, axis=-1):
+def _min(data, ignore_nodata=True, axis=None, keepdims=False):
     if ignore_nodata:
-        return np.nanmin(data, axis=axis)
+        return np.nanmin(data, axis=axis, keepdims=keepdims)
     else:
-        return np.min(data, axis=axis)
+        return np.min(data, axis=axis, keepdims=keepdims)
 
 
-def _max(data, ignore_nodata=True, axis=-1):
+def _max(data, ignore_nodata=True, axis=None, keepdims=False):
     if ignore_nodata:
-        return np.nanmax(data, axis=axis)
+        return np.nanmax(data, axis=axis, keepdims=keepdims)
     else:
-        return np.max(data, axis=axis)
+        return np.max(data, axis=axis, keepdims=keepdims)
 
 
-def median(data, ignore_nodata=True, axis=-1):
+def median(data, ignore_nodata=True, axis=None, keepdims=False):
     if ignore_nodata:
-        return np.nanmedian(data, axis=axis)
+        return np.nanmedian(data, axis=axis, keepdims=keepdims)
     else:
-        return np.median(data, axis=axis)
+        return np.median(data, axis=axis, keepdims=keepdims)
 
 
-def mean(data, ignore_nodata=False, axis=-1):
+def mean(data, ignore_nodata=False, axis=None, keepdims=False):
     if ignore_nodata:
-        return np.nanmean(data, axis=axis)
+        return np.nanmean(data, axis=axis, keepdims=keepdims)
     else:
-        return np.mean(data, axis=axis)
+        return np.mean(data, axis=axis, keepdims=keepdims)
 
 
-def sd(data, ignore_nodata=False, axis=-1):
+def sd(data, ignore_nodata=False, axis=None, keepdims=False):
     if ignore_nodata:
-        return np.nanstd(data, axis=axis, ddof=1)
+        return np.nanstd(data, axis=axis, ddof=1, keepdims=keepdims)
     else:
-        return np.std(data, axis=axis, ddof=1)
+        return np.std(data, axis=axis, ddof=1, keepdims=keepdims)
 
 
-def variance(data, ignore_nodata=False, axis=-1):
+def variance(data, ignore_nodata=False, axis=None, keepdims=False):
     if ignore_nodata:
-        return np.nanvar(data, axis=axis, ddof=1)
+        return np.nanvar(data, axis=axis, ddof=1, keepdims=keepdims)
     else:
-        return np.var(data, axis=axis, ddof=1)
+        return np.var(data, axis=axis, ddof=1, keepdims=keepdims)
 
 
 def floor(x):
@@ -260,10 +260,10 @@ def power(base, p):
     return e
 
 
-def extrema(data, ignore_nodata=True, axis=-1):
+def extrema(data, ignore_nodata=True, axis=None, keepdims=False):
     # TODO: Could be sped up by only iterating over array once
-    minimum = _min(data, skipna=ignore_nodata, axis=axis)
-    maximum = _max(data, skipna=ignore_nodata, axis=axis)
+    minimum = _min(data, skipna=ignore_nodata, axis=axis, keepdims=keepdims)
+    maximum = _max(data, skipna=ignore_nodata, axis=axis, keepdims=keepdims)
     array = dask.delayed(np.array)([minimum, maximum])
     return da.from_delayed(array, (2,), dtype=data.dtype)
 
@@ -273,7 +273,9 @@ def clip(x, min, max):
     return np.clip(x, min, max)
 
 
-def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=-1):
+def quantiles(
+    data, probabilities=None, q=None, ignore_nodata=True, axis=None, keepdims=False
+):
     if probabilities is not None and q is not None:
         raise QuantilesParameterConflict(
             "The process `quantiles` requires either the `probabilities` or `q` parameter to be set."
@@ -295,35 +297,35 @@ def quantiles(data, probabilities=None, q=None, ignore_nodata=True, axis=-1):
 
     if ignore_nodata:
         result = np.nanquantile(
-            data, q=probabilities, method="linear", axis=axis, keepdims=True
+            data, q=probabilities, method="linear", axis=axis, keepdims=keepdims
         )
     else:
         result = np.quantile(
-            data, q=probabilities, method="linear", axis=axis, keepdims=True
+            data, q=probabilities, method="linear", axis=axis, keepdims=keepdims
         )
 
     return result
 
 
-def _sum(data, ignore_nodata=True, axis=-1):
+def _sum(data, ignore_nodata=True, axis=None, keepdims=False):
     if len(data) == 0:
         return nan(data=data)
 
     if ignore_nodata:
-        result = np.nansum(data, axis=axis)
+        result = np.nansum(data, axis=axis, keepdims=keepdims)
     else:
-        result = np.sum(data, axis=axis)
+        result = np.sum(data, axis=axis, keepdims=keepdims)
     return result
 
 
-def product(data, ignore_nodata=True, axis=-1):
+def product(data, ignore_nodata=True, axis=None, keepdims=False):
     if len(data) == 0:
         return nan(data=data)
 
     if ignore_nodata:
-        result = np.nanprod(data, axis=axis)
+        result = np.nanprod(data, axis=axis, keepdims=keepdims)
     else:
-        result = np.prod(data, axis=axis)
+        result = np.prod(data, axis=axis, keepdims=keepdims)
     return result
 
 
