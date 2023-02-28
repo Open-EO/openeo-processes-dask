@@ -236,23 +236,18 @@ def rearrange(
         return data
     if isinstance(data, list):
         data = np.asarray(data)
+    if len(data.shape) == 1 and axis is None:
+        axis = 0
     if isinstance(order, list):
         order = np.asarray(order)
-
-    if len(data.shape) != len(order.shape):
+    if len(order.shape) != 1:
         raise ValueError(
-            f"rearrange: number of axes on data ({len(data.shape)}) != number of axes ({len(order.shape)}) on order. rearrange does not support broadcasting in this case."
+            f"rearrange: order must be one-dimensional, but has {len(order.shape)} dimensions. "
         )
-
-    # This is to allow for the fact that apply_dimension can rearrange dimensions to put core dimensions in the back
-    if source_transposed_axis is not None:
-        order = np.moveaxis(order, source_transposed_axis, -1)
-
     logger.warning(
         "rearrange: This operation cannot be performed lazily, therefore the array will be loaded into memory here. This might fail for arrays that don't fit into memory."
     )
-
-    return np.take_along_axis(data, indices=order, axis=axis)
+    return np.take(data, indices=order, axis=axis)
 
 
 def sort(
