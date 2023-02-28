@@ -244,9 +244,6 @@ def rearrange(
         raise ValueError(
             f"rearrange: order must be one-dimensional, but has {len(order.shape)} dimensions. "
         )
-    logger.warning(
-        "rearrange: This operation cannot be performed lazily, therefore the array will be loaded into memory here. This might fail for arrays that don't fit into memory."
-    )
     return np.take(data, indices=order, axis=axis)
 
 

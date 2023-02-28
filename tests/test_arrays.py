@@ -265,7 +265,7 @@ def test_rearrange(data, order, axis, expected):
 
 def test_rearrange_mismatched_shape():
     with pytest.raises(ValueError):
-        rearrange(data=[[5, 4, 3, 2], [5, 4, 3, 2]], order=[1, 3], axis=1)
+        rearrange(data=[[5, 4, 3, 2], [5, 4, 3, 2]], order=[[]], axis=1)
 
 
 @pytest.mark.parametrize(
