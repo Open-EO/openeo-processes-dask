@@ -23,7 +23,9 @@ def test_filter_temporal(
         backend="dask",
     )
 
-    temporal_interval_part = TemporalInterval.parse_obj(["2018-05-15", "2018-06-01"])
+    temporal_interval_part = TemporalInterval.parse_obj(
+        ["2018-05-15T00:00:00", "2018-06-01T00:00:00"]
+    )
     output_cube = filter_temporal(data=input_cube, extent=temporal_interval_part)
 
     general_output_checks(
@@ -34,5 +36,6 @@ def test_filter_temporal(
     )
 
     xr.testing.assert_equal(
-        output_cube, input_cube.loc[dict(t=slice("2018-05-15", "2018-06-01"))]
+        output_cube,
+        input_cube.loc[dict(t=slice("2018-05-15T00:00:00", "2018-05-31T23:59:59"))],
     )
