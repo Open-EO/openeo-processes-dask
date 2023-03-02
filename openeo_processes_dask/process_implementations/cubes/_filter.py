@@ -1,10 +1,13 @@
+import logging
 from typing import Callable
 
 import numpy as np
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, GeoJson, TemporalInterval
 
-from openeo_processes_dask.exceptions import DimensionNotAvailable
+from openeo_processes_dask.exceptions import DimensionNotAvailable, TooManyDimensions
 from openeo_processes_dask.process_implementations.data_model import RasterCube
+
+logger = logging.getLogger(__name__)
 
 
 def filter_spatial(data: RasterCube, geometries: GeoJson, **kwargs) -> RasterCube:
@@ -26,6 +29,10 @@ def filter_temporal(
                 f"A dimension with the specified name: {dimension} does not exist."
             )
         applicable_temporal_dimension = dimension
+        if dimension not in temporal_dims:
+            logger.warning(
+                f"The selected dimension {dimension} exists but it is not labeled as a temporal dimension. Available temporal diemnsions are {temporal_dims}."
+            )
     else:
         if not temporal_dims:
             raise DimensionNotAvailable(
