@@ -1,3 +1,0 @@
-[submodule "openeo_processes_dask/specs"]
-	path = openeo_processes_dask/specs
-	url = git@github.com:eodcgmbh/openeo-processes
