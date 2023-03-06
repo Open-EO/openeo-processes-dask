@@ -49,7 +49,6 @@ __all__ = [
     "artanh",
     "arctan2",
     "linear_scale_range",
-    "scale",
     "mod",
     "absolute",
     "sgn",
@@ -232,11 +231,6 @@ def arctan2(y, x):
 def linear_scale_range(x, inputMin, inputMax, outputMin=0.0, outputMax=1.0):
     lsr = ((x - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin
     return lsr
-
-
-def scale(x, factor=1.0):
-    s = x * factor
-    return s
 
 
 def mod(x, y):
