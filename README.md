@@ -20,13 +20,16 @@ Note that by default this only installs the json process specs. In order to inst
 pip install openeo-processes-dask[implementations]
 ```
 
+A subset of process implementations with heavy or unstable dependencies are hidden behind these further build variants:
+- `openeo_processes_dask/process_implementations/ml`: `pip install openeo-processes-dask[ml]`
+- `openeo_processes_dask/process_implementations/experimental`: `pip install openeo-processes-dask[experimental]`
 
 ## Development environment
 openeo-processes-dask requires poetry >1.2, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
 
 To setup the python venv and install this project into it run:
 ```
-poetry install --extras "implementations"
+poetry install --all-extras
 ```
 
 To add a new core dependency run:
