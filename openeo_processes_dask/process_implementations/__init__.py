@@ -12,7 +12,18 @@ from .math import *
 try:
     from .ml import *
 except ImportError as e:
-    logger.warning("Could not load ML processes due to missing dependencies: ", e)
+    logger.warning(
+        "Did not load machine learning processes due to missing dependencies: Install them like this: `pip install openeo-processes-dask[implementations, ml]`",
+        e,
+    )
+
+try:
+    from .experimental import *
+except ImportError as e:
+    logger.warning(
+        "Did not load experimental processes due to missing dependencies. Install them like this: `pip install openeo-processes-dask[implementations, experimental]`",
+        e,
+    )
 
 import rioxarray as rio  # Required for the .rio accessor on xarrays.
 

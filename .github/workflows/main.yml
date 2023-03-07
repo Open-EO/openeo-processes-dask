@@ -69,7 +69,7 @@ jobs:
           timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        run: poetry install --with dev
+        run: poetry install --with dev --all-extras
 
       - name: Pre-commit hooks
         run: poetry run pre-commit run --all-files

@@ -7,12 +7,26 @@
 
 `openeo-processes-dask` is a collection of Python implementations of [OpenEO processes](https://processes.openeo.org/) based on the [xarray](https://github.com/pydata/xarray)/[dask](https://github.com/dask/dask) ecosystem. It is intended to be used alongside with [openeo-pg-parser-networkx](https://github.com/Open-EO/openeo-pg-parser-networkx), which handles the parsing and execution of [OpenEO process graphs](https://openeo.org/documentation/1.0/developers/api/reference.html#section/Processes/Process-Graphs). There you'll also find a tutorial on how to register process implementations from an arbitrary source (e.g. this repo) to the registry of available processes.
 
+## Installation
+Install this project via pip:
+
+```
+pip install openeo-processes-dask
+```
+
+Note that by default this only installs the json process specs. In order to install the actual implementations, add the `implementations` extra:
+
+```
+pip install openeo-processes-dask[implementations]
+```
+
+
 ## Development environment
 openeo-processes-dask requires poetry >1.2, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
 
 To setup the python venv and install this project into it run:
 ```
-poetry install
+poetry install --extras "implementations"
 ```
 
 To add a new core dependency run:
