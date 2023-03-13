@@ -67,7 +67,6 @@ def aggregate_temporal_period(
     dimension: Optional[str] = None,
     **kwargs,
 ) -> RasterCube:
-
     temporal_dims = data.openeo.temporal_dims
 
     if dimension is not None:

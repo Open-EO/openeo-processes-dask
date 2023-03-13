@@ -25,7 +25,6 @@ def merge_cubes(
     overlap_resolver: Callable = None,
     context: Optional[dict] = None,
 ) -> RasterCube:
-
     if context is None:
         context = {}
     if not isinstance(cube1, type(cube2)):
