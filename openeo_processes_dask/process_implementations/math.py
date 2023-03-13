@@ -2,14 +2,14 @@ import dask
 import dask.array as da
 import numpy as np
 
-from openeo_processes_dask.exceptions import (
-    OpenEOException,
-    QuantilesParameterConflict,
-    QuantilesParameterMissing,
-)
 from openeo_processes_dask.process_implementations.cubes.utils import (
     _has_dask,
     _is_dask_array,
+)
+from openeo_processes_dask.process_implementations.exceptions import (
+    OpenEOException,
+    QuantilesParameterConflict,
+    QuantilesParameterMissing,
 )
 
 __all__ = [

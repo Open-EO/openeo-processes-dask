@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: 1.3.2
+  POETRY_VERSION: 1.4.0
 
 jobs:
   tests:
@@ -33,6 +33,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -69,7 +71,7 @@ jobs:
           timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        run: poetry install --with dev
+        run: poetry install --with dev --all-extras
 
       - name: Pre-commit hooks
         run: poetry run pre-commit run --all-files

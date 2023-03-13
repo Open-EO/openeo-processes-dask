@@ -15,7 +15,7 @@ from openeo_pg_parser_networkx.pg_schema import (
     TemporalInterval,
 )
 
-from openeo_processes_dask.core import process
+from openeo_processes_dask.process_implementations.core import process
 from openeo_processes_dask.process_implementations.data_model import VectorCube
 
 logger = logging.getLogger(__name__)
