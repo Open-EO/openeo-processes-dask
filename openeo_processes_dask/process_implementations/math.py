@@ -2,14 +2,14 @@ import dask
 import dask.array as da
 import numpy as np
 
-from openeo_processes_dask.exceptions import (
-    OpenEOException,
-    QuantilesParameterConflict,
-    QuantilesParameterMissing,
-)
 from openeo_processes_dask.process_implementations.cubes.utils import (
     _has_dask,
     _is_dask_array,
+)
+from openeo_processes_dask.process_implementations.exceptions import (
+    OpenEOException,
+    QuantilesParameterConflict,
+    QuantilesParameterMissing,
 )
 
 __all__ = [
@@ -49,7 +49,6 @@ __all__ = [
     "artanh",
     "arctan2",
     "linear_scale_range",
-    "scale",
     "mod",
     "absolute",
     "sgn",
@@ -232,11 +231,6 @@ def arctan2(y, x):
 def linear_scale_range(x, inputMin, inputMax, outputMin=0.0, outputMax=1.0):
     lsr = ((x - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin
     return lsr
-
-
-def scale(x, factor=1.0):
-    s = x * factor
-    return s
 
 
 def mod(x, y):

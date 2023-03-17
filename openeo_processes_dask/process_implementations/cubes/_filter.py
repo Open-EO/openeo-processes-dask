@@ -4,8 +4,11 @@ from typing import Callable
 import numpy as np
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, GeoJson, TemporalInterval
 
-from openeo_processes_dask.exceptions import DimensionNotAvailable, TooManyDimensions
 from openeo_processes_dask.process_implementations.data_model import RasterCube
+from openeo_processes_dask.process_implementations.exceptions import (
+    DimensionNotAvailable,
+    TooManyDimensions,
+)
 
 logger = logging.getLogger(__name__)
 
