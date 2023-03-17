@@ -30,7 +30,7 @@ __all__ = [
     "variance",
     "floor",
     "ceil",
-    "int",
+    "_int",
     "_round",
     "exp",
     "log",
@@ -156,7 +156,7 @@ def ceil(x):
     return np.ceil(x)
 
 
-def int(x):
+def _int(x):
     return np.trunc(x)
 
 

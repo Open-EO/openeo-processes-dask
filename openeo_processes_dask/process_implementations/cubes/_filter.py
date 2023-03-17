@@ -12,13 +12,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-
-def filter_spatial(data: RasterCube, geometries: GeoJson, **kwargs) -> RasterCube:
-    raise NotImplementedError()
-
-
-def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
-    raise NotImplementedError()
+__all__ = ["filter_labels"]
 
 
 def filter_temporal(

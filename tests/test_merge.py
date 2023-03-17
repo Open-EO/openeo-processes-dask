@@ -53,7 +53,8 @@ def test_merge_cubes_type_2(
         merge_cubes(cube_1, cube_2)
 
     overlap_resolver = partial(
-        process_registry["mean"], data=ParameterReference(from_parameter="data")
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     xr.testing.assert_equal(
@@ -89,7 +90,8 @@ def test_merge_cubes_type_3(
         cube_1,
         cube_2,
         partial(
-            process_registry["max"], data=ParameterReference(from_parameter="data")
+            process_registry["max"].implementation,
+            data=ParameterReference(from_parameter="data"),
         ),
     )
     xr.testing.assert_equal(merged_cube, cube_1 + 1)
@@ -118,7 +120,8 @@ def test_merge_cubes_type_4(
         merge_cubes(cube_1, cube_2)
 
     overlap_resolver = partial(
-        process_registry["sum"], data=ParameterReference(from_parameter="data")
+        process_registry["sum"].implementation,
+        data=ParameterReference(from_parameter="data"),
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     xr.testing.assert_equal(merged_cube, cube_1 + 1)
