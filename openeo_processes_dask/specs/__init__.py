@@ -1,4 +1,6 @@
+import builtins
 import json
+import keyword
 import logging
 from pathlib import Path
 
@@ -15,7 +17,7 @@ for spec_path in process_json_paths:
 
     process_name = spec_json["id"]
     # Make sure we don't overwrite any builtins
-    if spec_json["id"] in globals() or spec_json["id"] in globals()["__builtins__"]:
+    if spec_json["id"] in dir(builtins) or keyword.iskeyword(spec_json["id"]):
         process_name = "_" + spec_json["id"]
 
     globals()[process_name] = spec_json

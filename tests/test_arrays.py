@@ -31,7 +31,7 @@ def test_array_element(
     )
 
     _process = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=1,
         data=ParameterReference(from_parameter="data"),
     )
@@ -49,7 +49,7 @@ def test_array_element(
 
     # When the index is out of range, we expect an ArrayElementNotAvailable exception to be thrown
     _process_not_available = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=5,
         data=ParameterReference(from_parameter="data"),
     )
@@ -61,7 +61,7 @@ def test_array_element(
 
         # When the index is out of range, we expect an ArrayElementNotAvailable exception to be thrown
     _process_no_data = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=5,
         return_nodata=True,
         data=ParameterReference(from_parameter="data"),
@@ -219,7 +219,7 @@ def test_reduce_dimension(
 
     input_cube[:, :, :, 0] = 1
     _process = partial(
-        process_registry["array_find"],
+        process_registry["array_find"].implementation,
         data=ParameterReference(from_parameter="data"),
         value=1,
         reverse=False,
@@ -235,7 +235,7 @@ def test_reduce_dimension(
     xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
 
     # _process = partial(
-    #     process_registry["first"],
+    #     process_registry["first"].implementation,
     #     data=ParameterReference(from_parameter="data"),
     #     ignore_nodata=True,
     # )
@@ -252,7 +252,7 @@ def test_reduce_dimension(
     # xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))
 
     # _process = partial(
-    #     process_registry["last"],
+    #     process_registry["last"].implementation,
     #     data=ParameterReference(from_parameter="data"),
     #     ignore_nodata=True,
     # )

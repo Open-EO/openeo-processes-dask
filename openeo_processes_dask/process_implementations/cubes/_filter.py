@@ -1,3 +1,4 @@
+import logging
 from typing import Callable
 
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, GeoJson, TemporalInterval
@@ -7,13 +8,9 @@ from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
 )
 
+logger = logging.getLogger(__name__)
 
-def filter_spatial(data: RasterCube, geometries: GeoJson, **kwargs) -> RasterCube:
-    raise NotImplementedError()
-
-
-def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
-    raise NotImplementedError()
+__all__ = ["filter_labels"]
 
 
 def filter_temporal(
