@@ -2,7 +2,7 @@ import logging
 from typing import Callable
 
 import numpy as np
-from openeo_pg_parser_networkx.pg_schema import BoundingBox, GeoJson, TemporalInterval
+from openeo_pg_parser_networkx.pg_schema import TemporalInterval
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
@@ -12,7 +12,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["filter_labels"]
+__all__ = ["filter_labels", "filter_temporal"]
 
 
 def filter_temporal(
@@ -56,9 +56,7 @@ def filter_temporal(
     return filtered
 
 
-def filter_labels(
-    data: RasterCube, condition: Callable, dimension: str, **kwargs
-) -> RasterCube:
+def filter_labels(data: RasterCube, condition: Callable, dimension: str) -> RasterCube:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
