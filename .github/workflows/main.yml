@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: 1.4.0
+  POETRY_VERSION: 1.4.1
 
 jobs:
   tests:
