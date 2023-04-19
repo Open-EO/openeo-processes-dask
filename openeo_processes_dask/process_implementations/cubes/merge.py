@@ -3,8 +3,10 @@ from typing import Callable, Optional
 import numpy as np
 import xarray as xr
 
-from openeo_processes_dask.exceptions import OverlapResolverMissing
 from openeo_processes_dask.process_implementations.data_model import RasterCube
+from openeo_processes_dask.process_implementations.exceptions import (
+    OverlapResolverMissing,
+)
 
 __all__ = ["merge_cubes"]
 
@@ -23,7 +25,6 @@ def merge_cubes(
     overlap_resolver: Callable = None,
     context: Optional[dict] = None,
 ) -> RasterCube:
-
     if context is None:
         context = {}
     if not isinstance(cube1, type(cube2)):

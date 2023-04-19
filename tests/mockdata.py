@@ -16,7 +16,6 @@ def create_fake_rastercube(
     backend="numpy",
     chunks=("auto", "auto", "auto", -1),
 ):
-
     # Calculate the desired resolution based on how many samples we desire on the longest axis.
     len_x = max(spatial_extent.west, spatial_extent.east) - min(
         spatial_extent.west, spatial_extent.east
