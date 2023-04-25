@@ -179,7 +179,7 @@ def test_apply_dimension_ordering_processes(
     )
 
     _process_order = partial(
-        process_registry["order"],
+        process_registry["order"].implementation,
         data=ParameterReference(from_parameter="data"),
         nodata=True,
     )
@@ -198,7 +198,7 @@ def test_apply_dimension_ordering_processes(
     assert isinstance(output_cube_order.data, np.ndarray)
 
     _process_rearrange = partial(
-        process_registry["rearrange"],
+        process_registry["rearrange"].implementation,
         data=ParameterReference(from_parameter="data"),
         order=da.from_array(np.array([0, 1, 2, 3])),
     )
@@ -212,7 +212,7 @@ def test_apply_dimension_ordering_processes(
     assert isinstance(output_cube_rearrange.data, da.Array)
 
     _process_sort = partial(
-        process_registry["sort"],
+        process_registry["sort"].implementation,
         data=ParameterReference(from_parameter="data"),
         nodata=True,
     )
