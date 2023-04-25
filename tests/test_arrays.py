@@ -273,7 +273,7 @@ def test_reduce_dimension(
     xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
 
     _process = partial(
-        process_registry["first"],
+        process_registry["first"].implementation,
         data=ParameterReference(from_parameter="data"),
         ignore_nodata=True,
     )
@@ -290,7 +290,7 @@ def test_reduce_dimension(
     xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))
 
     _process = partial(
-        process_registry["last"],
+        process_registry["last"].implementation,
         data=ParameterReference(from_parameter="data"),
         ignore_nodata=True,
     )
