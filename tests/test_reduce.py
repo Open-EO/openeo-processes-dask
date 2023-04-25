@@ -24,7 +24,7 @@ def test_reduce_dimension(
     )
 
     _process = partial(
-        process_registry["mean"],
+        process_registry["mean"].implementation,
         ignore_nodata=True,
         data=ParameterReference(from_parameter="data"),
     )

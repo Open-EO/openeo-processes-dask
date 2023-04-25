@@ -7,9 +7,12 @@ import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
-from openeo_processes_dask.exceptions import ArrayElementNotAvailable, TooManyDimensions
 from openeo_processes_dask.process_implementations.arrays import *
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
+from openeo_processes_dask.process_implementations.exceptions import (
+    ArrayElementNotAvailable,
+    TooManyDimensions,
+)
 from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
 
@@ -28,7 +31,7 @@ def test_array_element(
     )
 
     _process = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=1,
         data=ParameterReference(from_parameter="data"),
     )
@@ -46,7 +49,7 @@ def test_array_element(
 
     # When the index is out of range, we expect an ArrayElementNotAvailable exception to be thrown
     _process_not_available = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=5,
         data=ParameterReference(from_parameter="data"),
     )
@@ -58,7 +61,7 @@ def test_array_element(
 
         # When the index is out of range, we expect an ArrayElementNotAvailable exception to be thrown
     _process_no_data = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=5,
         return_nodata=True,
         data=ParameterReference(from_parameter="data"),
@@ -254,7 +257,7 @@ def test_reduce_dimension(
 
     input_cube[:, :, :, 0] = 1
     _process = partial(
-        process_registry["array_find"],
+        process_registry["array_find"].implementation,
         data=ParameterReference(from_parameter="data"),
         value=1,
         reverse=False,

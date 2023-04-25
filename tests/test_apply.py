@@ -25,7 +25,9 @@ def test_apply(temporal_interval, bounding_box, random_raster_data, process_regi
     )
 
     _process = partial(
-        process_registry["add"], y=1, x=ParameterReference(from_parameter="x")
+        process_registry["add"].implementation,
+        y=1,
+        x=ParameterReference(from_parameter="x"),
     )
 
     output_cube = apply(data=input_cube, process=_process)
@@ -55,7 +57,9 @@ def test_apply_dimension_case_1(
     )
 
     _process = partial(
-        process_registry["add"], y=1, x=ParameterReference(from_parameter="data")
+        process_registry["add"].implementation,
+        y=1,
+        x=ParameterReference(from_parameter="data"),
     )
 
     # Target dimension is null and therefore defaults to the source dimension
@@ -86,7 +90,8 @@ def test_apply_dimension_reduce_dimension(
     )
 
     _process = partial(
-        process_registry["mean"], data=ParameterReference(from_parameter="data")
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
     )
 
     # Target dimension is null and therefore defaults to the source dimension
@@ -119,7 +124,8 @@ def test_apply_dimension_target_dimension(
     )
 
     _process = partial(
-        process_registry["mean"], data=ParameterReference(from_parameter="data")
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
     )
 
     # Target dimension is null and therefore defaults to the source dimension

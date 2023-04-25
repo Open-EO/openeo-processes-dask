@@ -6,13 +6,13 @@ import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
 
-from openeo_processes_dask.exceptions import (
+from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
+from openeo_processes_dask.process_implementations.exceptions import (
     ArrayElementNotAvailable,
     ArrayElementParameterConflict,
     ArrayElementParameterMissing,
     TooManyDimensions,
 )
-from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 
 logger = logging.getLogger(__name__)
 
