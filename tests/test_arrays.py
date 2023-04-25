@@ -277,3 +277,20 @@ def test_reduce_dimension(
     )
     assert output_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
+
+    _process = partial(
+        process_registry["first"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=True,
+    )
+    input_cube[0, :, :, :2] = np.nan
+    input_cube[0, :, :, 2] = 1
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))
