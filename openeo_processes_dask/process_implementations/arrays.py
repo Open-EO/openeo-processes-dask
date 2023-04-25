@@ -1,10 +1,13 @@
+import itertools
 import logging
 from typing import Any, Optional
 
 import dask.array as da
 import numpy as np
 import pandas as pd
+import xarray as xr
 from numpy.typing import ArrayLike
+from xarray.core.duck_array_ops import isnull, notnull
 
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 from openeo_processes_dask.process_implementations.exceptions import (
@@ -187,28 +190,36 @@ def array_labels(data: ArrayLike) -> ArrayLike:
 def first(
     data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
-    axis: Optional[str] = None,
+    axis: Optional[int] = None,
 ):
     if len(data) == 0:
         return np.nan
+
     if axis is None:
+        data = data.flatten()
         axis = 0
+
     if ignore_nodata:  # skip np.nan values
-        nan_mask = ~np.isnan(data)  # create mask for valid values (not np.nan)
-        idx_first = np.argmax(nan_mask, axis=axis)
-        first_elem = np.take(data, indices=0, axis=axis)
-        if np.isnan(first_elem).any():
-            for i in range(np.max(idx_first) + 1):
-                first_elem = np.nan_to_num(first_elem, True, np.take(data, i, axis))
-    else:  # take the first element, no matter np.nan values are in the array
-        first_elem = np.take(data, indices=0, axis=axis)
-    return first_elem
+        nan_mask = xr.core.duck_array_ops.notnull(data)  # create mask for valid values
+        indices = nan_mask.argmax(axis=axis, keepdims=True)
+    else:
+        indices_shape = tuple(
+            itertools.chain(data.shape[0:axis], data.shape[axis + 1 :])
+        )
+        indices = np.zeros(indices_shape, dtype=int)
+        if len(indices.shape) != len(data.shape):
+            indices = np.expand_dims(indices, axis=axis)
+
+    # TODO: This breaks laziness because `take_along_axis` is currently not implemented in dask
+    # See https://github.com/dask/dask/issues/3663
+    first_elem = np.take_along_axis(data, indices=indices, axis=axis)
+    return np.squeeze(first_elem)
 
 
 def last(
     data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
-    axis: Optional[str] = None,
+    axis: Optional[int] = None,
 ):
     if len(data) == 0:
         return np.nan
