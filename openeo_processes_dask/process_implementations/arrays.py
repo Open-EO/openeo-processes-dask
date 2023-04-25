@@ -200,12 +200,11 @@ def order(
         "order: Dask does not support lazy sorting of arrays, therefore the array is loaded into memory here. This might fail for arrays that don't fit into memory."
     )
 
-    if asc:
-        permutation_idxs = np.argsort(data, kind="mergesort", axis=axis)
-    else:  # [::-1] not possible
-        permutation_idxs = np.argsort(
-            -data, kind="mergesort", axis=axis
-        )  # to get the indizes in descending order, the sign of the data is changed
+    permutation_idxs = np.argsort(data, kind="mergesort", axis=axis)
+    if not asc:  # [::-1] not possible
+        permutation_idxs = np.flip(
+            permutation_idxs
+        )  # descending - the order is flipped
 
     if nodata is None:  # ignore np.nan values
         if len(data.shape) > 1:
