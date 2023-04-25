@@ -223,8 +223,6 @@ def last(
 ):
     if len(data) == 0:
         return np.nan
-    if axis is None:
-        axis = 0
     data = np.flip(data, axis=axis)  # flip data to retrieve the first valid element
     last_elem = first(data, ignore_nodata=ignore_nodata, axis=axis)
     return last_elem
