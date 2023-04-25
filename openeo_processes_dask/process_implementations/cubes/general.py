@@ -1,11 +1,11 @@
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import *
 
-from openeo_processes_dask.exceptions import (
+from openeo_processes_dask.process_implementations.data_model import RasterCube
+from openeo_processes_dask.process_implementations.exceptions import (
     DimensionLabelCountMismatch,
     DimensionNotAvailable,
 )
-from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 __all__ = ["create_raster_cube", "drop_dimension", "dimension_labels"]
 
