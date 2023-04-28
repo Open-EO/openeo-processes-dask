@@ -55,6 +55,8 @@ def temporal_interval(interval=["2018-05-01", "2018-06-01"]) -> TemporalInterval
 
 @pytest.fixture
 def process_registry() -> ProcessRegistry:
+    registry = ProcessRegistry(wrap_funcs=[process])
+
     standard_processes = [
         func
         for _, func in inspect.getmembers(
@@ -64,16 +66,16 @@ def process_registry() -> ProcessRegistry:
     ]
 
     specs_module = importlib.import_module("openeo_processes_dask.specs")
-    specs = {
-        func.__name__: getattr(specs_module, func.__name__)
-        for func in standard_processes
-    }
 
-    registry = ProcessRegistry(wrap_funcs=[process])
-
+    specs = {}
     for func in standard_processes:
+        if hasattr(specs_module, func.__name__):
+            specs[func.__name__] = getattr(specs_module, func.__name__)
+        else:
+            logger.warning("Process {} does not have a spec.")
         registry[func.__name__] = Process(
-            spec=specs[func.__name__], implementation=func
+            spec=specs[func.__name__] if func.__name__ in specs else None,
+            implementation=func,
         )
 
     return registry
