@@ -1,4 +1,5 @@
 # Checks here are inspired by makepath/xarray-spatial/tests/general_checks.py
+from typing import List
 
 import dask.array as da
 import numpy as np
@@ -12,6 +13,7 @@ def general_output_checks(
     expected_results=None,
     verify_crs: bool = False,
     verify_attrs: bool = False,
+    expected_dims: list = [],
     rtol=1e-06,
 ):
     assert isinstance(output_cube.data, type(input_cube.data))
@@ -36,6 +38,11 @@ def general_output_checks(
         np.testing.assert_allclose(
             output_data, expected_results, equal_nan=True, rtol=rtol
         )
+
+    if expected_dims:
+        actual_dims = output_cube.dims
+        assert len(expected_dims) == len(actual_dims)
+        assert set(actual_dims) == set(expected_dims)
 
 
 def assert_numpy_equals_dask_numpy(numpy_cube, dask_cube, func):
