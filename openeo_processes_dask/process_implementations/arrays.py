@@ -1,10 +1,13 @@
+import itertools
 import logging
 from typing import Any, Optional
 
 import dask.array as da
 import numpy as np
 import pandas as pd
+import xarray as xr
 from numpy.typing import ArrayLike
+from xarray.core.duck_array_ops import isnull, notnull
 
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 from openeo_processes_dask.process_implementations.exceptions import (
@@ -25,8 +28,8 @@ __all__ = [
     "array_contains",
     "array_find",
     "array_labels",
-    # "first",
-    # "last",
+    "first",
+    "last",
     "order",
     "rearrange",
     "sort",
@@ -182,6 +185,41 @@ def array_labels(data: ArrayLike) -> ArrayLike:
     if len(data.shape) > 1:
         raise TooManyDimensions("array_labels is only implemented for 1D arrays.")
     return np.arange(len(data))
+
+
+def first(
+    data: ArrayLike,
+    ignore_nodata: Optional[bool] = True,
+    axis: Optional[str] = None,
+):
+    if len(data) == 0:
+        return np.nan
+    if axis is None:
+        data = data.flatten()
+        axis = 0
+    if ignore_nodata:
+        nan_mask = ~pd.isnull(data)  # create mask for valid values (not np.nan)
+        idx_first = np.argmax(nan_mask, axis=axis)
+        first_elem = np.take(data, indices=0, axis=axis)
+
+        if pd.isnull(np.asarray(first_elem)).any():
+            for i in range(np.max(idx_first) + 1):
+                first_elem = np.nan_to_num(first_elem, True, np.take(data, i, axis))
+    else:  # take the first element, no matter np.nan values are in the array
+        first_elem = np.take(data, indices=0, axis=axis)
+    return first_elem
+
+
+def last(
+    data: ArrayLike,
+    ignore_nodata: Optional[bool] = True,
+    axis: Optional[int] = None,
+):
+    if len(data) == 0:
+        return np.nan
+    data = np.flip(data, axis=axis)  # flip data to retrieve the first valid element
+    last_elem = first(data, ignore_nodata=ignore_nodata, axis=axis)
+    return last_elem
 
 
 def order(
