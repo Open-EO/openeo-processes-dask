@@ -2,7 +2,7 @@ from functools import partial
 
 import numpy as np
 import pytest
-from openeo_pg_parser_networkx.pg_schema import TemporalInterval
+from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 
 from openeo_processes_dask.process_implementations.cubes.aggregate import (
     aggregate_temporal_period,
@@ -26,7 +26,12 @@ from tests.mockdata import create_fake_rastercube
     ],
 )
 def test_aggregate_temporal_period(
-    temporal_extent, period, expected, bounding_box, random_raster_data
+    temporal_extent,
+    period,
+    expected,
+    bounding_box,
+    random_raster_data,
+    process_registry,
 ):
     """"""
     input_cube = create_fake_rastercube(
@@ -35,8 +40,14 @@ def test_aggregate_temporal_period(
         temporal_extent=TemporalInterval.parse_obj(temporal_extent),
         bands=["B02", "B03", "B04", "B08"],
     )
+
+    reducer = partial(
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
     output_cube = aggregate_temporal_period(
-        data=input_cube, period=period, reducer=mean
+        data=input_cube, period=period, reducer=reducer
     )
 
     general_output_checks(
@@ -53,7 +64,7 @@ def test_aggregate_temporal_period(
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 def test_aggregate_temporal_period_numpy_equals_dask(
-    random_raster_data, bounding_box, temporal_interval
+    random_raster_data, bounding_box, temporal_interval, process_registry
 ):
     numpy_cube = create_fake_rastercube(
         data=random_raster_data,
@@ -70,7 +81,12 @@ def test_aggregate_temporal_period_numpy_equals_dask(
         backend="dask",
     )
 
-    func = partial(aggregate_temporal_period, reducer=mean, period="hour")
+    reducer = partial(
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    func = partial(aggregate_temporal_period, reducer=reducer, period="hour")
     assert_numpy_equals_dask_numpy(
         numpy_cube=numpy_cube, dask_cube=dask_cube, func=func
     )
