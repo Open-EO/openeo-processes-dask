@@ -13,7 +13,7 @@ def general_output_checks(
     expected_results=None,
     verify_crs: bool = False,
     verify_attrs: bool = False,
-    expected_dims: list = [],
+    expected_dims: list = None,
     rtol=1e-06,
 ):
     assert isinstance(output_cube.data, type(input_cube.data))
