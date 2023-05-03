@@ -39,7 +39,7 @@ def general_output_checks(
             output_data, expected_results, equal_nan=True, rtol=rtol
         )
 
-    if expected_dims:
+    if expected_dims is not None:
         actual_dims = output_cube.dims
         assert len(expected_dims) == len(actual_dims)
         assert set(actual_dims) == set(expected_dims)
