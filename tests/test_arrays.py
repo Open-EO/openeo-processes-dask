@@ -248,6 +248,109 @@ def test_last():
     assert pd.isnull(last([]))
 
 
+@pytest.mark.parametrize(
+    "data, asc, nodata, expected",
+    [
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            None,
+            [1, 2, 8, 5, 0, 4, 7, 9, 10],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            True,
+            [1, 2, 8, 5, 0, 4, 7, 9, 10, 3, 6],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            True,
+            [6, 3, 10, 9, 7, 4, 0, 5, 8, 2, 1],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            False,
+            [6, 3, 10, 9, 7, 4, 0, 5, 8, 2, 1],
+        ),
+    ],
+)
+def test_order(data, asc, nodata, expected):
+    np.testing.assert_array_equal(order(data=data, asc=asc, nodata=nodata), expected)
+    np.testing.assert_array_equal(
+        order(data=np.array(data), asc=asc, nodata=nodata), np.array(expected)
+    )
+    np.testing.assert_array_equal(
+        order(data=da.from_array(np.array(data)), asc=asc, nodata=nodata),
+        da.from_array(np.array(expected)),
+    )
+
+
+@pytest.mark.parametrize(
+    "data, order, axis, expected",
+    [
+        ([5, 4, 3], [2, 1, 0], None, [3, 4, 5]),
+        ([5, 4, 3, 2], [0, 2, 1, 3], 0, [5, 3, 4, 2]),
+        ([5, 4, 3, 2], [1, 3], 0, [4, 2]),
+        ([[5, 4, 3, 2], [5, 4, 3, 2]], [1, 3], 1, [[4, 2], [4, 2]]),
+    ],
+)
+def test_rearrange(data, order, axis, expected):
+    np.testing.assert_array_equal(
+        rearrange(data=data, order=order, axis=axis), expected
+    )
+    np.testing.assert_array_equal(
+        rearrange(data=np.array(data), order=order, axis=axis), np.array(expected)
+    )
+    np.testing.assert_array_equal(
+        rearrange(data=da.from_array(np.array(data)), order=order, axis=axis),
+        da.from_array(np.array(expected)),
+    )
+
+
+def test_rearrange_mismatched_shape():
+    with pytest.raises(ValueError):
+        rearrange(data=[[5, 4, 3, 2], [5, 4, 3, 2]], order=[[]], axis=1)
+
+
+@pytest.mark.parametrize(
+    "data, asc, nodata, expected",
+    [
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            None,
+            [-1, 2, 3, 4, 6, 7, 8, 9, 9],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            True,
+            [9, 9, 8, 7, 6, 4, 3, 2, -1, np.nan, np.nan],
+        ),
+    ],
+)
+def test_sort(data, asc, nodata, expected):
+    """Tests `sort` function."""
+    assert np.isclose(
+        sort(data=data, asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+    assert np.isclose(
+        sort(data=np.array(data), asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+    assert np.isclose(
+        sort(data=da.from_array(np.array(data)), asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+
+
 @pytest.mark.parametrize("size", [(3, 3, 2, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_reduce_dimension(

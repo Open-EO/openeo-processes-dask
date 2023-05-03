@@ -64,6 +64,7 @@ def apply_dimension(
             "named_parameters": named_parameters,
             "axis": reordered_data.get_axis_num(dimension),
             "keepdims": True,
+            "source_transposed_axis": data.get_axis_num(dimension),
         },
         exclude_dims={dimension},
     )
