@@ -60,7 +60,6 @@ def add_dimension(
         raise Exception(
             f"DimensionExists - A dimension with the specified name already exists. The existing dimensions are: {data.dims}"
         )
-    data_e = data.assign_coords(placeholder=label)
-    data_e = data_e.expand_dims("placeholder")
-    data_e = data_e.rename({"placeholder": name})
+    data_e = data.assign_coords(**{name: label})
+    data_e = data_e.expand_dims(name)
     return data_e
