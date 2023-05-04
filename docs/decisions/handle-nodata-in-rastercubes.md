@@ -9,6 +9,7 @@ To implement `and` as specified, instead of this:
 
 **Example A: What you'd expect from an implementation for a logical `and` process**
 
+```python
 logical_and = np.logical_and(x, y)
 
 we have to do this:
