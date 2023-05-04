@@ -15,6 +15,7 @@ we have to do this:
 
 **Example B: Workaround we have to use to account for null values are returned by logic processes**
 
+```python
 nan_x = np.isnan(x)
 nan_y = np.isnan(y)
 xy = np.logical_and(x, y)
@@ -23,7 +24,6 @@ xy = np.where(~nan_mask, xy, np.nan)
 nan_mask = np.logical_and(nan_y, xy)
 xy = np.where(~nan_mask, xy, np.nan)
 return xy
-
 Note that the output array of Example A has the dtype `bool_`, whereas the output array of Example B has dtype `float64`. This is because the missing data value `np.nan` is only defined for dtype `float64` and thus the entire array needs to be upcast to `float64`.
 
 See these numpy snippets to confirm this:
