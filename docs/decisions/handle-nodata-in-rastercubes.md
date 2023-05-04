@@ -28,7 +28,7 @@ return xy
 Note that the output array of Example A has the dtype `bool_`, whereas the output array of Example B has dtype `float64`. This is because the missing data value `np.nan` is only defined for dtype `float64` and thus the entire array needs to be upcast to `float64`.
 
 See these numpy snippets to confirm this:
-
+```python
 >>> np.array([True, False])
 array([ True, False], dtype='bool')  # boolean array
 >>> np.array([True, False]).itemsize
