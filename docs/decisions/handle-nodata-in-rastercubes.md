@@ -11,6 +11,7 @@ To implement `and` as specified, instead of this:
 
 ```python
 logical_and = np.logical_and(x, y)
+```
 
 we have to do this:
 
@@ -25,6 +26,8 @@ xy = np.where(~nan_mask, xy, np.nan)
 nan_mask = np.logical_and(nan_y, xy)
 xy = np.where(~nan_mask, xy, np.nan)
 return xy
+```
+
 Note that the output array of Example A has the dtype `bool_`, whereas the output array of Example B has dtype `float64`. This is because the missing data value `np.nan` is only defined for dtype `float64` and thus the entire array needs to be upcast to `float64`.
 
 See these numpy snippets to confirm this:
@@ -37,6 +40,8 @@ array([ True, False], dtype='bool')  # boolean array
 array([ 1., 0., nan], dtype='float64')  # casts to float64
 >>> np.array([True, False, np.nan]).itemsize
 8
+```
+
 Apart from looking really awkward, this also has direct performance implications, as the memory footprint of this array is multiplied by 8 and operations with float64 arrays will also be slower than on pure boolean arrays.
 
 We've had a handful of discussions with the maintainers of openeo-processes here:
@@ -46,25 +51,26 @@ We've had a handful of discussions with the maintainers of openeo-processes here
 
 The outcomes of these discussions were as follows (in my recollection):
 - numpy was initially designed as a linear algebra library, which is the historic reason why the options for handling nodata are so limited
-- EO data has missing values all the time, therefore the OpenEO datacube abstraction needs to handle `null` even at the level of boolean arrays
--
+- EO data has missing values all the time, therefore the OpenEO datacube abstraction needs to handle `null` for all datatypes
 
 Given this, we are left with no other choice than addressing this in our process implementations.
 
 We've evaluated the following approaches:
-1) Using the np.ma.MaskedArray library
-    - We could return np.ma.masked whenever a null value is produced
-    - This would require us to cast every datacube to use masked arrays as the backend, because child processes (e.g. `mean` when called in `reduce_dimension`) cannot affect the container type of their parent datacube (i.e. turn an np.array into a np.ma.MaskedArray).
-    - xarray functions like `isnull` wouldn't necessarily work correctly with this
+1) Using the `np.ma.MaskedArray` library
+    - The idea would be to use a separate boolean mask to represent nullness for each pixel of a rastercube at all times. Subprocesses could return `np.ma.masked` whenever a null value is produced.
+    - However, numpy MaskedArrays are not currently valid container types for xarray datastructures. Trying to set the `.data` field of a `xr.DataArray` to a `np.ma.MaskedArray` will immediately cast this array to a normal numpy array.
+    - Even if it worked, this would require us to cast every datacube to use masked arrays as the backend, because child processes (e.g. `mean` when called in `reduce_dimension`) cannot affect the container type of their parent datacube (i.e. turn an np.array into a np.ma.MaskedArray). This would have performance hits all over the place, because masked arrays are always slower to compute on. Also xarray functions like `isnull` wouldn't necessarily work correctly with this.
+    - Also, committing to this default array container might prevent us from leveraging other container types when needed in other situations e.g. pydata/sparse for achieving scalability in UC8.
 2) Do it like xarray does it
-    - see [xarray null handling](https://github.com/pydata/xarray/blob/da8746b46265a61a5a5020924d27aeccd1f43f98/xarray/core/duck_array_ops.py#L116). Basically use `np.nan` for null values and use `pd.isnull()` to check for nullness
-    - This means that in favor of null-handling, we'll incur performance penalties when working with arrays of a dtype different than `float` (int/bool/char)
+    - See [xarray null handling](https://github.com/pydata/xarray/blob/da8746b46265a61a5a5020924d27aeccd1f43f98/xarray/core/duck_array_ops.py#L116). Basically use `np.nan` for null values and use `pd.isnull()` to check for nullness
+    - This means that in favor of null-handling, we'll incur performance penalties when working with arrays of a dtype different than `float` (int/bool/char).
     - But xarray nullness related functionality should still work.
+    - However, we'd have no way to distinguish between the concepts of `NaN` and `nodata`.
 
 ## Decision
 We think that the best solution at this stage is to imitate xarray, use `pd.isnull()` to check for null-ness and return `np.nan` whenever the spec wants a process to return `null`.
-Both approaches 1) and 2) would mean changing the default array container type to either masked array or sparse arrays
 
 ## Consequences
 This has performance implications, as this will cause arrays of a dtype different than `float` (int/bool/char) to always be upcast to `float64`.
+We will not be able to implement `is_nodata` and `is_nan` as they're currently defined, as they'd refer to the same thing.
 On the plus-side, this aligns closest with the process definitions in the specification, so it should be easier to follow them faithfully in the future.
