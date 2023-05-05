@@ -3,7 +3,10 @@ import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import TemporalInterval
 
-from openeo_processes_dask.process_implementations.cubes._filter import filter_temporal
+from openeo_processes_dask.process_implementations.cubes._filter import (
+    filter_temporal,
+    filter_bands
+)
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
 )
@@ -51,3 +54,18 @@ def test_filter_temporal(temporal_interval, bounding_box, random_raster_data):
         output_cube,
         input_cube.loc[dict(t=slice("2018-05-01T00:00:00", "2018-05-02T23:59:59"))],
     )
+
+@pytest.mark.parametrize("size", [(1, 1, 1, 2)])
+@pytest.mark.parametrize("dtype", [np.uint8])
+def test_filter_bands(temporal_interval, bounding_box, random_raster_data):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02","SCL"],
+        backend="dask",
+    )
+
+    output_cube = filter_bands(data=input_cube, bands=["SCL"])
+
+    assert output_cube["bands"].values == "SCL"
