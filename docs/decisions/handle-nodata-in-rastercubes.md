@@ -1,5 +1,7 @@
 # How to handle nodata values in Rastercubes
 
+Date: 2023-05-05
+
 ## Context
 The logic processes as defined by OpenEO can return True/False/null. In numpy there is no sentinel value for missing data in boolean/integer/char arrays (like there is with NaN for float).
 
