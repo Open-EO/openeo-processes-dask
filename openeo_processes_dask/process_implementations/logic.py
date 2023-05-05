@@ -1,10 +1,8 @@
 from typing import Any
 
-import numpy as np
-import pandas as pd
 from numpy.typing import ArrayLike
+from xarray.core.duck_array_ops import notnull
 
 
 def is_valid(x: Any) -> ArrayLike:
-    null_mask = pd.isnull(np.asarray(x))
-    return ~null_mask
+    return notnull(x)
