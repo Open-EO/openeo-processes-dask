@@ -24,3 +24,7 @@ def test_add_dimension(temporal_interval, bounding_box, random_raster_data):
         output_cube=output_cube,
         expected_dims=["x", "y", "t", "bands", "other"],
     )
+    assert output_cube.openeo.band_dims[0] == "bands"
+    assert output_cube.openeo.temporal_dims[0] == "t"
+    assert output_cube.openeo.spatial_dims == ("y", "x")
+    assert output_cube.openeo.other_dims[0] == "other"
