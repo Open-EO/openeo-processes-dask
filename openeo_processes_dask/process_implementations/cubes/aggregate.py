@@ -65,7 +65,6 @@ def aggregate_temporal_period(
     reducer: Callable,
     period: str,
     dimension: Optional[str] = None,
-    **kwargs,
 ) -> RasterCube:
     temporal_dims = data.openeo.temporal_dims
 
@@ -104,7 +103,10 @@ def aggregate_temporal_period(
 
     resampled_data = data.resample({applicable_temporal_dimension: frequency})
 
-    return resampled_data.reduce(reducer, keep_attrs=True)
+    positional_parameters = {"data": 0}
+    return resampled_data.reduce(
+        reducer, keep_attrs=True, positional_parameters=positional_parameters
+    )
 
 
 def aggregate_spatial(
