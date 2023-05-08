@@ -23,6 +23,8 @@ __all__ = [
 def is_infinite(x: ArrayLike):
     if x is None:
         return False
+    if isinstance(x, str) or x.dtype.kind.lower() in ["u", "s"]:
+        return False
     return np.isinf(x)
 
 
