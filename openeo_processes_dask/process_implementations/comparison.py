@@ -52,7 +52,10 @@ def eq(
     delta: Optional[float] = None,
     case_sensitive: Optional[bool] = True,
 ):
-    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
         if is_nodata(x) or is_nodata(y):
             return np.nan
     if x is False or y is False:
@@ -79,7 +82,10 @@ def neq(
 
 
 def gt(x: ArrayLike, y: ArrayLike):
-    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
         if is_nodata(x) or is_nodata(y):
             return np.nan
     gt_ar = x > y
@@ -87,7 +93,10 @@ def gt(x: ArrayLike, y: ArrayLike):
 
 
 def gte(x: ArrayLike, y: ArrayLike):
-    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
         if is_nodata(x) or is_nodata(y):
             return np.nan
     gte_ar = (x - y) >= 0
@@ -95,7 +104,10 @@ def gte(x: ArrayLike, y: ArrayLike):
 
 
 def lt(x: ArrayLike, y: ArrayLike):
-    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
         if is_nodata(x) or is_nodata(y):
             return np.nan
     lt_ar = x < y
@@ -103,7 +115,10 @@ def lt(x: ArrayLike, y: ArrayLike):
 
 
 def lte(x: ArrayLike, y: ArrayLike):
-    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
         if is_nodata(x) or is_nodata(y):
             return np.nan
     lte_ar = x <= y
