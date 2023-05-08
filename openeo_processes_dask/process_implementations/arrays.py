@@ -1,18 +1,21 @@
+import itertools
 import logging
 from typing import Any, Optional
 
 import dask.array as da
 import numpy as np
 import pandas as pd
+import xarray as xr
 from numpy.typing import ArrayLike
+from xarray.core.duck_array_ops import isnull, notnull
 
-from openeo_processes_dask.exceptions import (
+from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
+from openeo_processes_dask.process_implementations.exceptions import (
     ArrayElementNotAvailable,
     ArrayElementParameterConflict,
     ArrayElementParameterMissing,
     TooManyDimensions,
 )
-from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +28,11 @@ __all__ = [
     "array_contains",
     "array_find",
     "array_labels",
-    # "first",
-    # "last",
-    # "order",
-    # "rearrange",
-    # "sort",
+    "first",
+    "last",
+    "order",
+    "rearrange",
+    "sort",
 ]
 
 
@@ -182,3 +185,130 @@ def array_labels(data: ArrayLike) -> ArrayLike:
     if len(data.shape) > 1:
         raise TooManyDimensions("array_labels is only implemented for 1D arrays.")
     return np.arange(len(data))
+
+
+def first(
+    data: ArrayLike,
+    ignore_nodata: Optional[bool] = True,
+    axis: Optional[str] = None,
+):
+    if len(data) == 0:
+        return np.nan
+    if axis is None:
+        data = data.flatten()
+        axis = 0
+    if ignore_nodata:
+        nan_mask = ~pd.isnull(data)  # create mask for valid values (not np.nan)
+        idx_first = np.argmax(nan_mask, axis=axis)
+        first_elem = np.take(data, indices=0, axis=axis)
+
+        if pd.isnull(np.asarray(first_elem)).any():
+            for i in range(np.max(idx_first) + 1):
+                first_elem = np.nan_to_num(first_elem, True, np.take(data, i, axis))
+    else:  # take the first element, no matter np.nan values are in the array
+        first_elem = np.take(data, indices=0, axis=axis)
+    return first_elem
+
+
+def last(
+    data: ArrayLike,
+    ignore_nodata: Optional[bool] = True,
+    axis: Optional[int] = None,
+):
+    if len(data) == 0:
+        return np.nan
+    data = np.flip(data, axis=axis)  # flip data to retrieve the first valid element
+    last_elem = first(data, ignore_nodata=ignore_nodata, axis=axis)
+    return last_elem
+
+
+def order(
+    data: ArrayLike,
+    asc: Optional[bool] = True,
+    nodata: Optional[bool] = None,
+    axis: Optional[int] = None,
+):
+    if isinstance(data, list):
+        data = np.asarray(data)
+    if len(data) == 0:
+        return data
+
+    # See https://github.com/dask/dask/issues/4368
+    logger.warning(
+        "order: Dask does not support lazy sorting of arrays, therefore the array is loaded into memory here. This might fail for arrays that don't fit into memory."
+    )
+
+    permutation_idxs = np.argsort(data, kind="mergesort", axis=axis)
+    if not asc:  # [::-1] not possible
+        permutation_idxs = np.flip(
+            permutation_idxs
+        )  # descending - the order is flipped
+
+    if nodata is None:  # ignore np.nan values
+        if len(data.shape) > 1:
+            raise ValueError(
+                "order with nodata=None is not supported for arrays with more than one dimension, as this would result in sparse multi-dimensional arrays."
+            )
+        # sort the original data first, to get correct position of no data values
+        sorted_data = np.take_along_axis(data, permutation_idxs, axis=axis)
+        return permutation_idxs[~pd.isnull(sorted_data)]
+    elif nodata is False:  # put location/index of np.nan values first
+        # sort the original data first, to get correct position of no data values
+        sorted_data = data[permutation_idxs]
+        return np.append(
+            permutation_idxs[pd.isnull(sorted_data)],
+            permutation_idxs[~pd.isnull(sorted_data)],
+        )
+    elif nodata is True:  # default argsort behaviour, np.nan values are put last
+        return permutation_idxs
+
+
+def rearrange(
+    data: ArrayLike,
+    order: ArrayLike,
+    axis: Optional[int] = None,
+    source_transposed_axis: int = None,
+):
+    if len(data) == 0:
+        return data
+    if isinstance(data, list):
+        data = np.asarray(data)
+    if len(data.shape) == 1 and axis is None:
+        axis = 0
+    if isinstance(order, list):
+        order = np.asarray(order)
+    if len(order.shape) != 1:
+        raise ValueError(
+            f"rearrange: order must be one-dimensional, but has {len(order.shape)} dimensions. "
+        )
+    return np.take(data, indices=order, axis=axis)
+
+
+def sort(
+    data: ArrayLike,
+    asc: Optional[bool] = True,
+    nodata: Optional[bool] = None,
+    axis: Optional[int] = None,
+):
+    if isinstance(data, list):
+        data = np.asarray(data)
+    if len(data) == 0:
+        return data
+    if asc:
+        data_sorted = np.sort(data, axis=axis)
+    else:  # [::-1] not possible
+        data_sorted = -np.sort(
+            -data, axis=axis
+        )  # to get the indexes in descending order, the sign of the data is changed
+
+    if nodata is None:  # ignore np.nan values
+        nan_idxs = pd.isnull(data_sorted)
+        return data_sorted[~nan_idxs]
+    elif nodata == False:  # put np.nan values first
+        nan_idxs = pd.isnull(data_sorted)
+        data_sorted_flip = np.flip(data_sorted, axis=axis)
+        nan_idxs_flip = pd.isnull(data_sorted_flip)
+        data_sorted_flip[~nan_idxs_flip] = data_sorted[~nan_idxs]
+        return data_sorted_flip
+    elif nodata == True:  # default sort behaviour, np.nan values are put last
+        return data_sorted

@@ -8,14 +8,14 @@ import numpy as np
 import pytest
 from dask.distributed import Client
 from geopandas.geodataframe import GeoDataFrame
-from openeo_pg_parser_networkx import ProcessRegistry
+from openeo_pg_parser_networkx import Process, ProcessRegistry
 from openeo_pg_parser_networkx.pg_schema import (
     DEFAULT_CRS,
     BoundingBox,
     TemporalInterval,
 )
 
-from openeo_processes_dask.core import process
+from openeo_processes_dask.process_implementations.core import process
 from openeo_processes_dask.process_implementations.data_model import VectorCube
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,8 @@ def temporal_interval(interval=["2018-05-01", "2018-06-01"]) -> TemporalInterval
 
 @pytest.fixture
 def process_registry() -> ProcessRegistry:
+    registry = ProcessRegistry(wrap_funcs=[process])
+
     standard_processes = [
         func
         for _, func in inspect.getmembers(
@@ -63,10 +65,18 @@ def process_registry() -> ProcessRegistry:
         )
     ]
 
-    registry = ProcessRegistry(wrap_funcs=[process])
+    specs_module = importlib.import_module("openeo_processes_dask.specs")
 
+    specs = {}
     for func in standard_processes:
-        registry[func.__name__] = func
+        if hasattr(specs_module, func.__name__):
+            specs[func.__name__] = getattr(specs_module, func.__name__)
+        else:
+            logger.warning("Process {} does not have a spec.")
+        registry[func.__name__] = Process(
+            spec=specs[func.__name__] if func.__name__ in specs else None,
+            implementation=func,
+        )
 
     return registry
 

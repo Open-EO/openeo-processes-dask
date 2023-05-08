@@ -3,10 +3,13 @@ from typing import Callable, Optional, Union
 import rasterio
 from openeo_pg_parser_networkx.pg_schema import TemporalInterval, TemporalIntervals
 
-from openeo_processes_dask.exceptions import DimensionNotAvailable, TooManyDimensions
 from openeo_processes_dask.process_implementations.data_model import (
     RasterCube,
     VectorCube,
+)
+from openeo_processes_dask.process_implementations.exceptions import (
+    DimensionNotAvailable,
+    TooManyDimensions,
 )
 
 __all__ = ["aggregate_temporal", "aggregate_temporal_period", "aggregate_spatial"]
@@ -62,9 +65,7 @@ def aggregate_temporal_period(
     reducer: Callable,
     period: str,
     dimension: Optional[str] = None,
-    **kwargs,
 ) -> RasterCube:
-
     temporal_dims = data.openeo.temporal_dims
 
     if dimension is not None:
@@ -102,7 +103,10 @@ def aggregate_temporal_period(
 
     resampled_data = data.resample({applicable_temporal_dimension: frequency})
 
-    return resampled_data.reduce(reducer, keep_attrs=True)
+    positional_parameters = {"data": 0}
+    return resampled_data.reduce(
+        reducer, keep_attrs=True, positional_parameters=positional_parameters
+    )
 
 
 def aggregate_spatial(

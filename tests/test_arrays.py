@@ -3,13 +3,17 @@ from functools import partial
 import dask
 import dask.array as da
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
-from openeo_processes_dask.exceptions import ArrayElementNotAvailable, TooManyDimensions
 from openeo_processes_dask.process_implementations.arrays import *
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
+from openeo_processes_dask.process_implementations.exceptions import (
+    ArrayElementNotAvailable,
+    TooManyDimensions,
+)
 from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
 
@@ -28,7 +32,7 @@ def test_array_element(
     )
 
     _process = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=1,
         data=ParameterReference(from_parameter="data"),
     )
@@ -46,7 +50,7 @@ def test_array_element(
 
     # When the index is out of range, we expect an ArrayElementNotAvailable exception to be thrown
     _process_not_available = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=5,
         data=ParameterReference(from_parameter="data"),
     )
@@ -58,7 +62,7 @@ def test_array_element(
 
         # When the index is out of range, we expect an ArrayElementNotAvailable exception to be thrown
     _process_no_data = partial(
-        process_registry["array_element"],
+        process_registry["array_element"].implementation,
         index=5,
         return_nodata=True,
         data=ParameterReference(from_parameter="data"),
@@ -201,6 +205,152 @@ def test_array_labels():
         array_labels(np.array([[1, 0, 3, 2], [5, 0, 6, 4]]))
 
 
+def test_first():
+    assert first(np.array([1, 0, 3, 2])) == 1
+    assert pd.isnull(first(np.array([np.nan, 2, 3]), ignore_nodata=False))
+    assert first(np.array([np.nan, 2, 3]), ignore_nodata=True) == 2
+    assert pd.isnull(first([]))
+
+
+def test_first_along_axis():
+    multi_axis_array = np.array([[1, 0, 3, 2], [np.nan, 6, 7, 9]])
+    expected_result_0_true = np.array([1, 0, 3, 2])
+    expected_result_1_true = np.array([1, 6])
+    expected_result_0_false = np.array([1, 0, 3, 2])
+    expected_result_1_false = np.array([1, np.nan])
+
+    assert np.array_equal(
+        first(multi_axis_array, ignore_nodata=True, axis=0),
+        expected_result_0_true,
+        equal_nan=True,
+    )
+    assert np.array_equal(
+        first(multi_axis_array, ignore_nodata=True, axis=1),
+        expected_result_1_true,
+        equal_nan=True,
+    )
+    assert np.array_equal(
+        first(multi_axis_array, ignore_nodata=False, axis=0),
+        expected_result_0_false,
+        equal_nan=True,
+    )
+    assert np.array_equal(
+        first(multi_axis_array, ignore_nodata=False, axis=1),
+        expected_result_1_false,
+        equal_nan=True,
+    )
+
+
+def test_last():
+    assert last([1, 0, 3, 2]) == 2
+    assert pd.isnull(last([0, 1, np.nan], ignore_nodata=False))
+    assert last([0, 1, np.nan], ignore_nodata=True) == 1
+    assert pd.isnull(last([]))
+
+
+@pytest.mark.parametrize(
+    "data, asc, nodata, expected",
+    [
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            None,
+            [1, 2, 8, 5, 0, 4, 7, 9, 10],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            True,
+            [1, 2, 8, 5, 0, 4, 7, 9, 10, 3, 6],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            True,
+            [6, 3, 10, 9, 7, 4, 0, 5, 8, 2, 1],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            False,
+            [6, 3, 10, 9, 7, 4, 0, 5, 8, 2, 1],
+        ),
+    ],
+)
+def test_order(data, asc, nodata, expected):
+    np.testing.assert_array_equal(order(data=data, asc=asc, nodata=nodata), expected)
+    np.testing.assert_array_equal(
+        order(data=np.array(data), asc=asc, nodata=nodata), np.array(expected)
+    )
+    np.testing.assert_array_equal(
+        order(data=da.from_array(np.array(data)), asc=asc, nodata=nodata),
+        da.from_array(np.array(expected)),
+    )
+
+
+@pytest.mark.parametrize(
+    "data, order, axis, expected",
+    [
+        ([5, 4, 3], [2, 1, 0], None, [3, 4, 5]),
+        ([5, 4, 3, 2], [0, 2, 1, 3], 0, [5, 3, 4, 2]),
+        ([5, 4, 3, 2], [1, 3], 0, [4, 2]),
+        ([[5, 4, 3, 2], [5, 4, 3, 2]], [1, 3], 1, [[4, 2], [4, 2]]),
+    ],
+)
+def test_rearrange(data, order, axis, expected):
+    np.testing.assert_array_equal(
+        rearrange(data=data, order=order, axis=axis), expected
+    )
+    np.testing.assert_array_equal(
+        rearrange(data=np.array(data), order=order, axis=axis), np.array(expected)
+    )
+    np.testing.assert_array_equal(
+        rearrange(data=da.from_array(np.array(data)), order=order, axis=axis),
+        da.from_array(np.array(expected)),
+    )
+
+
+def test_rearrange_mismatched_shape():
+    with pytest.raises(ValueError):
+        rearrange(data=[[5, 4, 3, 2], [5, 4, 3, 2]], order=[[]], axis=1)
+
+
+@pytest.mark.parametrize(
+    "data, asc, nodata, expected",
+    [
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            True,
+            None,
+            [-1, 2, 3, 4, 6, 7, 8, 9, 9],
+        ),
+        (
+            [6, -1, 2, np.nan, 7, 4, np.nan, 8, 3, 9, 9],
+            False,
+            True,
+            [9, 9, 8, 7, 6, 4, 3, 2, -1, np.nan, np.nan],
+        ),
+    ],
+)
+def test_sort(data, asc, nodata, expected):
+    """Tests `sort` function."""
+    assert np.isclose(
+        sort(data=data, asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+    assert np.isclose(
+        sort(data=np.array(data), asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+    assert np.isclose(
+        sort(data=da.from_array(np.array(data)), asc=asc, nodata=nodata),
+        expected,
+        equal_nan=True,
+    ).all()
+
+
 @pytest.mark.parametrize("size", [(3, 3, 2, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_reduce_dimension(
@@ -216,7 +366,7 @@ def test_reduce_dimension(
 
     input_cube[:, :, :, 0] = 1
     _process = partial(
-        process_registry["array_find"],
+        process_registry["array_find"].implementation,
         data=ParameterReference(from_parameter="data"),
         value=1,
         reverse=False,
@@ -231,35 +381,19 @@ def test_reduce_dimension(
     assert output_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
 
-    # _process = partial(
-    #     process_registry["first"],
-    #     data=ParameterReference(from_parameter="data"),
-    #     ignore_nodata=True,
-    # )
-    # input_cube[0, :, :, :2] = np.nan
-    # input_cube[0, :, :, 2] = 1
-    # output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
-    # general_output_checks(
-    #     input_cube=input_cube,
-    #     output_cube=output_cube,
-    #     verify_attrs=False,
-    #     verify_crs=True,
-    # )
-    # assert output_cube.dims == ("x", "y", "t")
-    # xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))
-
-    # _process = partial(
-    #     process_registry["last"],
-    #     data=ParameterReference(from_parameter="data"),
-    #     ignore_nodata=True,
-    # )
-    # input_cube[:, :, :, -1] = 0
-    # output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
-    # general_output_checks(
-    #     input_cube=input_cube,
-    #     output_cube=output_cube,
-    #     verify_attrs=False,
-    #     verify_crs=True,
-    # )
-    # assert output_cube.dims == ("x", "y", "t")
-    # xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
+    _process = partial(
+        process_registry["first"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=True,
+    )
+    input_cube[0, :, :, :2] = np.nan
+    input_cube[0, :, :, 2] = 1
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))
