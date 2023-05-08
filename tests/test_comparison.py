@@ -108,7 +108,8 @@ def test_is(temporal_interval, bounding_box, random_raster_data, process_registr
     )
 
     _process = partial(
-        process_registry["is_nan"], x=ParameterReference(from_parameter="x")
+        process_registry["is_nan"].implementation,
+        x=ParameterReference(from_parameter="x"),
     )
     output_cube = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -120,7 +121,8 @@ def test_is(temporal_interval, bounding_box, random_raster_data, process_registr
     xr.testing.assert_equal(output_cube, xr.zeros_like(input_cube))
 
     _process = partial(
-        process_registry["is_valid"], x=ParameterReference(from_parameter="x")
+        process_registry["is_valid"].implementation,
+        x=ParameterReference(from_parameter="x"),
     )
     output_cube = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -132,7 +134,8 @@ def test_is(temporal_interval, bounding_box, random_raster_data, process_registr
     xr.testing.assert_equal(output_cube, xr.ones_like(input_cube))
 
     _process = partial(
-        process_registry["is_infinite"], x=ParameterReference(from_parameter="x")
+        process_registry["is_infinite"].implementation,
+        x=ParameterReference(from_parameter="x"),
     )
     output_cube = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -157,7 +160,9 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     )
 
     _process = partial(
-        process_registry["eq"], y=0.5, x=ParameterReference(from_parameter="x")
+        process_registry["eq"].implementation,
+        y=0.5,
+        x=ParameterReference(from_parameter="x"),
     )
     output_cube = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -169,7 +174,9 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     xr.testing.assert_equal(output_cube, xr.zeros_like(input_cube))
 
     _process = partial(
-        process_registry["neq"], y=0.5, x=ParameterReference(from_parameter="x")
+        process_registry["neq"].implementation,
+        y=0.5,
+        x=ParameterReference(from_parameter="x"),
     )
     output_cube = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -181,11 +188,15 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     xr.testing.assert_equal(output_cube, xr.ones_like(input_cube))
 
     _process = partial(
-        process_registry["gt"], x=ParameterReference(from_parameter="x"), y=0.5
+        process_registry["gt"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=0.5,
     )
     output_cube_gt = apply(data=input_cube, process=_process)
     _process = partial(
-        process_registry["gte"], x=ParameterReference(from_parameter="x"), y=0.5
+        process_registry["gte"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=0.5,
     )
     output_cube_gte = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -197,11 +208,15 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     xr.testing.assert_equal(output_cube_gt, output_cube_gte)
 
     _process = partial(
-        process_registry["lt"], x=ParameterReference(from_parameter="x"), y=0.5
+        process_registry["lt"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=0.5,
     )
     output_cube_lt = apply(data=input_cube, process=_process)
     _process = partial(
-        process_registry["lte"], x=ParameterReference(from_parameter="x"), y=0.5
+        process_registry["lte"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=0.5,
     )
     output_cube_lte = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -213,7 +228,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     xr.testing.assert_equal(output_cube_lt, output_cube_lte)
 
     _process = partial(
-        process_registry["between"],
+        process_registry["between"].implementation,
         x=ParameterReference(from_parameter="x"),
         min=0.1,
         max=0.5,
