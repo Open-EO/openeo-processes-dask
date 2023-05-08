@@ -3,12 +3,13 @@ from typing import Callable, Optional
 import numpy as np
 import xarray as xr
 from numpy.typing import ArrayLike
+from xarray.core.duck_array_ops import notnull
 
 __all__ = [
+    "is_infinite",
+    "is_valid",
     "is_nodata",
     "is_nan",
-    "is_valid",
-    "is_infinite",
     "eq",
     "neq",
     "gt",
@@ -19,24 +20,23 @@ __all__ = [
 ]
 
 
-def is_nodata(x: ArrayLike):
-    return x is None
-
-
-def is_nan(x: ArrayLike):
-    return np.isnan(x)
-
-
-def is_valid(x: ArrayLike):
-    if x is None:
-        return False
-    return np.logical_not(np.logical_or(np.isnan(x), np.isinf(x)))
-
-
 def is_infinite(x: ArrayLike):
     if x is None:
         return False
     return np.isinf(x)
+
+
+def is_valid(x: ArrayLike):
+    finite = np.logical_not(is_infinite(x))
+    return np.logical_and(notnull(x), finite)
+
+
+def is_nodata(x: ArrayLike):
+    return np.logical_not(is_valid(x))
+
+
+def is_nan(x: ArrayLike):
+    return is_nodata(x)
 
 
 def eq(
@@ -45,8 +45,8 @@ def eq(
     delta: Optional[float] = None,
     case_sensitive: Optional[bool] = True,
 ):
-    if x is None or y is None:
-        return None
+    if is_nodata(x) or is_nodata(y):
+        return np.nan
     if x is False or y is False:
         return False
     if delta:
@@ -65,36 +65,36 @@ def neq(
     case_sensitive: Optional[bool] = True,
 ):
     eq_val = eq(x, y, delta=delta, case_sensitive=case_sensitive)
-    if eq_val is None:
-        return None
+    if is_nodata(x) or is_nodata(y):
+        return np.nan
     else:
         return np.logical_not(eq_val)
 
 
 def gt(x: ArrayLike, y: ArrayLike):
-    if x is None or y is None:
-        return None
+    if is_nodata(x) or is_nodata(y):
+        return np.nan
     gt_ar = x > y
     return gt_ar
 
 
 def gte(x: ArrayLike, y: ArrayLike):
-    if x is None or y is None:
-        return None
+    if is_nodata(x) or is_nodata(y):
+        return np.nan
     gte_ar = (x - y) >= 0
     return gte_ar
 
 
 def lt(x: ArrayLike, y: ArrayLike):
-    if x is None or y is None:
-        return None
+    if is_nodata(x) or is_nodata(y):
+        return np.nan
     lt_ar = x < y
     return lt_ar
 
 
 def lte(x: ArrayLike, y: ArrayLike):
-    if x is None or y is None:
-        return None
+    if is_nodata(x) or is_nodata(y):
+        return np.nan
     lte_ar = x <= y
     return lte_ar
 
@@ -105,8 +105,8 @@ def between(
     max: float,
     exclude_max: Optional[bool] = False,
 ):
-    if x is None or min is None or max is None:
-        return None
+    if is_nodata(x) or is_nodata(min) or is_nodata(max):
+        return np.nan
     if exclude_max:
         bet = np.logical_and(gte(x, y=min), lt(x, y=max))
     else:

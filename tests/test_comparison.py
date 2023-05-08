@@ -6,11 +6,40 @@ import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
-from openeo_processes_dask.process_implementations.comparison import between, eq, neq
+from openeo_processes_dask.process_implementations.comparison import (
+    between,
+    eq,
+    is_valid,
+    neq,
+)
 from openeo_processes_dask.process_implementations.cubes.apply import apply
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (1, True),
+        (np.nan, False),
+        (np.array([1, np.nan]), np.array([True, False])),
+        ({"test": "ok"}, True),
+        ([1, 2, np.nan], np.array([True, True, False])),
+    ],
+)
+@pytest.mark.parametrize("is_dask", [True, False])
+def test_is_valid(value, expected, is_dask):
+    value = np.asarray(value)
+
+    if is_dask:
+        value = da.from_array(value)
+
+    output = is_valid(value)
+    np.testing.assert_array_equal(output, expected)
+
+    if is_dask:
+        assert hasattr(output, "dask")
 
 
 @pytest.mark.parametrize(
