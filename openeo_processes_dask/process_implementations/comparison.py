@@ -1,15 +1,16 @@
-import math
+from typing import Callable, Optional
 
 import dask.array as da
 import numpy as np
 import xarray as xr
+from numpy.typing import ArrayLike
+from xarray.core.duck_array_ops import notnull
 
 __all__ = [
-    "is_empty",
+    "is_infinite",
+    "is_valid",
     "is_nodata",
     "is_nan",
-    "is_valid",
-    "is_infinite",
     "eq",
     "neq",
     "gt",
@@ -20,142 +21,120 @@ __all__ = [
 ]
 
 
-def keep_attrs(x, y, data):
-    if isinstance(x, xr.DataArray) and isinstance(y, xr.DataArray):
-        for a in x.attrs:
-            if a in y.attrs and (x.attrs[a] == y.attrs[a]):
-                data.attrs[a] = x.attrs[a]
-    elif isinstance(x, xr.DataArray):
-        data.attrs = x.attrs
-    elif isinstance(y, xr.DataArray):
-        data.attrs = y.attrs
-    return data
-
-
-def is_empty(data):
-    if isinstance(data, xr.DataArray):
-        if data.shape == ():
-            return True
-        return False
-
-
-def is_nodata(x):
-    return x is None
-
-
-def is_nan(x):
-    if isinstance(x, (int, float)):
-        return math.isnan(x)
-    if isinstance(x, xr.DataArray):
-        return x.isnull()
-
-
-def is_valid(x):
+def is_infinite(x: ArrayLike):
     if x is None:
         return False
-    elif isinstance(x, float):
-        return not (math.isnan(x) or math.isinf(x))
-    return True
-
-
-def is_infinite(x):
-    if x is None:
+    if (
+        type(x) in [str, list, dict]
+        or type(x) in [np.ndarray, da.core.Array]
+        and x.dtype.kind.lower() in ["u", "s", "o"]
+    ):
         return False
-    return da.isinf(x)
+    return np.isinf(x)
+
+
+def is_valid(x: ArrayLike):
+    finite = np.logical_not(is_infinite(x))
+    return np.logical_and(notnull(x), finite)
+
+
+def is_nodata(x: ArrayLike):
+    return np.logical_not(is_valid(x))
+
+
+def is_nan(x: ArrayLike):
+    return is_nodata(x)
 
 
 def eq(
-    x, y, delta=False, case_sensitive=True, reduce=False
-):  # TODO: add equal checks for date strings in xar
-    if x is None or y is None:
-        return None
-
-    x_type = (
-        x.dtype if isinstance(x, (xr.core.dataarray.DataArray, np.ndarray)) else type(x)
-    )
-    y_type = (
-        y.dtype if isinstance(y, (xr.core.dataarray.DataArray, np.ndarray)) else type(y)
-    )
-
-    if (x_type in [float, int]) and (
-        y_type in [float, int]
-    ):  # both arrays only contain numbers
-        if type(delta) in [float, int]:
-            ar_eq = abs(x - y) <= delta
-        else:
-            ar_eq = x == y
+    x: ArrayLike,
+    y: ArrayLike,
+    delta: Optional[float] = None,
+    case_sensitive: Optional[bool] = True,
+):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
+    if x is False or y is False:
+        return False
+    if delta:
+        ar_eq = np.isclose(x, y, atol=delta)
+    elif not case_sensitive:
+        ar_eq = np.char.lower(x) == np.char.lower(y)
     else:
         ar_eq = x == y
-    ar_eq = keep_attrs(x, y, ar_eq)
-    if reduce:
-        return ar_eq.all()
-    else:
-        return ar_eq
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), ar_eq, np.nan)
 
 
 def neq(
-    x, y, delta=None, case_sensitive=True, reduce=False
-):  # TODO: add equal checks for date strings
-    eq_val = eq(x, y, delta=delta, case_sensitive=case_sensitive, reduce=reduce)
-    if eq_val is None:
-        return None
-    else:
-        return da.logical_not(eq_val)
+    x: ArrayLike,
+    y: ArrayLike,
+    delta: Optional[float] = None,
+    case_sensitive: Optional[bool] = True,
+):
+    eq_val = eq(x, y, delta=delta, case_sensitive=case_sensitive)
+    return np.where(
+        np.logical_and(is_valid(x), is_valid(y)), np.logical_not(eq_val), np.nan
+    )
 
 
-def gt(x, y, reduce=False):
-    if x is None or y is None:
-        return None
+def gt(x: ArrayLike, y: ArrayLike):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     gt_ar = x > y
-    gt_ar = keep_attrs(x, y, gt_ar)
-    if reduce:
-        return gt_ar.all()
-    else:
-        return gt_ar
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), gt_ar, np.nan)
 
 
-def gte(x, y, reduce=False):
-    if x is None or y is None:
-        return None
+def gte(x: ArrayLike, y: ArrayLike):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     gte_ar = (x - y) >= 0
-    gte_ar = keep_attrs(x, y, gte_ar)
-    if reduce:
-        return gte_ar.all()
-    else:
-        return gte_ar
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), gte_ar, np.nan)
 
 
-def lt(x, y, reduce=False):
-    if x is None or y is None:
-        return None
+def lt(x: ArrayLike, y: ArrayLike):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     lt_ar = x < y
-    lt_ar = keep_attrs(x, y, lt_ar)
-    if reduce:
-        return lt_ar.all()
-    else:
-        return lt_ar
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), lt_ar, np.nan)
 
 
-def lte(x, y, reduce=False):
-    if x is None or y is None:
-        return None
+def lte(x: ArrayLike, y: ArrayLike):
+    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
+        np.ndarray,
+        da.core.Array,
+    ]:
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     lte_ar = x <= y
-    lte_ar = keep_attrs(x, y, lte_ar)
-    if reduce:
-        return lte_ar.all()
-    else:
-        return lte_ar
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), lte_ar, np.nan)
 
 
-def between(x, min, max, exclude_max=False, reduce=False):
-    if x is None or min is None or max is None:
-        return None
-    if lt(max, min):
-        return False
+def between(
+    x: ArrayLike,
+    min: float,
+    max: float,
+    exclude_max: Optional[bool] = False,
+):
+    if is_nodata(min) or is_nodata(max):
+        return np.nan
     if exclude_max:
-        bet = da.logical_and(gte(x, min, reduce=reduce), lt(x, max, reduce=reduce))
+        bet = np.logical_and(gte(x, y=min), lt(x, y=max))
     else:
-        bet = da.logical_and(gte(x, min, reduce=reduce), lte(x, max, reduce=reduce))
-    if isinstance(x, xr.DataArray):
-        bet.attrs = x.attrs
-    return bet
+        bet = np.logical_and(gte(x, y=min), lte(x, y=max))
+    return np.where(is_valid(x), bet, np.nan)

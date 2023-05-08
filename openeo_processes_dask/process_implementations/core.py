@@ -6,7 +6,9 @@ from typing import Optional
 
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
-from openeo_processes_dask.exceptions import ProcessParameterMissing
+from openeo_processes_dask.process_implementations.exceptions import (
+    ProcessParameterMissing,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +68,11 @@ def process(f):
             else:
                 resolved_kwargs[k] = arg
 
-        # Remove 'axis' parameter if not expected in function signature.
-        if "axis" not in inspect.signature(f).parameters:
-            resolved_kwargs.pop("axis", None)
+        special_args = ["axis", "keepdims", "source_transposed_axis"]
+        # Remove 'axis' and keepdims parameter if not expected in function signature.
+        for arg in special_args:
+            if arg not in inspect.signature(f).parameters:
+                resolved_kwargs.pop(arg, None)
 
         pretty_args = {k: type(v) for k, v in resolved_kwargs.items()}
         logger.warning(f"Running process {f.__name__}")
