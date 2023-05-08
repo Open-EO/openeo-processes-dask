@@ -27,7 +27,7 @@ def is_infinite(x: ArrayLike):
     if (
         type(x) in [str, list, dict]
         or type(x) in [np.ndarray, da.core.Array]
-        and x.dtype.kind.lower() in ["u", "s"]
+        and x.dtype.kind.lower() in ["u", "s", "o"]
     ):
         return False
     return np.isinf(x)
