@@ -23,7 +23,11 @@ __all__ = [
 def is_infinite(x: ArrayLike):
     if x is None:
         return False
-    if isinstance(x, str) or x.dtype.kind.lower() in ["u", "s"]:
+    if (
+        type(x) in [str, list]
+        or isinstance(x, np.ndarray)
+        and x.dtype.kind.lower() in ["u", "s"]
+    ):
         return False
     return np.isinf(x)
 
@@ -47,8 +51,9 @@ def eq(
     delta: Optional[float] = None,
     case_sensitive: Optional[bool] = True,
 ):
-    if is_nodata(x) or is_nodata(y):
-        return np.nan
+    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     if x is False or y is False:
         return False
     if delta:
@@ -57,7 +62,7 @@ def eq(
         ar_eq = np.char.lower(x) == np.char.lower(y)
     else:
         ar_eq = x == y
-    return ar_eq
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), ar_eq, np.nan)
 
 
 def neq(
@@ -67,38 +72,41 @@ def neq(
     case_sensitive: Optional[bool] = True,
 ):
     eq_val = eq(x, y, delta=delta, case_sensitive=case_sensitive)
-    if is_nodata(x) or is_nodata(y):
-        return np.nan
-    else:
-        return np.logical_not(eq_val)
+    return np.where(
+        np.logical_and(is_valid(x), is_valid(y)), np.logical_not(eq_val), np.nan
+    )
 
 
 def gt(x: ArrayLike, y: ArrayLike):
-    if is_nodata(x) or is_nodata(y):
-        return np.nan
+    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     gt_ar = x > y
-    return gt_ar
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), gt_ar, np.nan)
 
 
 def gte(x: ArrayLike, y: ArrayLike):
-    if is_nodata(x) or is_nodata(y):
-        return np.nan
+    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     gte_ar = (x - y) >= 0
-    return gte_ar
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), gte_ar, np.nan)
 
 
 def lt(x: ArrayLike, y: ArrayLike):
-    if is_nodata(x) or is_nodata(y):
-        return np.nan
+    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     lt_ar = x < y
-    return lt_ar
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), lt_ar, np.nan)
 
 
 def lte(x: ArrayLike, y: ArrayLike):
-    if is_nodata(x) or is_nodata(y):
-        return np.nan
+    if not isinstance(x, np.ndarray) and not isinstance(y, np.ndarray):
+        if is_nodata(x) or is_nodata(y):
+            return np.nan
     lte_ar = x <= y
-    return lte_ar
+    return np.where(np.logical_and(is_valid(x), is_valid(y)), lte_ar, np.nan)
 
 
 def between(
@@ -107,10 +115,10 @@ def between(
     max: float,
     exclude_max: Optional[bool] = False,
 ):
-    if is_nodata(x) or is_nodata(min) or is_nodata(max):
+    if is_nodata(min) or is_nodata(max):
         return np.nan
     if exclude_max:
         bet = np.logical_and(gte(x, y=min), lt(x, y=max))
     else:
         bet = np.logical_and(gte(x, y=min), lte(x, y=max))
-    return bet
+    return np.where(is_valid(x), bet, np.nan)
