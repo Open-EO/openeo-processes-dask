@@ -1,5 +1,6 @@
 from typing import Callable, Optional
 
+import dask.array as da
 import numpy as np
 import xarray as xr
 from numpy.typing import ArrayLike
@@ -25,7 +26,7 @@ def is_infinite(x: ArrayLike):
         return False
     if (
         type(x) in [str, list]
-        or isinstance(x, np.ndarray)
+        or type(x) in [np.ndarray, da.core.Array]
         and x.dtype.kind.lower() in ["u", "s"]
     ):
         return False
