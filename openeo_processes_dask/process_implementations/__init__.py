@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 from .arrays import *
 from .comparison import *
 from .cubes import *
+from .logic import *
 from .math import *
 
 try:

@@ -115,7 +115,7 @@ def test_reduce_dimension(
         :, :, :, 0
     ] = True  # set all values in the first band to True - any() over bands will return True (ones_like)
     _process = partial(
-        process_registry["any"],
+        process_registry["any"].implementation,
         ignore_nodata=False,
         data=ParameterReference(from_parameter="data"),
     )
@@ -133,7 +133,7 @@ def test_reduce_dimension(
         :, :, :, 1
     ] = False  # set all values in the second band to False - all() over bands will return False (zeros_like)
     _process = partial(
-        process_registry["all"],
+        process_registry["all"].implementation,
         ignore_nodata=False,
         data=ParameterReference(from_parameter="data"),
     )
@@ -165,21 +165,27 @@ def test_merge_cubes(
     cube_1[:, :, :] = True
     cube_2[:, :, :] = False
 
-    overlap_resolver = partial(process_registry["and"], x=cube_1, y=cube_2)
+    overlap_resolver = partial(
+        process_registry["and"].implementation, x=cube_1, y=cube_2
+    )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(
         merged_cube, xr.zeros_like(merged_cube)
     )  # and(True, False) == False (zeros_like)
 
-    overlap_resolver = partial(process_registry["or"], x=cube_1, y=cube_2)
+    overlap_resolver = partial(
+        process_registry["or"].implementation, x=cube_1, y=cube_2
+    )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(
         merged_cube, xr.ones_like(merged_cube)
     )  # or(True, False) == True (ones_like)
 
-    overlap_resolver = partial(process_registry["xor"], x=cube_1, y=cube_2)
+    overlap_resolver = partial(
+        process_registry["xor"].implementation, x=cube_1, y=cube_2
+    )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(
@@ -201,7 +207,7 @@ def test_apply(temporal_interval, bounding_box, random_raster_data, process_regi
     input_cube[:, :, :, 2:] = False
 
     _process = partial(
-        process_registry["not"], x=ParameterReference(from_parameter="x")
+        process_registry["not"].implementation, x=ParameterReference(from_parameter="x")
     )
     output_cube = apply(data=input_cube, process=_process)
     expected_result = xr.zeros_like(input_cube)
@@ -216,7 +222,7 @@ def test_apply(temporal_interval, bounding_box, random_raster_data, process_regi
     xr.testing.assert_equal(output_cube, expected_result)
 
     _process = partial(
-        process_registry["if"],
+        process_registry["if"].implementation,
         value=ParameterReference(from_parameter="x"),
         accept=True,
         reject=True,
