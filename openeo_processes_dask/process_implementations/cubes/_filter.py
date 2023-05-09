@@ -6,9 +6,9 @@ from openeo_pg_parser_networkx.pg_schema import TemporalInterval
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
+    DimensionMissing,
     DimensionNotAvailable,
     TooManyDimensions,
-    DimensionMissing
 )
 
 logger = logging.getLogger(__name__)
@@ -69,14 +69,15 @@ def filter_labels(data: RasterCube, condition: Callable, dimension: str) -> Rast
     data = data.sel(**{dimension: label})
     return data
 
-def filter_bands(data: RasterCube, bands: List[str]) -> RasterCube:
+
+def filter_bands(data: RasterCube, bands: list[str]) -> RasterCube:
     band_dim = data.openeo.band_dims
     if not band_dim:
-        raise DimensionMissing(
-            "A band dimension is missing."
-        )
+        raise DimensionMissing("A band dimension is missing.")
     try:
         data = data.sel(**{band_dim[0]: bands})
     except Exception as e:
-        raise Exception(f"The provided bands: {bands} are not all available in the datacube. Please modify the bands parameter of filter_bands and choose among: {data[band_dim[0]].values}.")
+        raise Exception(
+            f"The provided bands: {bands} are not all available in the datacube. Please modify the bands parameter of filter_bands and choose among: {data[band_dim[0]].values}."
+        )
     return data

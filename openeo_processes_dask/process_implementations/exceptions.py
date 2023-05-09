@@ -49,5 +49,6 @@ class QuantilesParameterMissing(OpenEOException):
 class QuantilesParameterConflict(OpenEOException):
     pass
 
+
 class DimensionMissing(OpenEOException):
     pass
