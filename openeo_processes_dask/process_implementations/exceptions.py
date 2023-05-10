@@ -52,3 +52,7 @@ class QuantilesParameterConflict(OpenEOException):
 
 class DimensionMissing(OpenEOException):
     pass
+
+
+class BandFilterParameterMissing(OpenEOException):
+    pass
