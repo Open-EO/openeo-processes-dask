@@ -24,13 +24,15 @@ def test_merge_cubes_type_1(temporal_interval, bounding_box, random_raster_data)
         data=random_raster_data,
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
-        bands=["B02", "B03", "B04", "B08"],
+        bands=["B02", "B03", "B04", "--324"],
+        backend="dask",
     )
 
-    cube_1 = origin_cube.drop_sel({"bands": ["B04", "B08"]})
+    cube_1 = origin_cube.drop_sel({"bands": ["B04", "--324"]})
     cube_2 = origin_cube.drop_sel({"bands": ["B02", "B03"]})
 
     merged_cube = merge_cubes(cube_1, cube_2)
+
     xr.testing.assert_equal(merged_cube, origin_cube)
 
 

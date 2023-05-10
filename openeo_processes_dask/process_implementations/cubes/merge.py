@@ -90,7 +90,28 @@ def merge_cubes(
 
             if len(dims_requiring_resolve) == 0:
                 # Example 1: No overlap on any dimensions, can just combine by coords
+                previous_dim_order = list(cube1.dims) + [
+                    dim for dim in cube2.dims if dim not in cube1.dims
+                ]
+
+                if len(cube1.openeo.band_dims) > 0 or len(cube2.openeo.band_dims) > 0:
+                    previous_band_order = list(
+                        cube1[cube1.openeo.band_dims[0]].values
+                    ) + [
+                        band
+                        for band in list(cube2[cube2.openeo.band_dims[0]].values)
+                        if band not in list(cube1[cube1.openeo.band_dims[0]].values)
+                    ]
+                    cube1 = cube1.to_dataset(cube1.openeo.band_dims[0])
+                    cube2 = cube2.to_dataset(cube2.openeo.band_dims[0])
+
                 merged_cube = xr.combine_by_coords([cube1, cube2])
+                if isinstance(merged_cube, xr.Dataset):
+                    merged_cube = merged_cube.to_array(dim="bands")
+                    merged_cube = merged_cube.reindex({"bands": previous_band_order})
+
+                merged_cube = merged_cube.transpose(*previous_dim_order)
+
             elif len(dims_requiring_resolve) == 1:
                 # Example 2: Overlap on one dimension, resolve these pixels with overlap resolver
                 # and combine the rest by coords
