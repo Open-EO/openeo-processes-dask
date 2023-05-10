@@ -90,11 +90,15 @@ def merge_cubes(
 
             if len(dims_requiring_resolve) == 0:
                 # Example 1: No overlap on any dimensions, can just combine by coords
+
+                # We need to convert to dataset before calling `combine_by_coords` in order to avoid the bug raised in https://github.com/Open-EO/openeo-processes-dask/issues/102
+                # This messes with the order of dimensions and the band dimension, so we need to reorder this correctly afterwards.
                 previous_dim_order = list(cube1.dims) + [
                     dim for dim in cube2.dims if dim not in cube1.dims
                 ]
 
                 if len(cube1.openeo.band_dims) > 0 or len(cube2.openeo.band_dims) > 0:
+                    # Same reordering issue mentioned above
                     previous_band_order = list(
                         cube1[cube1.openeo.band_dims[0]].values
                     ) + [
