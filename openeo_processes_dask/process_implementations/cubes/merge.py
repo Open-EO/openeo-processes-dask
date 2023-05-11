@@ -69,8 +69,8 @@ def merge_cubes(
                 merged_cube = concat_both_cubes_rechunked
             else:
                 # Example 3.2: Elementwise operation
-                positional_parameters = {"data": 0}
-                named_parameters = {"context": context}
+                positional_parameters = {}
+                named_parameters = {"x": cube1, "y": cube2, "context": context}
 
                 merged_cube = concat_both_cubes_rechunked.reduce(
                     overlap_resolver,
@@ -153,8 +153,20 @@ def merge_cubes(
                     | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
                 )
 
-                positional_parameters = {"data": 0}
-                named_parameters = {"context": context}
+                conflicts_cube_1 = cube1.sel(
+                    **{overlapping_dim: overlap_per_shared_dim[overlapping_dim].in_both}
+                )
+
+                conflicts_cube_2 = cube2.sel(
+                    **{overlapping_dim: overlap_per_shared_dim[overlapping_dim].in_both}
+                )
+
+                positional_parameters = {}
+                named_parameters = {
+                    "x": conflicts_cube_1,
+                    "y": conflicts_cube_2,
+                    "context": context,
+                }
 
                 merge_conflicts = stacked_conflicts_rechunked.reduce(
                     overlap_resolver,
@@ -194,8 +206,16 @@ def merge_cubes(
             )
 
         # Example 4: broadcast lower dimension cube to higher-dimension cube
-        lower_dim_cube = cube1 if len(cube1.dims) < len(cube2.dims) else cube2
-        higher_dim_cube = cube1 if len(cube1.dims) >= len(cube2.dims) else cube2
+        if len(cube1.dims) < len(cube2.dims):
+            lower_dim_cube = cube1
+            higher_dim_cube = cube2
+            is_cube1_lower_dim = True
+
+        else:
+            lower_dim_cube = cube2
+            higher_dim_cube = cube1
+            is_cube1_lower_dim = False
+
         lower_dim_cube_broadcast = lower_dim_cube.broadcast_like(higher_dim_cube)
 
         # Stack both cubes and use overlap resolver to resolve each pixel
@@ -209,8 +229,16 @@ def merge_cubes(
             | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
         )
 
-        positional_parameters = {"data": 0}
+        positional_parameters = {}
+
         named_parameters = {"context": context}
+        if is_cube1_lower_dim:
+            named_parameters["x"] = lower_dim_cube_broadcast
+            named_parameters["y"] = higher_dim_cube
+        else:
+            named_parameters["x"] = higher_dim_cube
+            named_parameters["y"] = lower_dim_cube_broadcast
+
         merged_cube = both_stacked_rechunked.reduce(
             overlap_resolver,
             dim=NEW_DIM_NAME,
