@@ -137,7 +137,11 @@ def test_merge_cubes_type_4(
         x=ParameterReference(from_parameter="x"),
         y=ParameterReference(from_parameter="y"),
     )
-    merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
-    assert isinstance(merged_cube.data, dask.array.Array)
+    merged_cube_1 = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
+    merged_cube_2 = merge_cubes(cube_2, cube_1, overlap_resolver=overlap_resolver)
 
-    xr.testing.assert_equal(merged_cube, cube_1 + 1)
+    assert isinstance(merged_cube_1.data, dask.array.Array)
+    xr.testing.assert_equal(merged_cube_1, cube_1 + 1)
+
+    assert isinstance(merged_cube_2.data, dask.array.Array)
+    xr.testing.assert_equal(merged_cube_2, cube_1 + 1)
