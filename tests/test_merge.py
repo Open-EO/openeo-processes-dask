@@ -1,5 +1,6 @@
 from functools import partial
 
+import dask
 import numpy as np
 import pytest
 import xarray as xr
@@ -24,13 +25,16 @@ def test_merge_cubes_type_1(temporal_interval, bounding_box, random_raster_data)
         data=random_raster_data,
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
-        bands=["B02", "B03", "B04", "B08"],
+        bands=["B02", "B03", "B04", "--324"],
+        backend="dask",
     )
 
-    cube_1 = origin_cube.drop_sel({"bands": ["B04", "B08"]})
+    cube_1 = origin_cube.drop_sel({"bands": ["B04", "--324"]})
     cube_2 = origin_cube.drop_sel({"bands": ["B02", "B03"]})
 
     merged_cube = merge_cubes(cube_1, cube_2)
+    assert isinstance(merged_cube.data, dask.array.Array)
+
     xr.testing.assert_equal(merged_cube, origin_cube)
 
 
@@ -44,6 +48,7 @@ def test_merge_cubes_type_2(
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B01", "B02", "B03"],
+        backend="dask",
     )
 
     cube_1 = origin_cube.drop_sel({"bands": "B03"})
@@ -53,12 +58,15 @@ def test_merge_cubes_type_2(
         merge_cubes(cube_1, cube_2)
 
     overlap_resolver = partial(
-        process_registry["mean"].implementation,
-        data=ParameterReference(from_parameter="data"),
+        process_registry["add"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=ParameterReference(from_parameter="y"),
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
+    assert isinstance(merged_cube.data, dask.array.Array)
+
     xr.testing.assert_equal(
-        merged_cube.sel({"bands": "B02"}), origin_cube.sel({"bands": "B02"})
+        merged_cube.sel({"bands": "B02"}) / 2, origin_cube.sel({"bands": "B02"})
     )
 
 
@@ -73,10 +81,11 @@ def test_merge_cubes_type_3(
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B01", "B02", "B03"],
+        backend="dask",
     )
 
     cube_1 = origin_cube
-    cube_2 = origin_cube + 1
+    cube_2 = origin_cube
 
     # If no overlap reducer is provided, then simply concatenate along a new dimension
     merged_cube = merge_cubes(cube_1, cube_2)
@@ -90,11 +99,14 @@ def test_merge_cubes_type_3(
         cube_1,
         cube_2,
         partial(
-            process_registry["max"].implementation,
-            data=ParameterReference(from_parameter="data"),
+            process_registry["add"].implementation,
+            x=ParameterReference(from_parameter="x"),
+            y=ParameterReference(from_parameter="y"),
         ),
     )
-    xr.testing.assert_equal(merged_cube, cube_1 + 1)
+    assert isinstance(merged_cube.data, dask.array.Array)
+
+    xr.testing.assert_equal(merged_cube, cube_1 * 2)
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 3)])
@@ -108,6 +120,7 @@ def test_merge_cubes_type_4(
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B01", "B02", "B03"],
+        backend="dask",
     )
 
     cube_2 = xr.DataArray(
@@ -120,8 +133,15 @@ def test_merge_cubes_type_4(
         merge_cubes(cube_1, cube_2)
 
     overlap_resolver = partial(
-        process_registry["sum"].implementation,
-        data=ParameterReference(from_parameter="data"),
+        process_registry["add"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=ParameterReference(from_parameter="y"),
     )
-    merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
-    xr.testing.assert_equal(merged_cube, cube_1 + 1)
+    merged_cube_1 = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
+    merged_cube_2 = merge_cubes(cube_2, cube_1, overlap_resolver=overlap_resolver)
+
+    assert isinstance(merged_cube_1.data, dask.array.Array)
+    xr.testing.assert_equal(merged_cube_1, cube_1 + 1)
+
+    assert isinstance(merged_cube_2.data, dask.array.Array)
+    xr.testing.assert_equal(merged_cube_2, cube_1 + 1)

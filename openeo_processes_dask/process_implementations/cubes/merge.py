@@ -69,8 +69,8 @@ def merge_cubes(
                 merged_cube = concat_both_cubes_rechunked
             else:
                 # Example 3.2: Elementwise operation
-                positional_parameters = {"data": 0}
-                named_parameters = {"context": context}
+                positional_parameters = {}
+                named_parameters = {"x": cube1, "y": cube2, "context": context}
 
                 merged_cube = concat_both_cubes_rechunked.reduce(
                     overlap_resolver,
@@ -90,7 +90,32 @@ def merge_cubes(
 
             if len(dims_requiring_resolve) == 0:
                 # Example 1: No overlap on any dimensions, can just combine by coords
+
+                # We need to convert to dataset before calling `combine_by_coords` in order to avoid the bug raised in https://github.com/Open-EO/openeo-processes-dask/issues/102
+                # This messes with the order of dimensions and the band dimension, so we need to reorder this correctly afterwards.
+                previous_dim_order = list(cube1.dims) + [
+                    dim for dim in cube2.dims if dim not in cube1.dims
+                ]
+
+                if len(cube1.openeo.band_dims) > 0 or len(cube2.openeo.band_dims) > 0:
+                    # Same reordering issue mentioned above
+                    previous_band_order = list(
+                        cube1[cube1.openeo.band_dims[0]].values
+                    ) + [
+                        band
+                        for band in list(cube2[cube2.openeo.band_dims[0]].values)
+                        if band not in list(cube1[cube1.openeo.band_dims[0]].values)
+                    ]
+                    cube1 = cube1.to_dataset(cube1.openeo.band_dims[0])
+                    cube2 = cube2.to_dataset(cube2.openeo.band_dims[0])
+
                 merged_cube = xr.combine_by_coords([cube1, cube2])
+                if isinstance(merged_cube, xr.Dataset):
+                    merged_cube = merged_cube.to_array(dim="bands")
+                    merged_cube = merged_cube.reindex({"bands": previous_band_order})
+
+                merged_cube = merged_cube.transpose(*previous_dim_order)
+
             elif len(dims_requiring_resolve) == 1:
                 # Example 2: Overlap on one dimension, resolve these pixels with overlap resolver
                 # and combine the rest by coords
@@ -128,8 +153,20 @@ def merge_cubes(
                     | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
                 )
 
-                positional_parameters = {"data": 0}
-                named_parameters = {"context": context}
+                conflicts_cube_1 = cube1.sel(
+                    **{overlapping_dim: overlap_per_shared_dim[overlapping_dim].in_both}
+                )
+
+                conflicts_cube_2 = cube2.sel(
+                    **{overlapping_dim: overlap_per_shared_dim[overlapping_dim].in_both}
+                )
+
+                positional_parameters = {}
+                named_parameters = {
+                    "x": conflicts_cube_1,
+                    "y": conflicts_cube_2,
+                    "context": context,
+                }
 
                 merge_conflicts = stacked_conflicts_rechunked.reduce(
                     overlap_resolver,
@@ -169,8 +206,16 @@ def merge_cubes(
             )
 
         # Example 4: broadcast lower dimension cube to higher-dimension cube
-        lower_dim_cube = cube1 if len(cube1.dims) < len(cube2.dims) else cube2
-        higher_dim_cube = cube1 if len(cube1.dims) >= len(cube2.dims) else cube2
+        if len(cube1.dims) < len(cube2.dims):
+            lower_dim_cube = cube1
+            higher_dim_cube = cube2
+            is_cube1_lower_dim = True
+
+        else:
+            lower_dim_cube = cube2
+            higher_dim_cube = cube1
+            is_cube1_lower_dim = False
+
         lower_dim_cube_broadcast = lower_dim_cube.broadcast_like(higher_dim_cube)
 
         # Stack both cubes and use overlap resolver to resolve each pixel
@@ -184,8 +229,16 @@ def merge_cubes(
             | {dim: "auto" for dim in cube1.dims if dim != NEW_DIM_NAME}
         )
 
-        positional_parameters = {"data": 0}
+        positional_parameters = {}
+
         named_parameters = {"context": context}
+        if is_cube1_lower_dim:
+            named_parameters["x"] = lower_dim_cube_broadcast
+            named_parameters["y"] = higher_dim_cube
+        else:
+            named_parameters["x"] = higher_dim_cube
+            named_parameters["y"] = lower_dim_cube_broadcast
+
         merged_cube = both_stacked_rechunked.reduce(
             overlap_resolver,
             dim=NEW_DIM_NAME,
