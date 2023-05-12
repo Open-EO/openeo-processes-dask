@@ -241,3 +241,18 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
         verify_crs=True,
     )
     xr.testing.assert_equal(output_cube, xr.zeros_like(input_cube))
+    _process = partial(
+        process_registry["between"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        min=0.1,
+        max=0.5,
+        exclude_max=True,
+    )
+    output_cube_b2 = apply(data=input_cube, process=_process)
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=True,
+        verify_crs=True,
+    )
+    xr.testing.assert_equal(output_cube, output_cube_b2)
