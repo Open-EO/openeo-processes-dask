@@ -6,11 +6,6 @@ import xarray as xr
 from numpy.typing import ArrayLike
 from xarray.core.duck_array_ops import notnull
 
-__all__ = [
-    "check_type",
-    "is_array",
-]
-
 
 def check_type(x, type):
     if type == "str":
