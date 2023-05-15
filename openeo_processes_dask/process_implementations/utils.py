@@ -7,7 +7,7 @@ from numpy.typing import ArrayLike
 from xarray.core.duck_array_ops import notnull
 
 
-def check_type(x, type):
+def check_type(x, type="float"):
     if type == "str":
         if (
             isinstance(x, str)
