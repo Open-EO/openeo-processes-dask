@@ -6,6 +6,7 @@ from pyproj.crs import CRS, CRSError
 
 from openeo_processes_dask.process_implementations.cubes.utils import (
     detect_changing_unit,
+    prepare_geobox,
 )
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 

@@ -6,7 +6,8 @@ import math
 from enum import Enum
 
 from affine import Affine
-from odc.geo.geobox import GeoBox, resolution_from_affine
+from datacube.utils.geometry import GeoBox
+from odc.geo.geobox import resolution_from_affine
 
 
 def _has_dask():
