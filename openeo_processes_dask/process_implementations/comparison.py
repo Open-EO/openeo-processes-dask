@@ -6,11 +6,14 @@ import xarray as xr
 from numpy.typing import ArrayLike
 from xarray.core.duck_array_ops import notnull
 
+openeo_processes_dask.process_implementations.utils import (
+    check_type,
+    is_array,
+)
+
 __all__ = [
     "is_infinite",
     "is_valid",
-    "is_nodata",
-    "is_nan",
     "eq",
     "neq",
     "gt",
@@ -24,11 +27,7 @@ __all__ = [
 def is_infinite(x: ArrayLike):
     if x is None:
         return False
-    if (
-        type(x) in [str, list, dict]
-        or type(x) in [np.ndarray, da.core.Array]
-        and x.dtype.kind.lower() in ["u", "s", "o"]
-    ):
+    if check_type(x, "str") or check_type(x, "list") or or check_type(x, "dict")
         return False
     return np.isinf(x)
 
@@ -38,31 +37,29 @@ def is_valid(x: ArrayLike):
     return np.logical_and(notnull(x), finite)
 
 
-def is_nodata(x: ArrayLike):
-    return np.logical_not(is_valid(x))
-
-
-def is_nan(x: ArrayLike):
-    return is_nodata(x)
-
-
 def eq(
     x: ArrayLike,
     y: ArrayLike,
     delta: Optional[float] = None,
     case_sensitive: Optional[bool] = True,
 ):
-    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
-        np.ndarray,
-        da.core.Array,
-    ]:
-        if is_nodata(x) or is_nodata(y):
+    if not is_array(x, y):
+        if not is_valid(x) or not is_valid(y):
             return np.nan
-    if x is False or y is False:
-        return False
-    if delta:
+    if (
+        isinstance(x, np.datetime)
+        or isinstance(y, np.datetime)
+        or type(x) in [np.ndarray, da.core.Array]
+        and x.dtype.kind.lower() == "m"
+        or type(y) in [np.ndarray, da.core.Array]
+        and y.dtype.kind.lower() == "m"
+    ):
+        raise Exception("Comparison of datetime not supported, yet.")
+    if delta and check_type(x, "float") and check_type(y, "float"):
         ar_eq = np.isclose(x, y, atol=delta)
-    elif not case_sensitive:
+    else:
+        ar_eq = x == y
+    if not case_sensitive and check_type(x, "str") and check_type(y, "str"):
         ar_eq = np.char.lower(x) == np.char.lower(y)
     else:
         ar_eq = x == y
@@ -82,44 +79,32 @@ def neq(
 
 
 def gt(x: ArrayLike, y: ArrayLike):
-    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
-        np.ndarray,
-        da.core.Array,
-    ]:
-        if is_nodata(x) or is_nodata(y):
+    if not is_array(x, y):
+        if not is_valid(x) or not is_valid(y):
             return np.nan
     gt_ar = x > y
     return np.where(np.logical_and(is_valid(x), is_valid(y)), gt_ar, np.nan)
 
 
 def gte(x: ArrayLike, y: ArrayLike):
-    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
-        np.ndarray,
-        da.core.Array,
-    ]:
-        if is_nodata(x) or is_nodata(y):
+    if not is_array(x, y):
+        if not is_valid(x) or not is_valid(y):
             return np.nan
     gte_ar = (x - y) >= 0
     return np.where(np.logical_and(is_valid(x), is_valid(y)), gte_ar, np.nan)
 
 
 def lt(x: ArrayLike, y: ArrayLike):
-    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
-        np.ndarray,
-        da.core.Array,
-    ]:
-        if is_nodata(x) or is_nodata(y):
+    if not is_array(x, y):
+        if not is_valid(x) or not is_valid(y):
             return np.nan
     lt_ar = x < y
     return np.where(np.logical_and(is_valid(x), is_valid(y)), lt_ar, np.nan)
 
 
 def lte(x: ArrayLike, y: ArrayLike):
-    if not type(x) in [np.ndarray, da.core.Array] and not type(y) in [
-        np.ndarray,
-        da.core.Array,
-    ]:
-        if is_nodata(x) or is_nodata(y):
+    if not is_array(x, y):
+        if not is_valid(x) or not is_valid(y):
             return np.nan
     lte_ar = x <= y
     return np.where(np.logical_and(is_valid(x), is_valid(y)), lte_ar, np.nan)
@@ -131,7 +116,7 @@ def between(
     max: float,
     exclude_max: Optional[bool] = False,
 ):
-    if is_nodata(min) or is_nodata(max):
+    if not is_valid(min) or not is_valid(max):
         return np.nan
     if exclude_max:
         bet = np.logical_and(gte(x, y=min), lt(x, y=max))
