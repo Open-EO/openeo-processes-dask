@@ -148,7 +148,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
 
     _process = partial(
         process_registry["eq"].implementation,
-        y=0.5,
+        y=200,
         x=ParameterReference(from_parameter="x"),
     )
     output_cube = apply(data=input_cube, process=_process)
@@ -162,7 +162,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
 
     _process = partial(
         process_registry["neq"].implementation,
-        y=0.5,
+        y=200,
         x=ParameterReference(from_parameter="x"),
     )
     output_cube = apply(data=input_cube, process=_process)
@@ -177,13 +177,13 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     _process = partial(
         process_registry["gt"].implementation,
         x=ParameterReference(from_parameter="x"),
-        y=0.5,
+        y=200,
     )
     output_cube_gt = apply(data=input_cube, process=_process)
     _process = partial(
         process_registry["gte"].implementation,
         x=ParameterReference(from_parameter="x"),
-        y=0.5,
+        y=200,
     )
     output_cube_gte = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -197,13 +197,13 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     _process = partial(
         process_registry["lt"].implementation,
         x=ParameterReference(from_parameter="x"),
-        y=0.5,
+        y=200,
     )
     output_cube_lt = apply(data=input_cube, process=_process)
     _process = partial(
         process_registry["lte"].implementation,
         x=ParameterReference(from_parameter="x"),
-        y=0.5,
+        y=200,
     )
     output_cube_lte = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -217,8 +217,8 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     _process = partial(
         process_registry["between"].implementation,
         x=ParameterReference(from_parameter="x"),
-        min=0.1,
-        max=0.5,
+        min=200,
+        max=300,
     )
     output_cube = apply(data=input_cube, process=_process)
     general_output_checks(
@@ -231,8 +231,8 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
     _process = partial(
         process_registry["between"].implementation,
         x=ParameterReference(from_parameter="x"),
-        min=0.1,
-        max=0.5,
+        min=200,
+        max=300,
         exclude_max=True,
     )
     output_cube_b2 = apply(data=input_cube, process=_process)
