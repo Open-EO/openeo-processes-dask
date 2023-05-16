@@ -51,12 +51,10 @@ def eq(
         or type(y) in [np.ndarray, da.core.Array]
         and y.dtype.kind.lower() == "m"
     ):
-        raise Exception("Comparison of datetime not supported, yet.")
+        raise Exception("Comparison of datetime not supported, yet. ")
     if delta and check_type(x, "float") and check_type(y, "float"):
         ar_eq = np.isclose(x, y, atol=delta)
-    else:
-        ar_eq = x == y
-    if not case_sensitive and check_type(x, "str") and check_type(y, "str"):
+    elif not case_sensitive and check_type(x, "str") and check_type(y, "str"):
         ar_eq = np.char.lower(x) == np.char.lower(y)
     else:
         ar_eq = x == y

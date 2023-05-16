@@ -40,9 +40,11 @@ def check_type(x, t="float"):
 
 
 def is_array(x: ArrayLike, y: ArrayLike):
-    if type(x) in [np.ndarray, da.core.Array] and type(y) in [
-        np.ndarray,
-        da.core.Array,
-    ]:
-        return True
-    return False
+    return (
+        type(x) in [np.ndarray, da.core.Array]
+        or type(y) in [np.ndarray, da.core.Array]
+        or isinstance(x, list)
+        and len(x) > 1
+        or isinstance(y, list)
+        and len(y) > 1
+    )
