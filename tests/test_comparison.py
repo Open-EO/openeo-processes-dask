@@ -6,6 +6,7 @@ import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
+from openeo_processes_dask.process_implementations import merge_cubes
 from openeo_processes_dask.process_implementations.comparison import (
     between,
     eq,
@@ -86,7 +87,6 @@ def test_eq_nan(x, y):
     "x, y, delta, case_sensitive",
     [
         (1, "1", None, True),
-        (0, False, None, None),
         (1.02, 1, 0.01, None),
         ("Test", "test", None, True),
     ],
@@ -123,6 +123,11 @@ def test_neq(x, y, delta, case_sensitive):
         delta=delta,
         case_sensitive=case_sensitive,
     )
+
+
+def test_eq_bool():
+    assert eq(x=0, y=False) is False
+    assert neq(x=False, y=0)
 
 
 @pytest.mark.parametrize(
@@ -287,3 +292,31 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
         verify_crs=True,
     )
     xr.testing.assert_equal(output_cube, output_cube_b2)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 4, 3)])
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_merge_cubes_type_3(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    # This is basically broadcasting the smaller datacube and then applying the overlap resolver.
+    origin_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B01", "B02", "B03"],
+        backend="dask",
+    )
+
+    cube_1 = origin_cube
+    cube_2 = origin_cube
+
+    merged_cube = merge_cubes(
+        cube_1,
+        cube_2,
+        partial(
+            process_registry["eq"].implementation,
+            x=ParameterReference(from_parameter="x"),
+            y=ParameterReference(from_parameter="y"),
+        ),
+    )
