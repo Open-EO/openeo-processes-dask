@@ -6,10 +6,7 @@ import xarray as xr
 from numpy.typing import ArrayLike
 from xarray.core.duck_array_ops import notnull
 
-openeo_processes_dask.process_implementations.utils import (
-    check_type,
-    is_array,
-)
+from openeo_processes_dask.process_implementations.utils import check_type, is_array
 
 __all__ = [
     "is_infinite",
@@ -27,7 +24,7 @@ __all__ = [
 def is_infinite(x: ArrayLike):
     if x is None:
         return False
-    if check_type(x, "str") or check_type(x, "list") or or check_type(x, "dict")
+    if check_type(x, "str") or check_type(x, "list") or check_type(x, "dict"):
         return False
     return np.isinf(x)
 
