@@ -297,7 +297,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 3)])
 @pytest.mark.parametrize("dtype", [np.float64])
-def test_merge_cubes_type_3(
+def test_merge_cubes_eq(
     temporal_interval, bounding_box, random_raster_data, process_registry
 ):
     # This is basically broadcasting the smaller datacube and then applying the overlap resolver.
@@ -322,6 +322,6 @@ def test_merge_cubes_type_3(
         ),
     )
 
-    assert isinstance(merged_cube.data, dask.array.Array)
+    assert isinstance(merged_cube.data, np.ndarray)
 
-    # xr.testing.assert_equal(merged_cube, np.ones_like(origin_cube))
+    xr.testing.assert_equal(merged_cube, np.ones_like(origin_cube))
