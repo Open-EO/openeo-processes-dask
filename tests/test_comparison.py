@@ -88,14 +88,14 @@ def test_eq_nan(x, y):
         (1, "1", None, True),
         (0, False, None, None),
         (1.02, 1, 0.01, None),
-        ("Test", "test", None, False),
+        ("Test", "test", None, True),
     ],
 )
 def test_eq_not(x, y, delta, case_sensitive):
-    assert eq(x=x, y=y, delta=delta, case_sensitive=case_sensitive) is False
+    assert eq(x=x, y=y, delta=delta, case_sensitive=case_sensitive) == 0
     assert (
         eq(x=np.array([x]), y=np.array([y]), delta=delta, case_sensitive=case_sensitive)
-        is False
+        == 0
     )
     assert (
         eq(
@@ -104,7 +104,7 @@ def test_eq_not(x, y, delta, case_sensitive):
             delta=delta,
             case_sensitive=case_sensitive,
         )
-        is False
+        == 0
     )
 
 
