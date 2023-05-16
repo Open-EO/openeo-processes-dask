@@ -131,6 +131,13 @@ def test_eq_bool():
     assert neq(x=False, y=0)
 
 
+def test_eq_mask():
+    data = np.array([[10, 10], [10, 0]])
+    data = da.from_array(data)
+    m = eq(data, 10)
+    assert (m == data / 10).all()
+
+
 @pytest.mark.parametrize(
     "x, min, max, exclude_max, expected",
     [
@@ -324,4 +331,4 @@ def test_merge_cubes_eq(
 
     assert isinstance(merged_cube.data, np.ndarray)
 
-    xr.testing.assert_equal(merged_cube, np.ones_like(origin_cube))
+    assert (merged_cube == 1).all()

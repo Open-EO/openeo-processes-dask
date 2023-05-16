@@ -41,7 +41,7 @@ def eq(
     case_sensitive: Optional[bool] = True,
 ):
     if is_number(x, y):
-        if not is_valid(x) or not is_valid(y):
+        if not notnull(x) or not notnull(y):
             return np.nan
         if (
             isinstance(x, bool)
@@ -65,7 +65,7 @@ def eq(
         ar_eq = np.char.lower(x) == np.char.lower(y)
     else:
         ar_eq = x == y
-    return np.where(np.logical_and(is_valid(x), is_valid(y)), ar_eq, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), ar_eq, np.nan)
 
 
 def neq(
@@ -76,40 +76,40 @@ def neq(
 ):
     eq_val = eq(x, y, delta=delta, case_sensitive=case_sensitive)
     return np.where(
-        np.logical_and(is_valid(x), is_valid(y)), np.logical_not(eq_val), np.nan
+        np.logical_and(notnull(x), notnull(y)), np.logical_not(eq_val), np.nan
     )
 
 
 def gt(x: ArrayLike, y: ArrayLike):
     if is_number(x, y):
-        if not is_valid(x) or not is_valid(y):
+        if not notnull(x) or not notnull(y):
             return np.nan
     gt_ar = x > y
-    return np.where(np.logical_and(is_valid(x), is_valid(y)), gt_ar, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), gt_ar, np.nan)
 
 
 def gte(x: ArrayLike, y: ArrayLike):
     if is_number(x, y):
-        if not is_valid(x) or not is_valid(y):
+        if not notnull(x) or not notnull(y):
             return np.nan
     gte_ar = (x - y) >= 0
-    return np.where(np.logical_and(is_valid(x), is_valid(y)), gte_ar, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), gte_ar, np.nan)
 
 
 def lt(x: ArrayLike, y: ArrayLike):
     if is_number(x, y):
-        if not is_valid(x) or not is_valid(y):
+        if not notnull(x) or not notnull(y):
             return np.nan
     lt_ar = x < y
-    return np.where(np.logical_and(is_valid(x), is_valid(y)), lt_ar, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), lt_ar, np.nan)
 
 
 def lte(x: ArrayLike, y: ArrayLike):
     if is_number(x, y):
-        if not is_valid(x) or not is_valid(y):
+        if not notnull(x) or not notnull(y):
             return np.nan
     lte_ar = x <= y
-    return np.where(np.logical_and(is_valid(x), is_valid(y)), lte_ar, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), lte_ar, np.nan)
 
 
 def between(
@@ -118,10 +118,10 @@ def between(
     max: float,
     exclude_max: Optional[bool] = False,
 ):
-    if not is_valid(min) or not is_valid(max):
+    if not notnull(min) or not notnull(max):
         return np.nan
     if exclude_max:
         bet = np.logical_and(gte(x, y=min), lt(x, y=max))
     else:
         bet = np.logical_and(gte(x, y=min), lte(x, y=max))
-    return np.where(is_valid(x), bet, np.nan)
+    return np.where(notnull(x), bet, np.nan)
