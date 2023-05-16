@@ -329,6 +329,6 @@ def test_merge_cubes_eq(
         ),
     )
 
-    assert isinstance(merged_cube.data, np.ndarray)
+    assert isinstance(merged_cube.data, dask.array.Array)
 
     assert (merged_cube == 1).all()
