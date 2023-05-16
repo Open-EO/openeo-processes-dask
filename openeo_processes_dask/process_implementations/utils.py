@@ -39,12 +39,13 @@ def check_type(x, t="float"):
     return False
 
 
-def is_array(x: ArrayLike, y: ArrayLike):
+def is_number(x: ArrayLike, y: ArrayLike):
+    # check if x and y are only one value each
     return (
-        type(x) in [np.ndarray, da.core.Array]
-        or type(y) in [np.ndarray, da.core.Array]
+        type(x) in [int, float, bool]
+        and type(y) in [int, float, bool]
         or isinstance(x, list)
-        and len(x) > 1
-        or isinstance(y, list)
-        and len(y) > 1
+        and len(x) == 1
+        and isinstance(y, list)
+        and len(y) == 1
     )

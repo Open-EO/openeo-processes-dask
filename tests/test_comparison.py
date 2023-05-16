@@ -320,3 +320,7 @@ def test_merge_cubes_type_3(
             y=ParameterReference(from_parameter="y"),
         ),
     )
+
+    assert isinstance(merged_cube.data, dask.array.Array)
+
+    xr.testing.assert_equal(merged_cube, np.ones_like(origin_cube))

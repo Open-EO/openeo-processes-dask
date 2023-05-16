@@ -6,7 +6,7 @@ import xarray as xr
 from numpy.typing import ArrayLike
 from xarray.core.duck_array_ops import notnull
 
-from openeo_processes_dask.process_implementations.utils import check_type, is_array
+from openeo_processes_dask.process_implementations.utils import check_type, is_number
 
 __all__ = [
     "is_infinite",
@@ -40,7 +40,7 @@ def eq(
     delta: Optional[float] = None,
     case_sensitive: Optional[bool] = True,
 ):
-    if not is_array(x, y):
+    if is_number(x, y):
         if not is_valid(x) or not is_valid(y):
             return np.nan
         if (
@@ -81,7 +81,7 @@ def neq(
 
 
 def gt(x: ArrayLike, y: ArrayLike):
-    if not is_array(x, y):
+    if is_number(x, y):
         if not is_valid(x) or not is_valid(y):
             return np.nan
     gt_ar = x > y
@@ -89,7 +89,7 @@ def gt(x: ArrayLike, y: ArrayLike):
 
 
 def gte(x: ArrayLike, y: ArrayLike):
-    if not is_array(x, y):
+    if is_number(x, y):
         if not is_valid(x) or not is_valid(y):
             return np.nan
     gte_ar = (x - y) >= 0
@@ -97,7 +97,7 @@ def gte(x: ArrayLike, y: ArrayLike):
 
 
 def lt(x: ArrayLike, y: ArrayLike):
-    if not is_array(x, y):
+    if is_number(x, y):
         if not is_valid(x) or not is_valid(y):
             return np.nan
     lt_ar = x < y
@@ -105,7 +105,7 @@ def lt(x: ArrayLike, y: ArrayLike):
 
 
 def lte(x: ArrayLike, y: ArrayLike):
-    if not is_array(x, y):
+    if is_number(x, y):
         if not is_valid(x) or not is_valid(y):
             return np.nan
     lte_ar = x <= y
