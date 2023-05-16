@@ -65,6 +65,50 @@ def test_eq(x, y, delta, case_sensitive):
 
 
 @pytest.mark.parametrize(
+    "x, y",
+    [
+        (1, np.nan),
+        (np.nan, np.nan),
+    ],
+)
+def test_eq_nan(x, y):
+    assert np.isnan(eq(x=x, y=y))
+    assert np.isnan(eq(x=np.array([x]), y=np.array([y])))
+    assert np.isnan(
+        eq(
+            x=da.from_array(np.array([x])),
+            y=da.from_array(np.array([y])),
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "x, y, delta, case_sensitive",
+    [
+        (1, "1", None, True),
+        (0, False, None, None),
+        (1.02, 1, 0.01, None),
+        ("Test", "test", None, False),
+    ],
+)
+def test_eq_not(x, y, delta, case_sensitive):
+    assert eq(x=x, y=y, delta=delta, case_sensitive=case_sensitive) is False
+    assert (
+        eq(x=np.array([x]), y=np.array([y]), delta=delta, case_sensitive=case_sensitive)
+        is False
+    )
+    assert (
+        eq(
+            x=da.from_array(np.array([x])),
+            y=da.from_array(np.array([y])),
+            delta=delta,
+            case_sensitive=case_sensitive,
+        )
+        is False
+    )
+
+
+@pytest.mark.parametrize(
     "x, y, delta, case_sensitive",
     [(1, "1", None, True), (1.02, 1, 0.01, True), ("Test", "test", None, True)],
 )

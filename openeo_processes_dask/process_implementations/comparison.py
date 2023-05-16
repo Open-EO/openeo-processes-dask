@@ -43,6 +43,13 @@ def eq(
     if not is_array(x, y):
         if not is_valid(x) or not is_valid(y):
             return np.nan
+        if (
+            isinstance(x, bool)
+            and not isinstance(y, bool)
+            or isinstance(y, bool)
+            and not isinstance(x, bool)
+        ):
+            return False
     if (
         isinstance(x, np.datetime64)
         or isinstance(y, np.datetime64)
