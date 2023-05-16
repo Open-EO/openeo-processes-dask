@@ -215,6 +215,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
         verify_attrs=True,
         verify_crs=True,
     )
+    assert isinstance(output_cube.data, dask.array.Array)
     xr.testing.assert_equal(output_cube, xr.zeros_like(input_cube))
 
     _process = partial(
@@ -229,6 +230,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
         verify_attrs=True,
         verify_crs=True,
     )
+    assert isinstance(output_cube.data, dask.array.Array)
     xr.testing.assert_equal(output_cube, xr.ones_like(input_cube))
 
     _process = partial(
@@ -249,6 +251,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
         verify_attrs=True,
         verify_crs=True,
     )
+    assert isinstance(output_cube_gt.data, dask.array.Array)
     xr.testing.assert_equal(output_cube_gt, output_cube_gte)
 
     _process = partial(
@@ -269,6 +272,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
         verify_attrs=True,
         verify_crs=True,
     )
+    assert isinstance(output_cube_lt.data, dask.array.Array)
     xr.testing.assert_equal(output_cube_lt, output_cube_lte)
 
     _process = partial(
@@ -299,6 +303,7 @@ def test_compare(temporal_interval, bounding_box, random_raster_data, process_re
         verify_attrs=True,
         verify_crs=True,
     )
+    assert isinstance(output_cube.data, dask.array.Array)
     xr.testing.assert_equal(output_cube, output_cube_b2)
 
 
