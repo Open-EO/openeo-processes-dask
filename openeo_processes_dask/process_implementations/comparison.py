@@ -44,8 +44,8 @@ def eq(
         if not is_valid(x) or not is_valid(y):
             return np.nan
     if (
-        isinstance(x, np.datetime)
-        or isinstance(y, np.datetime)
+        isinstance(x, np.datetime64)
+        or isinstance(y, np.datetime64)
         or type(x) in [np.ndarray, da.core.Array]
         and x.dtype.kind.lower() == "m"
         or type(y) in [np.ndarray, da.core.Array]
