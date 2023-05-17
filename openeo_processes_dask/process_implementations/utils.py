@@ -48,5 +48,5 @@ def check_type(x, t="float"):
 
 
 def is_number(x: ArrayLike):
-    # check if x and y are only one value each
+    # check if x is only one value, to avoid ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
     return type(x) in [int, float, bool] or isinstance(x, list) and len(x) == 1
