@@ -15,6 +15,8 @@ from tests.mockdata import create_fake_rastercube
 def test_and_():
     assert and_(True, True)
     assert not and_(True, False)
+    assert not and_(False, False)
+    assert not and_(False, np.nan)
     assert np.isnan(and_(True, np.nan))
     assert np.isclose(
         and_(
@@ -28,7 +30,9 @@ def test_and_():
 def test_or_():
     assert or_(True, True)
     assert or_(True, False)
+    assert not or_(False, False)
     assert or_(True, np.nan)
+    assert or_(np.nan, True)
     assert np.isnan(or_(False, np.nan))
     assert np.isclose(
         or_(x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]),
@@ -39,7 +43,9 @@ def test_or_():
 
 def test_xor():
     assert not xor(True, True)
+    assert not xor(False, False)
     assert xor(True, False)
+    assert np.isnan(xor(True, np.nan))
     assert np.isnan(xor(False, np.nan))
     assert np.isclose(
         xor(x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]),
@@ -52,14 +58,23 @@ def test_not():
     assert not not_(True)
     assert not_(False)
     assert np.isnan(not_(np.nan))
+    assert np.isclose(
+        not_(x=[True, False, np.nan]),
+        [False, True, np.nan],
+        equal_nan=True,
+    ).all()
 
 
 def test_if():
-    assert if_([True], "A", "B") == "A"
-    assert if_([None], "A", "B") == "B"
-    assert (if_([False], [1, 2, 3], [4, 5, 6]) == [4, 5, 6]).all()
+    assert if_(True, "A", "B") == "A"
+    assert if_(None, "A", "B") == "B"
+    assert (if_(False, [1, 2, 3], [4, 5, 6]) == [4, 5, 6]).all()
     assert if_(True, 123) == 123
     assert np.isnan(if_(False, 1))
+    assert np.isclose(
+        if_(value=[True, None, False], accept=[1, 2, 3], reject=[4, 5, 6]),
+        [1, 5, 6],
+    ).all()
 
 
 def test_any():
@@ -127,6 +142,7 @@ def test_reduce_dimension(
         verify_crs=True,
     )
     assert output_cube.dims == ("x", "y", "t")
+    assert isinstance(output_cube.data, da.Array)
     xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))
 
     input_cube[
@@ -145,6 +161,7 @@ def test_reduce_dimension(
         verify_crs=True,
     )
     assert output_cube.dims == ("x", "y", "t")
+    assert isinstance(output_cube.data, da.Array)
     xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
 
 
@@ -158,6 +175,7 @@ def test_merge_cubes(
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B01", "B02"],
+        backend="dask",
     )
 
     cube_1 = origin_cube.sel({"bands": "B01"})
@@ -170,6 +188,7 @@ def test_merge_cubes(
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
+    assert isinstance(merged_cube.data, da.Array)
     xr.testing.assert_equal(
         merged_cube, xr.zeros_like(merged_cube)
     )  # and(True, False) == False (zeros_like)
@@ -179,6 +198,7 @@ def test_merge_cubes(
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
+    assert isinstance(merged_cube.data, da.Array)
     xr.testing.assert_equal(
         merged_cube, xr.ones_like(merged_cube)
     )  # or(True, False) == True (ones_like)
@@ -188,6 +208,7 @@ def test_merge_cubes(
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
+    assert isinstance(merged_cube.data, da.Array)
     xr.testing.assert_equal(
         merged_cube, xr.ones_like(merged_cube)
     )  # xor(True, False) == True (ones_like)
@@ -219,6 +240,7 @@ def test_apply(temporal_interval, bounding_box, random_raster_data, process_regi
         verify_crs=True,
         expected_results=(expected_result),
     )
+    assert isinstance(output_cube.data, da.Array)
     xr.testing.assert_equal(output_cube, expected_result)
 
     _process = partial(
@@ -235,4 +257,5 @@ def test_apply(temporal_interval, bounding_box, random_raster_data, process_regi
         verify_crs=True,
         expected_results=(xr.ones_like(input_cube)),
     )
+    assert isinstance(output_cube.data, da.Array)
     xr.testing.assert_equal(output_cube, xr.ones_like(input_cube))
