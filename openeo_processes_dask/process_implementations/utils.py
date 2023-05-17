@@ -47,13 +47,6 @@ def check_type(x, t="float"):
     return False
 
 
-def is_number(x: ArrayLike, y: ArrayLike = 0):
+def is_number(x: ArrayLike):
     # check if x and y are only one value each
-    return (
-        type(x) in [int, float, bool]
-        and type(y) in [int, float, bool]
-        or isinstance(x, list)
-        and len(x) == 1
-        and isinstance(y, list)
-        and len(y) == 1
-    )
+    return type(x) in [int, float, bool] or isinstance(x, list) and len(x) == 1
