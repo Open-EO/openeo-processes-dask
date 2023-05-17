@@ -12,6 +12,7 @@ from openeo_processes_dask.process_implementations import merge_cubes
 from openeo_processes_dask.process_implementations.comparison import (
     between,
     eq,
+    is_infinite,
     is_valid,
     neq,
 )
@@ -43,6 +44,26 @@ def test_is_valid(value, expected, is_dask):
 
     if is_dask:
         assert hasattr(output, "dask")
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (None, False),
+        (1, False),
+        (np.nan, False),
+        (np.array([1, np.nan]), np.array([False, False])),
+        (np.inf, True),
+        ([1, np.inf, np.nan], np.array([False, True, False])),
+        (np.array(["1", "nan"]), np.array([False, False])),
+        ([1, 2], False),
+        ({"test": "ok"}, False),
+    ],
+)
+def test_is_inf(value, expected):
+    value = np.asarray(value)
+    output = is_infinite(value)
+    np.testing.assert_array_equal(output, expected)
 
 
 @pytest.mark.parametrize(
