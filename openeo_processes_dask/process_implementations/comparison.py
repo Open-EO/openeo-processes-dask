@@ -51,8 +51,6 @@ def eq(
         and not check_type(x, "bool")
     ):
         return False
-    if check_type(x, "time") or check_type(y, "time"):
-        raise Exception("Comparison of datetime not supported, yet. ")
     if delta and check_type(x, "float") and check_type(y, "float"):
         ar_eq = np.isclose(x, y, atol=delta)
     elif not case_sensitive and check_type(x, "str") and check_type(y, "str"):
@@ -80,8 +78,6 @@ def gt(x: ArrayLike, y: ArrayLike):
         return np.nan
     if is_number(y) and not notnull(y):
         return np.nan
-    if check_type(x, "time") or check_type(y, "time"):
-        raise Exception("Comparison of datetime not supported, yet. ")
     gt_ar = x > y
     return da.where(np.logical_and(notnull(x), notnull(y)), gt_ar, np.nan)
 
@@ -91,8 +87,6 @@ def gte(x: ArrayLike, y: ArrayLike):
         return np.nan
     if is_number(y) and not notnull(y):
         return np.nan
-    if check_type(x, "time") or check_type(y, "time"):
-        raise Exception("Comparison of datetime not supported, yet. ")
     gte_ar = (x - y) >= 0
     return da.where(np.logical_and(notnull(x), notnull(y)), gte_ar, np.nan)
 
@@ -102,8 +96,6 @@ def lt(x: ArrayLike, y: ArrayLike):
         return np.nan
     if is_number(y) and not notnull(y):
         return np.nan
-    if check_type(x, "time") or check_type(y, "time"):
-        raise Exception("Comparison of datetime not supported, yet. ")
     lt_ar = x < y
     return da.where(np.logical_and(notnull(x), notnull(y)), lt_ar, np.nan)
 
@@ -113,8 +105,6 @@ def lte(x: ArrayLike, y: ArrayLike):
         return np.nan
     if is_number(y) and not notnull(y):
         return np.nan
-    if check_type(x, "time") or check_type(y, "time"):
-        raise Exception("Comparison of datetime not supported, yet. ")
     lte_ar = x <= y
     return da.where(np.logical_and(notnull(x), notnull(y)), lte_ar, np.nan)
 

@@ -139,16 +139,6 @@ def test_eq_mask():
     assert (m == data / 10).all()
 
 
-def test_datetime_error():
-    with pytest.raises(Exception):
-        data = eq(
-            np.datetime64("2021-06-01"),
-            np.datetime64("2021-06-01T09:00:00Z"),
-        )
-    with pytest.raises(Exception):
-        data = neq(datetime(2021, 6, 1), "2021-06-01T09:00:00Z")
-
-
 @pytest.mark.parametrize(
     "x, min, max, exclude_max, expected",
     [
