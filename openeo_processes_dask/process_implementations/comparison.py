@@ -40,24 +40,18 @@ def eq(
     delta: Optional[float] = None,
     case_sensitive: Optional[bool] = True,
 ):
-    if is_number(x, y):
-        if not notnull(x) or not notnull(y):
-            return np.nan
-        if (
-            isinstance(x, bool)
-            and not isinstance(y, bool)
-            or isinstance(y, bool)
-            and not isinstance(x, bool)
-        ):
-            return False
+    if is_number(x) and not notnull(x):
+        return np.nan
+    if is_number(y) and not notnull(y):
+        return np.nan
     if (
-        isinstance(x, np.datetime64)
-        or isinstance(y, np.datetime64)
-        or type(x) in [np.ndarray, da.core.Array]
-        and x.dtype.kind.lower() == "m"
-        or type(y) in [np.ndarray, da.core.Array]
-        and y.dtype.kind.lower() == "m"
+        check_type(x, "bool")
+        and not check_type(y, "bool")
+        or check_type(y, "bool")
+        and not check_type(x, "bool")
     ):
+        return False
+    if check_type(x, "time") or check_type(y, "time"):
         raise Exception("Comparison of datetime not supported, yet. ")
     if delta and check_type(x, "float") and check_type(y, "float"):
         ar_eq = np.isclose(x, y, atol=delta)
@@ -65,7 +59,8 @@ def eq(
         ar_eq = np.char.lower(x) == np.char.lower(y)
     else:
         ar_eq = x == y
-    return np.where(np.logical_and(notnull(x), notnull(y)), ar_eq, np.nan)
+    ar_eq = da.where(np.logical_and(notnull(x), notnull(y)), ar_eq, np.nan)
+    return ar_eq
 
 
 def neq(
@@ -75,41 +70,53 @@ def neq(
     case_sensitive: Optional[bool] = True,
 ):
     eq_val = eq(x, y, delta=delta, case_sensitive=case_sensitive)
-    return np.where(
+    return da.where(
         np.logical_and(notnull(x), notnull(y)), np.logical_not(eq_val), np.nan
     )
 
 
 def gt(x: ArrayLike, y: ArrayLike):
-    if is_number(x, y):
-        if not notnull(x) or not notnull(y):
-            return np.nan
+    if is_number(x) and not notnull(x):
+        return np.nan
+    if is_number(y) and not notnull(y):
+        return np.nan
+    if check_type(x, "time") or check_type(y, "time"):
+        raise Exception("Comparison of datetime not supported, yet. ")
     gt_ar = x > y
-    return np.where(np.logical_and(notnull(x), notnull(y)), gt_ar, np.nan)
+    return da.where(np.logical_and(notnull(x), notnull(y)), gt_ar, np.nan)
 
 
 def gte(x: ArrayLike, y: ArrayLike):
-    if is_number(x, y):
-        if not notnull(x) or not notnull(y):
-            return np.nan
+    if is_number(x) and not notnull(x):
+        return np.nan
+    if is_number(y) and not notnull(y):
+        return np.nan
+    if check_type(x, "time") or check_type(y, "time"):
+        raise Exception("Comparison of datetime not supported, yet. ")
     gte_ar = (x - y) >= 0
-    return np.where(np.logical_and(notnull(x), notnull(y)), gte_ar, np.nan)
+    return da.where(np.logical_and(notnull(x), notnull(y)), gte_ar, np.nan)
 
 
 def lt(x: ArrayLike, y: ArrayLike):
-    if is_number(x, y):
-        if not notnull(x) or not notnull(y):
-            return np.nan
+    if is_number(x) and not notnull(x):
+        return np.nan
+    if is_number(y) and not notnull(y):
+        return np.nan
+    if check_type(x, "time") or check_type(y, "time"):
+        raise Exception("Comparison of datetime not supported, yet. ")
     lt_ar = x < y
-    return np.where(np.logical_and(notnull(x), notnull(y)), lt_ar, np.nan)
+    return da.where(np.logical_and(notnull(x), notnull(y)), lt_ar, np.nan)
 
 
 def lte(x: ArrayLike, y: ArrayLike):
-    if is_number(x, y):
-        if not notnull(x) or not notnull(y):
-            return np.nan
+    if is_number(x) and not notnull(x):
+        return np.nan
+    if is_number(y) and not notnull(y):
+        return np.nan
+    if check_type(x, "time") or check_type(y, "time"):
+        raise Exception("Comparison of datetime not supported, yet. ")
     lte_ar = x <= y
-    return np.where(np.logical_and(notnull(x), notnull(y)), lte_ar, np.nan)
+    return da.where(np.logical_and(notnull(x), notnull(y)), lte_ar, np.nan)
 
 
 def between(
@@ -124,4 +131,4 @@ def between(
         bet = np.logical_and(gte(x, y=min), lt(x, y=max))
     else:
         bet = np.logical_and(gte(x, y=min), lte(x, y=max))
-    return np.where(notnull(x), bet, np.nan)
+    return da.where(notnull(x), bet, np.nan)

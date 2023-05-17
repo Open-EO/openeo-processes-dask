@@ -1,3 +1,4 @@
+import datetime
 from typing import Callable, Optional
 
 import dask.array as da
@@ -36,10 +37,24 @@ def check_type(x, t="float"):
             and x.dtype.kind.lower() in ["i", "f"]
         ):
             return True
+    if t == "bool":
+        if (
+            isinstance(x, bool)
+            or type(x) in [np.ndarray, xr.DataArray, da.core.Array]
+            and x.dtype.kind.lower() == "b"
+        ):
+            return True
+    if t == "time":
+        if (
+            type(x) in [datetime.datetime, np.datetime64]
+            or type(x) in [np.ndarray, xr.DataArray, da.core.Array]
+            and x.dtype.kind.lower() == "m"
+        ):
+            return True
     return False
 
 
-def is_number(x: ArrayLike, y: ArrayLike):
+def is_number(x: ArrayLike, y: ArrayLike = 0):
     # check if x and y are only one value each
     return (
         type(x) in [int, float, bool]

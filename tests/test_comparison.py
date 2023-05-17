@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import partial
 
 import dask
@@ -138,6 +139,16 @@ def test_eq_mask():
     assert (m == data / 10).all()
 
 
+def test_datetime_error():
+    with pytest.raises(Exception):
+        data = eq(
+            np.datetime64("2021-06-01"),
+            np.datetime64("2021-06-01T09:00:00Z"),
+        )
+    with pytest.raises(Exception):
+        data = neq(datetime(2021, 6, 1), "2021-06-01T09:00:00Z")
+
+
 @pytest.mark.parametrize(
     "x, min, max, exclude_max, expected",
     [
@@ -175,6 +186,7 @@ def test_is(temporal_interval, bounding_box, random_raster_data, process_registr
         verify_attrs=True,
         verify_crs=True,
     )
+    assert isinstance(output_cube.data, dask.array.Array)
     xr.testing.assert_equal(output_cube, xr.ones_like(input_cube))
 
     _process = partial(
@@ -188,6 +200,7 @@ def test_is(temporal_interval, bounding_box, random_raster_data, process_registr
         verify_attrs=True,
         verify_crs=True,
     )
+    assert isinstance(output_cube.data, dask.array.Array)
     xr.testing.assert_equal(output_cube, xr.zeros_like(input_cube))
 
 
@@ -324,7 +337,8 @@ def test_merge_cubes_eq(
     cube_1 = origin_cube
     cube_2 = origin_cube
 
-    merged_cube = merge_cubes(
+    # the values are all True = 1
+    merged_cube_eq = merge_cubes(
         cube_1,
         cube_2,
         partial(
@@ -334,6 +348,34 @@ def test_merge_cubes_eq(
         ),
     )
 
-    assert isinstance(merged_cube.data, dask.array.Array)
+    assert isinstance(merged_cube_eq.data, dask.array.Array)
 
-    assert (merged_cube == 1).all()
+    # the values are all False = 0
+    merged_cube_neq = merge_cubes(
+        cube_1,
+        cube_2,
+        partial(
+            process_registry["neq"].implementation,
+            x=ParameterReference(from_parameter="x"),
+            y=ParameterReference(from_parameter="y"),
+        ),
+    )
+
+    assert isinstance(merged_cube_eq.data, dask.array.Array)
+    # check if True (1) == False (0) + 1
+    xr.testing.assert_equal(merged_cube_eq, merged_cube_neq + 1)
+
+    # the values are all False = 0
+    merged_cube_lt = merge_cubes(
+        cube_1,
+        cube_2,
+        partial(
+            process_registry["lt"].implementation,
+            x=ParameterReference(from_parameter="x"),
+            y=ParameterReference(from_parameter="y"),
+        ),
+    )
+
+    assert isinstance(merged_cube_lt.data, dask.array.Array)
+    # check for data lt data, should be same as check for data not eq to data
+    xr.testing.assert_equal(merged_cube_lt, merged_cube_neq)
