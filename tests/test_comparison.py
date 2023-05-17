@@ -47,23 +47,30 @@ def test_is_valid(value, expected, is_dask):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    "value,expected,is_dask",
     [
-        (None, False),
-        (1, False),
-        (np.nan, False),
-        (np.array([1, np.nan]), np.array([False, False])),
-        (np.inf, True),
-        ([1, np.inf, np.nan], np.array([False, True, False])),
-        (np.array(["1", "nan"]), np.array([False, False])),
-        ([1, 2], False),
-        ({"test": "ok"}, False),
+        (None, False, False),
+        (1, False, True),
+        (np.nan, False, True),
+        (np.array([1, np.nan]), np.array([False, False]), True),
+        (np.inf, True, True),
+        ([1, np.inf, np.nan], np.array([False, True, False]), True),
+        (np.array(["1", "nan"]), np.array([False, False]), False),
+        ([1, 2], False, True),
+        ({"test": "ok"}, False, False),
     ],
 )
-def test_is_inf(value, expected):
+def test_is_inf(value, expected, is_dask):
     value = np.asarray(value)
+
+    if is_dask:
+        value = da.from_array(value)
+
     output = is_infinite(value)
     np.testing.assert_array_equal(output, expected)
+
+    if is_dask:
+        assert hasattr(output, "dask")
 
 
 @pytest.mark.parametrize(
