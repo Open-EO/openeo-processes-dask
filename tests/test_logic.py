@@ -7,6 +7,7 @@ import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.process_implementations.cubes import *
+from openeo_processes_dask.process_implementations.cubes.utils import isnull
 from openeo_processes_dask.process_implementations.logic import *
 from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
@@ -17,7 +18,7 @@ def test_and():
     assert not _and(True, False)
     assert not _and(False, False)
     assert not _and(False, np.nan)
-    assert np.isnan(_and(True, np.nan))
+    assert isnull(_and(True, np.nan))
     assert np.isclose(
         _and(
             x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]
@@ -33,7 +34,7 @@ def test_or():
     assert not _or(False, False)
     assert _or(True, np.nan)
     assert _or(np.nan, True)
-    assert np.isnan(_or(False, np.nan))
+    assert isnull(_or(False, np.nan))
     assert np.isclose(
         _or(x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]),
         [True, True, False, np.nan, True],
@@ -45,8 +46,8 @@ def test_xor():
     assert not xor(True, True)
     assert not xor(False, False)
     assert xor(True, False)
-    assert np.isnan(xor(True, np.nan))
-    assert np.isnan(xor(False, np.nan))
+    assert isnull(xor(True, np.nan))
+    assert isnull(xor(False, np.nan))
     assert np.isclose(
         xor(x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]),
         [False, True, False, np.nan, np.nan],
@@ -57,7 +58,7 @@ def test_xor():
 def test_not():
     assert not _not(True)
     assert _not(False)
-    assert np.isnan(_not(np.nan))
+    assert isnull(_not(np.nan))
     assert np.isclose(
         _not(x=[True, False, np.nan]),
         [False, True, np.nan],
@@ -70,7 +71,7 @@ def test_if():
     assert _if(None, "A", "B") == "B"
     assert (_if(False, [1, 2, 3], [4, 5, 6]) == [4, 5, 6]).all()
     assert _if(True, 123) == 123
-    assert np.isnan(_if(False, 1))
+    assert isnull(_if(False, 1))
     assert np.isclose(
         _if(value=[True, None, False], accept=[1, 2, 3], reject=[4, 5, 6]),
         [1, 5, 6],
@@ -80,14 +81,14 @@ def test_if():
 def test_any():
     assert not _any([False, np.nan])
     assert _any([True, np.nan])
-    assert np.isnan(_any([False, np.nan], ignore_nodata=False))
+    assert isnull(_any([False, np.nan], ignore_nodata=False))
     assert _any([True, np.nan], ignore_nodata=False)
     assert _any([True, False, True, False])
     assert _any([True, False])
     assert not _any([False, False])
     assert _any([True])
-    assert np.isnan(_any([np.nan], ignore_nodata=False))
-    assert np.isnan(_any([]))
+    assert isnull(_any([np.nan], ignore_nodata=False))
+    assert isnull(_any([]))
     assert np.isclose(
         _any([[True, np.nan], [False, False]], ignore_nodata=False, axis=0),
         [True, np.nan],
@@ -99,13 +100,13 @@ def test_all():
     assert not _all([False, np.nan])
     assert _all([True, np.nan])
     assert not _all([False, np.nan], ignore_nodata=False)
-    assert np.isnan(_all([True, np.nan], ignore_nodata=False))
+    assert isnull(_all([True, np.nan], ignore_nodata=False))
     assert not _all([True, False, True, False])
     assert not _all([True, False])
     assert _all([True, True])
     assert _all([True])
-    assert np.isnan(_all([np.nan], ignore_nodata=False))
-    assert np.isnan(_all([]))
+    assert isnull(_all([np.nan], ignore_nodata=False))
+    assert isnull(_all([]))
     assert np.isclose(
         _all([[True, np.nan], [False, True]], ignore_nodata=False, axis=0),
         [False, np.nan],
