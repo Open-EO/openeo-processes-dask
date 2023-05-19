@@ -1,12 +1,12 @@
-from typing import Callable, Optional
+from typing import Optional
 
 import dask.array as da
 import numpy as np
-import xarray as xr
 from numpy.typing import ArrayLike
 from xarray.core.duck_array_ops import notnull
 
-from openeo_processes_dask.process_implementations.utils import check_type
+from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
+from openeo_processes_dask.process_implementations.utils import get_scalar_type
 
 __all__ = [
     "is_infinite",
@@ -22,11 +22,10 @@ __all__ = [
 
 
 def is_infinite(x: ArrayLike):
-    if x is None:
+    if np.issubsctype(get_scalar_type(x), np.number):
+        return np.isinf(x)
+    else:
         return False
-    if check_type(x, "str") or check_type(x, "list") or check_type(x, "dict"):
-        return False
-    return np.isinf(x)
 
 
 def is_valid(x: ArrayLike):
@@ -40,21 +39,47 @@ def eq(
     delta: Optional[float] = None,
     case_sensitive: Optional[bool] = True,
 ):
-    if (
-        check_type(x, "bool")
-        and not check_type(y, "bool")
-        or check_type(y, "bool")
-        and not check_type(x, "bool")
-    ):
-        return False
-    if delta and check_type(x, "float") and check_type(y, "float"):
-        ar_eq = np.isclose(x, y, atol=delta)
-    elif not case_sensitive and check_type(x, "str") and check_type(y, "str"):
-        ar_eq = np.char.lower(x) == np.char.lower(y)
-    else:
+    x_dtype = get_scalar_type(x)
+    y_dtype = get_scalar_type(y)
+
+    if np.issubsctype(x_dtype, np.number) and np.issubsctype(y_dtype, np.number):
+        if delta:
+            ar_eq = np.isclose(x, y, atol=delta)
+        else:
+            ar_eq = x == y
+
+    elif np.issubsctype(x_dtype, np.bool_) and np.issubsctype(y_dtype, np.bool_):
         ar_eq = x == y
-    ar_eq = da.where(np.logical_and(notnull(x), notnull(y)), ar_eq, np.nan)
-    return ar_eq
+
+    elif np.issubsctype(x_dtype, np.flexible) and np.issubsctype(y_dtype, np.flexible):
+        if not case_sensitive:
+            if np.issubsctype(get_scalar_type(x), np.character):
+                x = np.char.lower(x)
+            if np.issubsctype(get_scalar_type(y), np.character):
+                y = np.char.lower(y)
+        ar_eq = x == y
+
+    elif np.issubsctype(x_dtype, np.flexible) and np.issubsctype(y_dtype, np.flexible):
+        ar_eq = x == y
+    else:
+        return False
+
+    if _is_dask_array(x):
+        x_is_null = da.map_blocks(notnull, x)
+    else:
+        x_is_null = notnull(x)
+    if _is_dask_array(y):
+        y_is_null = da.map_blocks(notnull, y)
+    else:
+        y_is_null = notnull(y)
+
+    null_mask = np.logical_and(x_is_null, y_is_null)
+
+    if _is_dask_array(ar_eq):
+        result = da.where(null_mask, ar_eq, np.nan)
+    else:
+        result = np.where(null_mask, ar_eq, np.nan)
+    return result
 
 
 def neq(
