@@ -70,7 +70,11 @@ def merge_cubes(
             else:
                 # Example 3.2: Elementwise operation
                 positional_parameters = {}
-                named_parameters = {"x": cube1, "y": cube2, "context": context}
+                named_parameters = {
+                    "x": cube1.data,
+                    "y": cube2.data,
+                    "context": context,
+                }
 
                 merged_cube = concat_both_cubes_rechunked.reduce(
                     overlap_resolver,
@@ -163,8 +167,8 @@ def merge_cubes(
 
                 positional_parameters = {}
                 named_parameters = {
-                    "x": conflicts_cube_1,
-                    "y": conflicts_cube_2,
+                    "x": conflicts_cube_1.data,
+                    "y": conflicts_cube_2.data,
                     "context": context,
                 }
 
@@ -233,11 +237,11 @@ def merge_cubes(
 
         named_parameters = {"context": context}
         if is_cube1_lower_dim:
-            named_parameters["x"] = lower_dim_cube_broadcast
-            named_parameters["y"] = higher_dim_cube
+            named_parameters["x"] = lower_dim_cube_broadcast.data
+            named_parameters["y"] = higher_dim_cube.data
         else:
-            named_parameters["x"] = higher_dim_cube
-            named_parameters["y"] = lower_dim_cube_broadcast
+            named_parameters["x"] = higher_dim_cube.data
+            named_parameters["y"] = lower_dim_cube_broadcast.data
 
         merged_cube = both_stacked_rechunked.reduce(
             overlap_resolver,
