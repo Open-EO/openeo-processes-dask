@@ -3,9 +3,11 @@ from typing import Optional
 import dask.array as da
 import numpy as np
 from numpy.typing import ArrayLike
-from xarray.core.duck_array_ops import notnull
 
-from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
+from openeo_processes_dask.process_implementations.cubes.utils import (
+    _is_dask_array,
+    notnull,
+)
 from openeo_processes_dask.process_implementations.utils import get_scalar_type
 
 __all__ = [
@@ -64,16 +66,7 @@ def eq(
     else:
         return False
 
-    if _is_dask_array(x):
-        x_is_null = da.map_blocks(notnull, x)
-    else:
-        x_is_null = notnull(x)
-    if _is_dask_array(y):
-        y_is_null = da.map_blocks(notnull, y)
-    else:
-        y_is_null = notnull(y)
-
-    null_mask = np.logical_and(x_is_null, y_is_null)
+    null_mask = np.logical_and(notnull(x), notnull(y))
 
     result = np.where(null_mask, ar_eq, np.nan)
     return result
