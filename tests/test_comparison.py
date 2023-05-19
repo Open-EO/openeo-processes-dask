@@ -379,7 +379,7 @@ def test_merge_cubes_eq(
         ),
     )
 
-    assert isinstance(merged_cube_eq.data, dask.array.Array)
+    assert isinstance(merged_cube_neq.data, dask.array.Array)
     # check if True (1) == False (0) + 1
     xr.testing.assert_equal(merged_cube_eq, merged_cube_neq + 1)
 
