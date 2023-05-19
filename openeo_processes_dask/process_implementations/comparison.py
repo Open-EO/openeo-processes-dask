@@ -79,29 +79,29 @@ def neq(
     case_sensitive: Optional[bool] = True,
 ):
     eq_val = eq(x, y, delta=delta, case_sensitive=case_sensitive)
-    return da.where(
+    return np.where(
         np.logical_and(notnull(x), notnull(y)), np.logical_not(eq_val), np.nan
     )
 
 
 def gt(x: ArrayLike, y: ArrayLike):
     gt_ar = x > y
-    return da.where(np.logical_and(notnull(x), notnull(y)), gt_ar, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), gt_ar, np.nan)
 
 
 def gte(x: ArrayLike, y: ArrayLike):
     gte_ar = (x - y) >= 0
-    return da.where(np.logical_and(notnull(x), notnull(y)), gte_ar, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), gte_ar, np.nan)
 
 
 def lt(x: ArrayLike, y: ArrayLike):
     lt_ar = x < y
-    return da.where(np.logical_and(notnull(x), notnull(y)), lt_ar, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), lt_ar, np.nan)
 
 
 def lte(x: ArrayLike, y: ArrayLike):
     lte_ar = x <= y
-    return da.where(np.logical_and(notnull(x), notnull(y)), lte_ar, np.nan)
+    return np.where(np.logical_and(notnull(x), notnull(y)), lte_ar, np.nan)
 
 
 def between(
@@ -116,4 +116,4 @@ def between(
         bet = np.logical_and(gte(x, y=min), lt(x, y=max))
     else:
         bet = np.logical_and(gte(x, y=min), lte(x, y=max))
-    return da.where(notnull(x), bet, np.nan)
+    return np.where(notnull(x), bet, np.nan)
