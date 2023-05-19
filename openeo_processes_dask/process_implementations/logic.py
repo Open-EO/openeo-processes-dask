@@ -1,14 +1,15 @@
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 
 import dask.array as da
 import numpy as np
 from numpy.typing import ArrayLike
-from xarray.core.duck_array_ops import notnull
 
-__all__ = ["and_", "or_", "xor", "not_", "if_", "any_", "all_"]
+from openeo_processes_dask.process_implementations.cubes.utils import notnull
+
+__all__ = ["_and", "_or", "xor", "_not", "_if", "_any", "_all"]
 
 
-def and_(x: ArrayLike, y: ArrayLike):
+def _and(x: ArrayLike, y: ArrayLike):
     nan_x = np.logical_not(notnull(x))
     nan_y = np.logical_not(notnull(y))
     xy = np.logical_and(x, y)
@@ -19,7 +20,7 @@ def and_(x: ArrayLike, y: ArrayLike):
     return xy
 
 
-def or_(x: ArrayLike, y: ArrayLike):
+def _or(x: ArrayLike, y: ArrayLike):
     nan_x = np.logical_not(notnull(x))
     nan_y = np.logical_not(notnull(y))
     x = np.nan_to_num(x)
@@ -41,13 +42,13 @@ def xor(x: ArrayLike, y: ArrayLike):
     return xy
 
 
-def not_(x: ArrayLike):
+def _not(x: ArrayLike):
     not_x = np.logical_not(x)
     not_x = da.where(notnull(x), not_x, np.nan)
     return not_x
 
 
-def if_(
+def _if(
     value: ArrayLike,
     accept: Union[np.array, list, str, float, int],
     reject: Optional[Union[np.array, list, str, float, int]] = np.nan,
@@ -55,7 +56,7 @@ def if_(
     return np.where(value, accept, reject)
 
 
-def any_(
+def _any(
     data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
     axis: Optional[int] = -1,
@@ -71,7 +72,7 @@ def any_(
     return data_any
 
 
-def all_(
+def _all(
     data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
     axis: Optional[int] = -1,
