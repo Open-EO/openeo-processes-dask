@@ -12,14 +12,14 @@ from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
 
 
-def test_and_():
-    assert and_(True, True)
-    assert not and_(True, False)
-    assert not and_(False, False)
-    assert not and_(False, np.nan)
-    assert np.isnan(and_(True, np.nan))
+def test_and():
+    assert _and(True, True)
+    assert not _and(True, False)
+    assert not _and(False, False)
+    assert not _and(False, np.nan)
+    assert np.isnan(_and(True, np.nan))
     assert np.isclose(
-        and_(
+        _and(
             x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]
         ),
         [True, False, False, False, np.nan],
@@ -27,15 +27,15 @@ def test_and_():
     ).all()
 
 
-def test_or_():
-    assert or_(True, True)
-    assert or_(True, False)
-    assert not or_(False, False)
-    assert or_(True, np.nan)
-    assert or_(np.nan, True)
-    assert np.isnan(or_(False, np.nan))
+def test_or():
+    assert _or(True, True)
+    assert _or(True, False)
+    assert not _or(False, False)
+    assert _or(True, np.nan)
+    assert _or(np.nan, True)
+    assert np.isnan(_or(False, np.nan))
     assert np.isclose(
-        or_(x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]),
+        _or(x=[True, True, False, False, True], y=[True, False, False, np.nan, np.nan]),
         [True, True, False, np.nan, True],
         equal_nan=True,
     ).all()
@@ -55,59 +55,59 @@ def test_xor():
 
 
 def test_not():
-    assert not not_(True)
-    assert not_(False)
-    assert np.isnan(not_(np.nan))
+    assert not _not(True)
+    assert _not(False)
+    assert np.isnan(_not(np.nan))
     assert np.isclose(
-        not_(x=[True, False, np.nan]),
+        _not(x=[True, False, np.nan]),
         [False, True, np.nan],
         equal_nan=True,
     ).all()
 
 
 def test_if():
-    assert if_(True, "A", "B") == "A"
-    assert if_(None, "A", "B") == "B"
-    assert (if_(False, [1, 2, 3], [4, 5, 6]) == [4, 5, 6]).all()
-    assert if_(True, 123) == 123
-    assert np.isnan(if_(False, 1))
+    assert _if(True, "A", "B") == "A"
+    assert _if(None, "A", "B") == "B"
+    assert (_if(False, [1, 2, 3], [4, 5, 6]) == [4, 5, 6]).all()
+    assert _if(True, 123) == 123
+    assert np.isnan(_if(False, 1))
     assert np.isclose(
-        if_(value=[True, None, False], accept=[1, 2, 3], reject=[4, 5, 6]),
+        _if(value=[True, None, False], accept=[1, 2, 3], reject=[4, 5, 6]),
         [1, 5, 6],
     ).all()
 
 
 def test_any():
-    assert not any_([False, np.nan])
-    assert any_([True, np.nan])
-    assert np.isnan(any_([False, np.nan], ignore_nodata=False))
-    assert any_([True, np.nan], ignore_nodata=False)
-    assert any_([True, False, True, False])
-    assert any_([True, False])
-    assert not any_([False, False])
-    assert any_([True])
-    assert np.isnan(any_([np.nan], ignore_nodata=False))
-    assert np.isnan(any_([]))
+    assert not _any([False, np.nan])
+    assert _any([True, np.nan])
+    assert np.isnan(_any([False, np.nan], ignore_nodata=False))
+    assert _any([True, np.nan], ignore_nodata=False)
+    assert _any([True, False, True, False])
+    assert _any([True, False])
+    assert not _any([False, False])
+    assert _any([True])
+    assert np.isnan(_any([np.nan], ignore_nodata=False))
+    assert np.isnan(_any([]))
     assert np.isclose(
-        any_([[True, np.nan], [False, False]], ignore_nodata=False, axis=0),
+        _any([[True, np.nan], [False, False]], ignore_nodata=False, axis=0),
         [True, np.nan],
         equal_nan=True,
     ).all()
 
 
 def test_all():
-    assert not all_([False, np.nan])
-    assert all_([True, np.nan])
-    assert not all_([False, np.nan], ignore_nodata=False)
-    assert np.isnan(all_([True, np.nan], ignore_nodata=False))
-    assert not all_([True, False, True, False])
-    assert not all_([True, False])
-    assert all_([True, True])
-    assert all_([True])
-    assert np.isnan(all_([np.nan], ignore_nodata=False))
-    assert np.isnan(all_([]))
+    assert not _all([False, np.nan])
+    assert _all([True, np.nan])
+    assert not _all([False, np.nan], ignore_nodata=False)
+    assert np.isnan(_all([True, np.nan], ignore_nodata=False))
+    assert not _all([True, False, True, False])
+    assert not _all([True, False])
+    assert _all([True, True])
+    assert _all([True])
+    assert np.isnan(_all([np.nan], ignore_nodata=False))
+    assert np.isnan(_all([]))
     assert np.isclose(
-        all_([[True, np.nan], [False, True]], ignore_nodata=False, axis=0),
+        _all([[True, np.nan], [False, True]], ignore_nodata=False, axis=0),
         [False, np.nan],
         equal_nan=True,
     ).all()
