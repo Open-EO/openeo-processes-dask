@@ -75,10 +75,7 @@ def eq(
 
     null_mask = np.logical_and(x_is_null, y_is_null)
 
-    if _is_dask_array(ar_eq):
-        result = da.where(null_mask, ar_eq, np.nan)
-    else:
-        result = np.where(null_mask, ar_eq, np.nan)
+    result = np.where(null_mask, ar_eq, np.nan)
     return result
 
 
