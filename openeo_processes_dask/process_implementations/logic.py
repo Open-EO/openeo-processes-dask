@@ -1,17 +1,16 @@
 from typing import Optional, Union
 
-import dask.array as da
 import numpy as np
 from numpy.typing import ArrayLike
 
-from openeo_processes_dask.process_implementations.cubes.utils import notnull
+from openeo_processes_dask.process_implementations.cubes.utils import isnull, notnull
 
 __all__ = ["_and", "_or", "xor", "_not", "_if", "_any", "_all"]
 
 
 def _and(x: ArrayLike, y: ArrayLike):
-    nan_x = np.logical_not(notnull(x))
-    nan_y = np.logical_not(notnull(y))
+    nan_x = isnull(x)
+    nan_y = isnull(y)
     xy = np.logical_and(x, y)
     nan_mask = np.logical_and(nan_x, xy)
     xy = np.where(~nan_mask, xy, np.nan)
@@ -21,8 +20,8 @@ def _and(x: ArrayLike, y: ArrayLike):
 
 
 def _or(x: ArrayLike, y: ArrayLike):
-    nan_x = np.logical_not(notnull(x))
-    nan_y = np.logical_not(notnull(y))
+    nan_x = isnull(x)
+    nan_y = isnull(y)
     x = np.nan_to_num(x)
     y = np.nan_to_num(y)
     xy = np.logical_or(x, y)
@@ -34,8 +33,8 @@ def _or(x: ArrayLike, y: ArrayLike):
 
 
 def xor(x: ArrayLike, y: ArrayLike):
-    nan_x = np.logical_not(notnull(x))
-    nan_y = np.logical_not(notnull(y))
+    nan_x = isnull(x)
+    nan_y = isnull(y)
     xy = np.logical_xor(x, y)
     xy = np.where(~nan_x, xy, np.nan)
     xy = np.where(~nan_y, xy, np.nan)
@@ -65,7 +64,7 @@ def _any(
         return np.nan
     data_any = np.any(np.nan_to_num(data), axis=axis)
     if not ignore_nodata:
-        nan_ar = np.logical_not(notnull(data))
+        nan_ar = isnull(data)
         nan_mask = np.any(nan_ar, axis=axis)
         nan_mask = np.logical_and(nan_mask, ~data_any)
         data_any = np.where(~nan_mask, data_any, np.nan)
