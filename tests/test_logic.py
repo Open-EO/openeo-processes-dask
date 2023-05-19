@@ -46,6 +46,7 @@ def test_xor():
     assert not xor(True, True)
     assert not xor(False, False)
     assert xor(True, False)
+    assert xor(False, True)
     assert isnull(xor(True, np.nan))
     assert isnull(xor(False, np.nan))
     assert np.isclose(
