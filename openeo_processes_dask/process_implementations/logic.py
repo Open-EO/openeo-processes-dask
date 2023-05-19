@@ -59,7 +59,7 @@ def _if(
 def _any(
     data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
-    axis: Optional[int] = -1,
+    axis: Optional[int] = None,
 ):
     if len(data) == 0:
         return np.nan
@@ -75,7 +75,7 @@ def _any(
 def _all(
     data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
-    axis: Optional[int] = -1,
+    axis: Optional[int] = None,
 ):
     if len(data) == 0:
         return np.nan
