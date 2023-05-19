@@ -14,9 +14,9 @@ def _and(x: ArrayLike, y: ArrayLike):
     nan_y = np.logical_not(notnull(y))
     xy = np.logical_and(x, y)
     nan_mask = np.logical_and(nan_x, xy)
-    xy = da.where(~nan_mask, xy, np.nan)
+    xy = np.where(~nan_mask, xy, np.nan)
     nan_mask = np.logical_and(nan_y, xy)
-    xy = da.where(~nan_mask, xy, np.nan)
+    xy = np.where(~nan_mask, xy, np.nan)
     return xy
 
 
@@ -27,9 +27,9 @@ def _or(x: ArrayLike, y: ArrayLike):
     y = np.nan_to_num(y)
     xy = np.logical_or(x, y)
     nan_mask = np.logical_and(nan_x, np.logical_not(xy))
-    xy = da.where(~nan_mask, xy, np.nan)
+    xy = np.where(~nan_mask, xy, np.nan)
     nan_mask = np.logical_and(nan_y, np.logical_not(xy))
-    xy = da.where(~nan_mask, xy, np.nan)
+    xy = np.where(~nan_mask, xy, np.nan)
     return xy
 
 
@@ -37,14 +37,14 @@ def xor(x: ArrayLike, y: ArrayLike):
     nan_x = np.logical_not(notnull(x))
     nan_y = np.logical_not(notnull(y))
     xy = np.logical_xor(x, y)
-    xy = da.where(~nan_x, xy, np.nan)
-    xy = da.where(~nan_y, xy, np.nan)
+    xy = np.where(~nan_x, xy, np.nan)
+    xy = np.where(~nan_y, xy, np.nan)
     return xy
 
 
 def _not(x: ArrayLike):
     not_x = np.logical_not(x)
-    not_x = da.where(notnull(x), not_x, np.nan)
+    not_x = np.where(notnull(x), not_x, np.nan)
     return not_x
 
 
@@ -68,7 +68,7 @@ def _any(
         nan_ar = np.logical_not(notnull(data))
         nan_mask = np.any(nan_ar, axis=axis)
         nan_mask = np.logical_and(nan_mask, ~data_any)
-        data_any = da.where(~nan_mask, data_any, np.nan)
+        data_any = np.where(~nan_mask, data_any, np.nan)
     return data_any
 
 
@@ -84,5 +84,5 @@ def _all(
         nan_ar = np.logical_not(notnull(data))
         nan_mask = np.any(nan_ar, axis=axis)
         nan_mask = np.logical_and(nan_mask, data_all)
-        data_all = da.where(~nan_mask, data_all, np.nan)
+        data_all = np.where(~nan_mask, data_all, np.nan)
     return data_all

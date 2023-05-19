@@ -184,7 +184,9 @@ def test_merge_cubes(
     cube_2[:, :, :] = False
 
     overlap_resolver = partial(
-        process_registry["and"].implementation, x=cube_1, y=cube_2
+        process_registry["and"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=ParameterReference(from_parameter="y"),
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
@@ -194,7 +196,9 @@ def test_merge_cubes(
     )  # and(True, False) == False (zeros_like)
 
     overlap_resolver = partial(
-        process_registry["or"].implementation, x=cube_1, y=cube_2
+        process_registry["or"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=ParameterReference(from_parameter="y"),
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
@@ -204,7 +208,9 @@ def test_merge_cubes(
     )  # or(True, False) == True (ones_like)
 
     overlap_resolver = partial(
-        process_registry["xor"].implementation, x=cube_1, y=cube_2
+        process_registry["xor"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=ParameterReference(from_parameter="y"),
     )
     merged_cube = merge_cubes(cube_1, cube_2, overlap_resolver=overlap_resolver)
     assert merged_cube.dims == ("x", "y", "t")
