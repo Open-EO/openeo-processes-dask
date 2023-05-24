@@ -1,6 +1,7 @@
 from typing import Union
 
 import odc.algo
+from odc.geo.geobox import resolution_from_affine
 from pyproj import Transformer
 from pyproj.crs import CRS, CRSError
 
@@ -75,7 +76,7 @@ def resample_spatial(
 
         # If resolution has not been provided, it must be inferred from old resolution.
         # First value of affine is pixel width. Use it as "resolution".
-        src_res = data.affine[0]
+        src_res = resolution_from_affine(data.affine).x
         dst_res = detect_changing_unit(
             src_crs=src_crs,
             dst_crs=dst_crs,
@@ -94,7 +95,7 @@ def resample_spatial(
         src_crs = CRS(data.rio.crs)
         # Get top left pixel seperately incase reprojection was carried out
         top_left_pixel = data.isel(x=[0], y=[0])
-        src_res = data.affine[0]
+        src_res = resolution_from_affine(data.affine).x
 
         dst_geobox = prepare_geobox(
             data,

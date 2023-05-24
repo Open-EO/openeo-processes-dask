@@ -55,7 +55,9 @@ def detect_changing_unit(src_crs, dst_crs, src_res=None):
     return src_res
 
 
-def prepare_geobox(data, dst_crs, dst_res, new_top_left_x, new_top_left_y, scale=False):
+def prepare_geobox(
+    data, dst_crs, dst_res, src_res, new_top_left_x, new_top_left_y, scale=False
+):
     """Get the destination geobox ready for the transformation."""
     # Docs for geotransform
     # https://gdal.org/tutorials/geotransforms_tut.html
