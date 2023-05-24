@@ -28,10 +28,10 @@ def test_openeo_accessor(temporal_interval, bounding_box, random_raster_data):
     assert raster_cube.openeo.temporal_dims[0] == "month"
 
     raster_cube = raster_cube.rename({"month": "NotATimeDim"})
-    assert raster_cube.openeo.temporal_dims is ()
+    assert raster_cube.openeo.temporal_dims == ()
 
     raster_cube = raster_cube.rename({"bands": "b"})
     assert raster_cube.openeo.band_dims[0] == "b"
 
     raster_cube = raster_cube.rename({"b": "NotABandDim"})
-    assert raster_cube.openeo.band_dims is ()
+    assert raster_cube.openeo.band_dims == ()
