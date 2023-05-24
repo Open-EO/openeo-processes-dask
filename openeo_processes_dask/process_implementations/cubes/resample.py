@@ -29,7 +29,7 @@ resample_methods_list = [
 
 def resample_spatial(
     data: RasterCube,
-    epsg_code: Union[str, int] = None,
+    projection: Union[str, int] = None,
     resolution: int = None,
     method: str = "near",
     align: str = "upper-left",
@@ -50,12 +50,12 @@ def resample_spatial(
     data = data.transpose("bands", "t", "y", "x")
 
     # Do reprojection first, and then resampling
-    if epsg_code:
+    if projection:
         try:
-            dst_crs = CRS.from_epsg(epsg_code)
+            dst_crs = CRS.from_user_input(projection)
         except CRSError:
             raise Exception(
-                f"epsg_code parameter {epsg_code} is not a valid epsg code."
+                f"Projection parameter {projection} could not be parsed to CRS."
             )
 
         # Get original crs and resolution from dataset.
@@ -93,6 +93,7 @@ def resample_spatial(
         dst_res = resolution
         # Get src_crs seperately incase reprojection was carried out.
         src_crs = CRS(data.rio.crs)
+
         # Get top left pixel seperately incase reprojection was carried out
         top_left_pixel = data.isel(x=[0], y=[0])
         src_res = resolution_from_affine(data.affine).x
@@ -107,15 +108,14 @@ def resample_spatial(
             scale=True,
         )
 
-        data = odc.algo.xr_reproject(src=data, geobox=dst_geobox)
+        data = odc.algo.xr_reproject(src=data, geobox=dst_geobox, resampling=method)
 
     reprojected = data
-
     if "longitude" in reprojected.dims:
-        reprojected = reprojected.rename({"longitude": data.openeo.x_dim})
+        reprojected = reprojected.rename({"longitude": "x"})
 
     if "latitude" in reprojected.dims:
-        reprojected = reprojected.rename({"latitude": data.openeo.y_dim})
+        reprojected = reprojected.rename({"latitude": "y"})
 
     reprojected.attrs["crs"] = data.rio.crs
     return reprojected
