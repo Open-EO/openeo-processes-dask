@@ -41,7 +41,7 @@ def resample_spatial(
             f"[{', '.join(resample_methods_list)}]"
         )
 
-    # Re-order, this is specifically done for xr_reproject
+    # Re-order, this is specifically done for odc reproject
     data = data.transpose("bands", "t", "y", "x")
 
     if not projection:
@@ -66,4 +66,8 @@ def resample_spatial(
         reprojected = reprojected.rename({"latitude": "y"})
 
     reprojected.attrs["crs"] = data.rio.crs
+
+    # Undo odc specific re-ordering.
+    reprojected = reprojected.transpose("bands", "t", "x", "y")
+
     return reprojected

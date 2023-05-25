@@ -44,6 +44,7 @@ def test_resample_spatial(
         verify_crs=False,
     )
 
+    assert output_cube.odc.spatial_dims == ("y", "x")
     assert output_cube.rio.crs == CRS.from_user_input(output_crs)
     assert resolution_from_affine(output_cube.geobox.affine).x == output_res
     assert resolution_from_affine(output_cube.geobox.affine).y == -output_res
