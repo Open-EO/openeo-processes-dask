@@ -16,6 +16,7 @@ from tests.mockdata import create_fake_rastercube
         3587,
         "32633",
         "+proj=aeqd +lat_0=53 +lon_0=24 +x_0=5837287.81977 +y_0=2121415.69617 +datum=WGS84 +units=m +no_defs",
+        "4326",
     ],
 )
 @pytest.mark.parametrize("output_res", [5, 30, 60])
@@ -46,5 +47,7 @@ def test_resample_spatial(
 
     assert output_cube.odc.spatial_dims == ("y", "x")
     assert output_cube.rio.crs == CRS.from_user_input(output_crs)
-    assert resolution_from_affine(output_cube.geobox.affine).x == output_res
-    assert resolution_from_affine(output_cube.geobox.affine).y == -output_res
+
+    if output_crs != "4326":
+        assert resolution_from_affine(output_cube.geobox.affine).x == output_res
+        assert resolution_from_affine(output_cube.geobox.affine).y == -output_res
