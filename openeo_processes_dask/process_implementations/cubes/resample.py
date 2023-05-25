@@ -4,9 +4,6 @@ import odc.geo
 from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
 
-from openeo_processes_dask.process_implementations.cubes.utils import (
-    approx_metres_2_degrees,
-)
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 
 resample_methods_list = [
