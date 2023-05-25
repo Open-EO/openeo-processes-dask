@@ -29,7 +29,7 @@ def resample_spatial(
     method: str = "near",
     align: str = "upper-left",
 ):
-    """Resample the input rastercube by the provided epsg_code. Currently not accepting resolution resampling."""
+    """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
 
     # Assert resampling method is correct.
     if method == "near":
