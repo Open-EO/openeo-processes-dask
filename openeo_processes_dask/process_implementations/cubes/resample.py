@@ -58,9 +58,6 @@ def resample_spatial(
     if not resolution:
         resolution = resolution_from_affine(data.geobox.affine).x
 
-    if projection.is_geographic:
-        resolution = approx_metres_2_degrees(resolution)
-
     reprojected = data.odc.reproject(
         how=projection, resolution=resolution, resampling=method
     )
