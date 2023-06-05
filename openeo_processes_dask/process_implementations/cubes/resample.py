@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 import odc.geo
@@ -5,6 +6,8 @@ from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
+
+logger = logging.getLogger(__name__)
 
 resample_methods_list = [
     "near",
@@ -31,6 +34,9 @@ def resample_spatial(
 ):
     """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
 
+    if align == "upper-left":
+        logging.warning("Warning: align parameter is unused by current implementation.")
+
     # Assert resampling method is correct.
     if method == "near":
         method = "nearest"
@@ -42,10 +48,10 @@ def resample_spatial(
         )
 
     # Re-order, this is specifically done for odc reproject
-    data = data.transpose("bands", "t", "y", "x")
+    data_cp = data.transpose("bands", "t", "y", "x")
 
     if not projection:
-        projection = data.rio.crs
+        projection = data_cp.rio.crs
 
     try:
         projection = CRS(projection)
@@ -53,9 +59,9 @@ def resample_spatial(
         raise CRSError(f"{projection} Can not be parsed to CRS.")
 
     if not resolution:
-        resolution = resolution_from_affine(data.geobox.affine).x
+        resolution = resolution_from_affine(data_cp.geobox.affine).x
 
-    reprojected = data.odc.reproject(
+    reprojected = data_cp.odc.reproject(
         how=projection, resolution=resolution, resampling=method
     )
 
@@ -65,9 +71,9 @@ def resample_spatial(
     if "latitude" in reprojected.dims:
         reprojected = reprojected.rename({"latitude": "y"})
 
-    reprojected.attrs["crs"] = data.rio.crs
+    reprojected.attrs["crs"] = data_cp.rio.crs
 
     # Undo odc specific re-ordering.
-    reprojected = reprojected.transpose("bands", "t", "x", "y")
+    reprojected = reprojected.transpose(*data.dims)
 
     return reprojected
