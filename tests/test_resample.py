@@ -52,6 +52,7 @@ def test_resample_spatial(
         assert resolution_from_affine(output_cube.geobox.affine).x == output_res
         assert resolution_from_affine(output_cube.geobox.affine).y == -output_res
 
+    if output_cube.rio.crs.is_geographic:
         assert min(output_cube.x) >= -180
         assert max(output_cube.x) <= 180
 
