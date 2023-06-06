@@ -34,6 +34,11 @@ def test_resample_spatial(
         backend="dask",
     )
 
+    with pytest.raises(Exception):
+        output_cube = resample_spatial(
+            data=input_cube, projection=output_crs, resolution=output_res, method="bad"
+        )
+
     output_cube = resample_spatial(
         data=input_cube, projection=output_crs, resolution=output_res
     )
