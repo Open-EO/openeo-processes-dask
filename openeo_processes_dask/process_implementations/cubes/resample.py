@@ -37,7 +37,8 @@ def resample_spatial(
     if align == "upper-left":
         logging.warning("Warning: align parameter is unused by current implementation.")
 
-    # Assert resampling method is correct.
+    # This is necessary, because the resampling methods in rasterio are used
+    # Reference here: https://rasterio.readthedocs.io/en/stable/api/rasterio.enums.html#rasterio.enums.Resampling
     if method == "near":
         method = "nearest"
 
