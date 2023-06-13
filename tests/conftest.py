@@ -49,6 +49,20 @@ def bounding_box(
 
 
 @pytest.fixture
+def bounding_box_small(
+    west=10.47, east=10.48, south=46.12, north=46.18, crs="EPSG:4326"
+) -> BoundingBox:
+    spatial_extent = {
+        "west": west,
+        "east": east,
+        "south": south,
+        "north": north,
+        "crs": crs,
+    }
+    return BoundingBox.parse_obj(spatial_extent)
+
+
+@pytest.fixture
 def temporal_interval(interval=["2018-05-01", "2018-06-01"]) -> TemporalInterval:
     return TemporalInterval.parse_obj(interval)
 

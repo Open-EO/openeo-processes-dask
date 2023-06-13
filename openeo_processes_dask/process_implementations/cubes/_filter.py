@@ -2,7 +2,10 @@ import logging
 from typing import Callable
 
 import numpy as np
-from openeo_pg_parser_networkx.pg_schema import TemporalInterval
+import rioxarray
+import xarray as xr
+from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
+from pyproj import CRS, Proj, Transformer, transform
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
@@ -12,7 +15,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["filter_labels", "filter_temporal"]
+__all__ = ["filter_labels", "filter_temporal", "filter_bands", "filter_bbox"]
 
 
 def filter_temporal(
@@ -67,3 +70,88 @@ def filter_labels(data: RasterCube, condition: Callable, dimension: str) -> Rast
     label = labels[label_mask]
     data = data.sel(**{dimension: label})
     return data
+
+
+def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
+    if bands is None:
+        raise BandFilterParameterMissing(
+            "The process `filter_bands` requires the parameters `bands` to be set."
+        )
+
+    if len(data.openeo.band_dims) < 1:
+        raise DimensionMissing("A band dimension is missing.")
+    band_dim = data.openeo.band_dims[0]
+
+    try:
+        data = data.sel(**{band_dim: bands})
+    except Exception as e:
+        raise Exception(
+            f"The provided bands: {bands} are not all available in the datacube. Please modify the bands parameter of filter_bands and choose among: {data[band_dim].values}."
+        )
+    return data
+
+
+def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
+    try:
+        input_crs = str(data.rio.crs)
+    except Exception as e:
+        raise Exception(f"Not possible to estimate the input data projection! {e}")
+    trasnformed_extent = reproject_bbox(extent, input_crs)
+
+    # Check if the coordinates are increasing or decreasing
+    if len(data.y) > 1:
+        if data.y[0] > data.y[1]:
+            y_slice = slice(trasnformed_extent.north, trasnformed_extent.south)
+        else:
+            y_slice = slice(trasnformed_extent.south, trasnformed_extent.north)
+    if len(data.x) > 1:
+        if data.x[0] > data.x[1]:
+            x_slice = slice(trasnformed_extent.east, trasnformed_extent.west)
+        else:
+            x_slice = slice(trasnformed_extent.west, trasnformed_extent.east)
+
+    aoi = data.loc[{"y": y_slice, "x": x_slice}]
+    return aoi
+
+
+def reproject_bbox(extent: BoundingBox, output_crs: str) -> BoundingBox:
+    if (
+        extent is not None
+        and extent.south is not None
+        and extent.west is not None
+        and extent.north is not None
+        and extent.east is not None
+    ):
+        bbox_points = [
+            [extent.south, extent.west],
+            [extent.south, extent.east],
+            [extent.north, extent.east],
+            [extent.north, extent.west],
+        ]
+    else:
+        raise Exception(f"Empty or non-valid bounding box provided! {extent}")
+        return
+    if extent.crs is not None:
+        source_crs = extent.crs
+    else:
+        source_crs = "EPSG:4326"
+
+    transformer = Transformer.from_crs(source_crs, output_crs, always_xy=True)
+
+    x_t = []
+    y_t = []
+    for p in bbox_points:
+        x1, y1 = p
+        x2, y2 = transformer.transform(y1, x1)
+        x_t.append(x2)
+        y_t.append(y2)
+
+    x_t = np.array(x_t)
+    y_t = np.array(y_t)
+
+    trasnformed_extent = {}
+
+    trasnformed_extent = BoundingBox(
+        west=x_t.min(), east=x_t.max(), north=y_t.max(), south=y_t.min(), crs=output_crs
+    )
+    return trasnformed_extent
