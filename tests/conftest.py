@@ -23,7 +23,9 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def dask_client():
-    return Client()
+    client = Client()
+    yield client
+    client.shutdown()
 
 
 @pytest.fixture

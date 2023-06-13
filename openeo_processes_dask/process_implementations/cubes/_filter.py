@@ -9,6 +9,8 @@ from pyproj import CRS, Proj, Transformer, transform
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
+    BandFilterParameterMissing,
+    DimensionMissing,
     DimensionNotAvailable,
     TooManyDimensions,
 )
@@ -149,9 +151,9 @@ def reproject_bbox(extent: BoundingBox, output_crs: str) -> BoundingBox:
     x_t = np.array(x_t)
     y_t = np.array(y_t)
 
-    trasnformed_extent = {}
+    reprojected_extent = {}
 
-    trasnformed_extent = BoundingBox(
+    reprojected_extent = BoundingBox(
         west=x_t.min(), east=x_t.max(), north=y_t.max(), south=y_t.min(), crs=output_crs
     )
-    return trasnformed_extent
+    return reprojected_extent
