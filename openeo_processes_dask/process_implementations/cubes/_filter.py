@@ -98,62 +98,93 @@ def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
         input_crs = str(data.rio.crs)
     except Exception as e:
         raise Exception(f"Not possible to estimate the input data projection! {e}")
-    trasnformed_extent = reproject_bbox(extent, input_crs)
+    trasnformed_extent = _reproject_bbox(extent, input_crs)
+    y_dim = data.openeo.y_dim
+    x_dim = data.openeo.x_dim
 
-    # Check if the coordinates are increasing or decreasing
-    if len(data.y) > 1:
-        if data.y[0] > data.y[1]:
-            y_slice = slice(trasnformed_extent.north, trasnformed_extent.south)
-        else:
-            y_slice = slice(trasnformed_extent.south, trasnformed_extent.north)
-    if len(data.x) > 1:
-        if data.x[0] > data.x[1]:
-            x_slice = slice(trasnformed_extent.east, trasnformed_extent.west)
-        else:
-            x_slice = slice(trasnformed_extent.west, trasnformed_extent.east)
+    # Check first if the data has some spatial dimensions:
+    if y_dim is None and x_dim is None:
+        raise DimensionNotAvailable(
+            "No spatial dimensions available, can't apply filter_bbox."
+        )
 
-    aoi = data.loc[{"y": y_slice, "x": x_slice}]
+    if y_dim is not None:
+        # Check if the coordinates are increasing or decreasing
+        if len(data[y_dim]) > 1:
+            if data[y_dim][0] > data[y_dim][1]:
+                y_slice = slice(trasnformed_extent.north, trasnformed_extent.south)
+            else:
+                y_slice = slice(trasnformed_extent.south, trasnformed_extent.north)
+        else:
+            # We need to check if the bbox crosses this single coordinate
+            # if data[y_dim][0] < trasnformed_extent.north and data[y_dim][0] > trasnformed_extent.south:
+            #     # bbox crosses the single coordinate
+            #     y_slice = data[y_dim][0]
+            # else:
+            #     # bbox doesn't cross the single coordinate: return empty data or error?
+            raise NotImplementedError(
+                f"filter_bbox can't filter data with a single coordinate on {y_dim} yet."
+            )
+
+    if x_dim is not None:
+        if len(data[x_dim]) > 1:
+            if data[x_dim][0] > data[x_dim][1]:
+                x_slice = slice(trasnformed_extent.east, trasnformed_extent.west)
+            else:
+                x_slice = slice(trasnformed_extent.west, trasnformed_extent.east)
+        else:
+            # We need to check if the bbox crosses this single coordinate. How to do this correctly?
+            # if data[x_dim][0] < trasnformed_extent.east and data[x_dim][0] > trasnformed_extent.west:
+            #     # bbox crosses the single coordinate
+            #     y_slice = data[x_dim][0]
+            # else:
+            #     # bbox doesn't cross the single coordinate: return empty data or error?
+            raise NotImplementedError(
+                f"filter_bbox can't filter data with a single coordinate on {x_dim} yet."
+            )
+
+    if y_dim is not None and x_dim is not None:
+        aoi = data.loc[{y_dim: y_slice, x_dim: x_slice}]
+    elif x_dim is None:
+        aoi = data.loc[{y_dim: y_slice}]
+    else:
+        aoi = data.loc[{x_dim: x_slice}]
+
     return aoi
 
 
-def reproject_bbox(extent: BoundingBox, output_crs: str) -> BoundingBox:
-    if (
-        extent is not None
-        and extent.south is not None
-        and extent.west is not None
-        and extent.north is not None
-        and extent.east is not None
-    ):
-        bbox_points = [
-            [extent.south, extent.west],
-            [extent.south, extent.east],
-            [extent.north, extent.east],
-            [extent.north, extent.west],
-        ]
-    else:
-        raise Exception(f"Empty or non-valid bounding box provided! {extent}")
-        return
+def _reproject_bbox(extent: BoundingBox, target_crs: str) -> BoundingBox:
+    bbox_points = [
+        [extent.south, extent.west],
+        [extent.south, extent.east],
+        [extent.north, extent.east],
+        [extent.north, extent.west],
+    ]
     if extent.crs is not None:
         source_crs = extent.crs
     else:
         source_crs = "EPSG:4326"
 
-    transformer = Transformer.from_crs(source_crs, output_crs, always_xy=True)
+    transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
 
-    x_t = []
-    y_t = []
+    x_reprojected = []
+    y_reprojected = []
     for p in bbox_points:
         x1, y1 = p
         x2, y2 = transformer.transform(y1, x1)
-        x_t.append(x2)
-        y_t.append(y2)
+        x_reprojected.append(x2)
+        y_reprojected.append(y2)
 
-    x_t = np.array(x_t)
-    y_t = np.array(y_t)
+    x_reprojected = np.array(x_reprojected)
+    y_reprojected = np.array(y_reprojected)
 
     reprojected_extent = {}
 
     reprojected_extent = BoundingBox(
-        west=x_t.min(), east=x_t.max(), north=y_t.max(), south=y_t.min(), crs=output_crs
+        west=x_reprojected.min(),
+        east=x_reprojected.max(),
+        north=y_reprojected.max(),
+        south=y_reprojected.min(),
+        crs=target_crs,
     )
     return reprojected_extent

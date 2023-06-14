@@ -8,7 +8,18 @@ import xarray as xr
 class OpenEOExtensionDa:
     def __init__(self, xarray_obj):
         self._obj = xarray_obj
-        self._spatial_guesses = ["y", "x", "lat", "lon"]
+        self._spatial_guesses = [
+            "y",
+            "Y",
+            "x",
+            "X",
+            "lat",
+            "latitude",
+            "lon",
+            "longitude",
+        ]
+        self._x_guesses = ["x", "X", "lon", "longitude"]
+        self._y_guesses = ["y", "Y", "lat", "latitude"]
         self._temporal_guesses = [
             "time",
             "t",
@@ -20,7 +31,7 @@ class OpenEOExtensionDa:
             "hour",
             "second",
         ]
-        self._bands_guesses = ["b", "bands"]
+        self._bands_guesses = ["b", "bands", "band"]
         self._other_guesses = []
 
     @property
@@ -31,17 +42,37 @@ class OpenEOExtensionDa:
 
     @property
     def x_dim(self) -> Optional[str]:
-        spatial_dims = self._obj.odc.spatial_dims
-        if spatial_dims is not None:
-            return spatial_dims[1]
-        return None
+        try:
+            # This works only if two spatial dimensions are present, throws an error in there's only one
+            spatial_dims = self._obj.odc.spatial_dims
+            if spatial_dims is not None:
+                return spatial_dims[1]
+            else:
+                return None
+        except:
+            dims = {str(dim).casefold(): str(dim) for dim in self._obj.dims}
+
+            for guess in self._x_guesses:
+                if guess in dims:
+                    return dims[guess]
+            return None
 
     @property
     def y_dim(self) -> Optional[str]:
-        spatial_dims = self._obj.odc.spatial_dims
-        if spatial_dims is not None:
-            return spatial_dims[0]
-        return None
+        try:
+            # This works only if two spatial dimensions are present, throws an error in there's only one
+            spatial_dims = self._obj.odc.spatial_dims
+            if spatial_dims is not None:
+                return spatial_dims[0]
+            else:
+                return None
+        except:
+            dims = {str(dim).casefold(): str(dim) for dim in self._obj.dims}
+
+            for guess in self._y_guesses:
+                if guess in dims:
+                    return dims[guess]
+            return None
 
     @property
     def z_dim(self):
