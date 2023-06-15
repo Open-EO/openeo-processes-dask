@@ -42,37 +42,21 @@ class OpenEOExtensionDa:
 
     @property
     def x_dim(self) -> Optional[str]:
-        try:
-            # This works only if two spatial dimensions are present, throws an error in there's only one
-            spatial_dims = self._obj.odc.spatial_dims
-            if spatial_dims is not None:
-                return spatial_dims[1]
-            else:
-                return None
-        except:
-            dims = {str(dim).casefold(): str(dim) for dim in self._obj.dims}
+        dims = {str(dim).casefold(): str(dim) for dim in self._obj.dims}
 
-            for guess in self._x_guesses:
-                if guess in dims:
-                    return dims[guess]
-            return None
+        for guess in self._x_guesses:
+            if guess in dims:
+                return dims[guess]
+        return None
 
     @property
     def y_dim(self) -> Optional[str]:
-        try:
-            # This works only if two spatial dimensions are present, throws an error in there's only one
-            spatial_dims = self._obj.odc.spatial_dims
-            if spatial_dims is not None:
-                return spatial_dims[0]
-            else:
-                return None
-        except:
-            dims = {str(dim).casefold(): str(dim) for dim in self._obj.dims}
+        dims = {str(dim).casefold(): str(dim) for dim in self._obj.dims}
 
-            for guess in self._y_guesses:
-                if guess in dims:
-                    return dims[guess]
-            return None
+        for guess in self._y_guesses:
+            if guess in dims:
+                return dims[guess]
+        return None
 
     @property
     def z_dim(self):

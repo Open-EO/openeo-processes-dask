@@ -2,10 +2,10 @@ import logging
 from typing import Callable
 
 import numpy as np
+import pyproj
 import rioxarray
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
-from pyproj import CRS, Proj, Transformer, transform
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
@@ -98,7 +98,10 @@ def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
         input_crs = str(data.rio.crs)
     except Exception as e:
         raise Exception(f"Not possible to estimate the input data projection! {e}")
-    trasnformed_extent = _reproject_bbox(extent, input_crs)
+    if not pyproj.crs.CRS(extent.crs).equals(input_crs):
+        reprojected_extent = _reproject_bbox(extent, input_crs)
+    else:
+        reprojected_extent = extent
     y_dim = data.openeo.y_dim
     x_dim = data.openeo.x_dim
 
@@ -112,12 +115,12 @@ def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
         # Check if the coordinates are increasing or decreasing
         if len(data[y_dim]) > 1:
             if data[y_dim][0] > data[y_dim][1]:
-                y_slice = slice(trasnformed_extent.north, trasnformed_extent.south)
+                y_slice = slice(reprojected_extent.north, reprojected_extent.south)
             else:
-                y_slice = slice(trasnformed_extent.south, trasnformed_extent.north)
+                y_slice = slice(reprojected_extent.south, reprojected_extent.north)
         else:
             # We need to check if the bbox crosses this single coordinate
-            # if data[y_dim][0] < trasnformed_extent.north and data[y_dim][0] > trasnformed_extent.south:
+            # if data[y_dim][0] < reprojected_extent.north and data[y_dim][0] > reprojected_extent.south:
             #     # bbox crosses the single coordinate
             #     y_slice = data[y_dim][0]
             # else:
@@ -129,12 +132,12 @@ def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
     if x_dim is not None:
         if len(data[x_dim]) > 1:
             if data[x_dim][0] > data[x_dim][1]:
-                x_slice = slice(trasnformed_extent.east, trasnformed_extent.west)
+                x_slice = slice(reprojected_extent.east, reprojected_extent.west)
             else:
-                x_slice = slice(trasnformed_extent.west, trasnformed_extent.east)
+                x_slice = slice(reprojected_extent.west, reprojected_extent.east)
         else:
             # We need to check if the bbox crosses this single coordinate. How to do this correctly?
-            # if data[x_dim][0] < trasnformed_extent.east and data[x_dim][0] > trasnformed_extent.west:
+            # if data[x_dim][0] < reprojected_extent.east and data[x_dim][0] > reprojected_extent.west:
             #     # bbox crosses the single coordinate
             #     y_slice = data[x_dim][0]
             # else:
@@ -165,7 +168,7 @@ def _reproject_bbox(extent: BoundingBox, target_crs: str) -> BoundingBox:
     else:
         source_crs = "EPSG:4326"
 
-    transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
+    transformer = pyproj.Transformer.from_crs(source_crs, target_crs, always_xy=True)
 
     x_reprojected = []
     y_reprojected = []
