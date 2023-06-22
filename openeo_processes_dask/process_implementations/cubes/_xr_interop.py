@@ -47,16 +47,44 @@ class OpenEOExtensionDa:
                 found_dims.append(self._obj.dims[i])
         return found_dims
 
+    def _get_existing_dims_and_pop_missing(self, expected_dims):
+        existing_dims = []
+        for i, dim in enumerate(expected_dims):
+            if dim in self._obj.dims:
+                existing_dims.append(dim)
+            else:
+                expected_dims.pop(i)
+        return existing_dims
+
     @property
     def spatial_dims(self) -> tuple[str]:
         """Find and return all spatial dimensions of the datacube as a tuple."""
-        return tuple(self._spatial_dims)
+        return tuple(self._get_existing_dims_and_pop_missing(self._spatial_dims))
+
+    @property
+    def temporal_dims(self) -> tuple[str]:
+        """Find and return all temporal dimensions of the datacube as a list."""
+        return tuple(self._get_existing_dims_and_pop_missing(self._temporal_dims))
+
+    @property
+    def band_dims(self) -> tuple[str]:
+        """Find and return all bands dimensions of the datacube as a list."""
+        return tuple(self._get_existing_dims_and_pop_missing(self._bands_dims))
+
+    @property
+    def other_dims(self) -> tuple[str]:
+        """Find and return any dimensions with type other as s list."""
+        return tuple(self._get_existing_dims_and_pop_missing(self._other_dims))
 
     @property
     def x_dim(self) -> Optional[str]:
         return next(
             iter(
-                [dim for dim in self.spatial_dims if str(dim).casefold() in X_GUESSES]
+                [
+                    dim
+                    for dim in self.spatial_dims
+                    if str(dim).casefold() in X_GUESSES and dim in self._obj.dims
+                ]
             ),
             None,
         )
@@ -65,7 +93,11 @@ class OpenEOExtensionDa:
     def y_dim(self) -> Optional[str]:
         return next(
             iter(
-                [dim for dim in self.spatial_dims if str(dim).casefold() in Y_GUESSES]
+                [
+                    dim
+                    for dim in self.spatial_dims
+                    if str(dim).casefold() in Y_GUESSES and dim in self._obj.dims
+                ]
             ),
             None,
         )
@@ -73,21 +105,6 @@ class OpenEOExtensionDa:
     @property
     def z_dim(self):
         raise NotImplementedError()
-
-    @property
-    def temporal_dims(self) -> tuple[str]:
-        """Find and return all temporal dimensions of the datacube as a list."""
-        return tuple(self._temporal_dims)
-
-    @property
-    def band_dims(self) -> tuple[str]:
-        """Find and return all bands dimensions of the datacube as a list."""
-        return tuple(self._bands_dims)
-
-    @property
-    def other_dims(self) -> tuple[str]:
-        """Find and return any dimensions with type other as s list."""
-        return tuple(self._other_dims)
 
     def add_dim_type(self, name: str, type: str) -> None:
         """Add dimension name to the list of guesses when calling add_dimension."""
