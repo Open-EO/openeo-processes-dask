@@ -28,14 +28,10 @@ resample_methods_list = [
 def resample_spatial(
     data: RasterCube,
     projection: Union[str, int] = None,
-    resolution: Union[str, int] = None,
+    resolution: int = 0,
     method: str = "near",
-    align: str = "upper-left",
 ):
     """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
-
-    if align == "upper-left":
-        logging.warning("Warning: align parameter is unused by current implementation.")
 
     # Assert resampling method is correct.
     if method == "near":
@@ -48,7 +44,12 @@ def resample_spatial(
         )
 
     # Re-order, this is specifically done for odc reproject
-    data_cp = data.transpose("bands", "t", "y", "x")
+    data_cp = data.transpose(
+        data.openeo.band_dims[0],
+        data.openeo.temporal_dims[0],
+        data.openeo.y_dim,
+        data.openeo.x_dim,
+    )
 
     if not projection:
         projection = data_cp.rio.crs
