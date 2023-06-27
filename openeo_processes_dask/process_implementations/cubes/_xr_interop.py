@@ -4,6 +4,7 @@ import odc.geo.xr  # Required for the .geo accessor on xarrays.
 import xarray as xr
 
 TEMPORAL_GUESSES = [
+    "DATE",
     "time",
     "t",
     "year",
@@ -16,7 +17,7 @@ TEMPORAL_GUESSES = [
 ]
 X_GUESSES = ["x", "lon", "longitude"]
 Y_GUESSES = ["y", "lat", "latitude"]
-BANDS_GUESSES = ["b", "bands"]
+BANDS_GUESSES = ["b", "bands", "band"]
 
 
 @xr.register_dataarray_accessor("openeo")
