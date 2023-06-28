@@ -4,12 +4,14 @@ from openeo_processes_dask.process_implementations.cubes.load import load_stac
 
 
 def test_load_stac(temporal_interval, bounding_box):
-    url = "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs"
+    url = (
+        "https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2"
+    )
     output_cube = load_stac(
         url=url,
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
-        bands=["B02", "B03", "B04", "B08"],
+        bands=["red"],
     )
 
     assert output_cube.openeo is not None

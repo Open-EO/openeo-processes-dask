@@ -125,7 +125,7 @@ def load_stac(
             if properties is not None:
                 query_params["query"] = properties
 
-            items = catalog.search(**query_params).get_all_items()
+            items = catalog.search(**query_params).item_collection()
             stack = stackstac.stack(items)
             if spatial_extent is not None:
                 stack = filter_bbox(stack, spatial_extent)
