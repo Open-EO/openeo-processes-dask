@@ -26,3 +26,6 @@ except ImportError as e:
 import rioxarray as rio  # Required for the .rio accessor on xarrays.
 
 import openeo_processes_dask.process_implementations.cubes._xr_interop
+
+log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+logging.basicConfig(level=logging.INFO, format=log_format)

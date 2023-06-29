@@ -74,10 +74,11 @@ def process(f):
             if arg not in inspect.signature(f).parameters:
                 resolved_kwargs.pop(arg, None)
 
-        pretty_args = {k: type(v) for k, v in resolved_kwargs.items()}
-        logger.warning(f"Running process {f.__name__}")
-        logger.warning(f"kwargs: {pretty_args}")
-        logger.warning("-" * 80)
+        pretty_args = {k: v.__repr__()[:80] for k, v in resolved_kwargs.items()}
+        logger.info(f"Running process {f.__name__}")
+        logger.debug(
+            f"Running process {f.__name__} with resolved parameters: {pretty_args}"
+        )
 
         return f(*resolved_args, **resolved_kwargs)
 
