@@ -55,7 +55,7 @@ def resample_spatial(
         projection = data_cp.rio.crs
 
     try:
-        projection = CRS(projection)
+        projection = CRS.from_user_input(projection)
     except CRSError as e:
         raise CRSError(f"{projection} Can not be parsed to CRS.")
 
