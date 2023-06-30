@@ -1,4 +1,5 @@
 import datetime
+import json
 from collections.abc import Iterator
 from pathlib import PurePosixPath
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -16,6 +17,7 @@ from openeo_processes_dask.process_implementations.cubes._filter import (
     _reproject_bbox,
     filter_bands,
     filter_bbox,
+    filter_temporal,
 )
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
@@ -42,8 +44,6 @@ def load_stac(
     properties: Optional[dict] = None,
     **kwargs,
 ) -> RasterCube:
-    modifier = kwargs["modifier"] if "modifier" in kwargs else None
-
     def validate_stac(url):
         stac = stac_validator.StacValidate(url)
         is_valid_stac = stac.run()
@@ -126,18 +126,38 @@ def load_stac(
                 query_params["query"] = properties
 
             items = catalog.search(**query_params).item_collection()
-            stack = stackstac.stack(items)
+            assets = None
+            if bands is not None:
+                assets = bands
+            stack = stackstac.stack(items, assets=assets)
             if spatial_extent is not None:
                 stack = filter_bbox(stack, spatial_extent)
-            if bands is not None:
-                stack = filter_bands(stack, bands)
-
             return stack
+
         else:
             # Load the whole collection wihout filters
             raise Exception(
                 f"No parameters for filtering provided. Loading the whole STAC Collection is not supported yet."
             )
+
+    elif asset_type == "ITEM":
+        stac_api = pystac_client.stac_api_io.StacApiIO()
+        stac_dict = json.loads(stac_api.read_text(url))
+        stac_item = stac_api.stac_object_from_dict(stac_dict)
+
+        assets = None
+        if bands is not None:
+            assets = bands
+
+        stack = stackstac.stack(stac_item, assets=assets)
+
+        if spatial_extent is not None:
+            stack = filter_bbox(stack, spatial_extent)
+
+        if temporal_extent is not None:
+            stack = filter_temporal(stack, temporal_extent)
+        return stack
+
     else:
         raise Exception(
             f"The provided URL is a STAC {asset_type}, which is not yet supported. Please provide a valid URL to a STAC Collection."
