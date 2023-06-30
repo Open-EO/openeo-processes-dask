@@ -63,5 +63,5 @@ def add_dimension(
     data_e = data.assign_coords(**{name: label})
     data_e = data_e.expand_dims(name)
     # Register dimension in the openeo accessor
-    data_e.openeo.add_dim_to_guesses(name=name, type=type)
+    data_e.openeo.add_dim_type(name=name, type=type)
     return data_e

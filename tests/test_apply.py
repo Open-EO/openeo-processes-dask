@@ -164,6 +164,8 @@ def test_apply_dimension_target_dimension(
         expected_results=expected_output,
     )
 
+    assert "y" in output_cube_reduced.openeo.other_dims
+
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
