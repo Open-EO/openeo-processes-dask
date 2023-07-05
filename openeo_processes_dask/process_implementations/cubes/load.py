@@ -126,10 +126,10 @@ def load_stac(
                 query_params["query"] = properties
 
             items = catalog.search(**query_params).item_collection()
-            assets = None
             if bands is not None:
-                assets = bands
-            stack = stackstac.stack(items, assets=assets)
+                stack = stackstac.stack(items, assets=bands)
+            else:
+                stack = stackstac.stack(items)
             if spatial_extent is not None:
                 stack = filter_bbox(stack, spatial_extent)
             return stack
