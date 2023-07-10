@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 from collections.abc import Iterator
 from pathlib import PurePosixPath
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -10,7 +11,7 @@ import pyproj
 import pystac_client
 import stackstac
 import xarray as xr
-from openeo_pg_parser_networkx.pg_schema import *
+from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 from stac_validator import stac_validator
 
 from openeo_processes_dask.process_implementations.cubes._filter import (
@@ -33,39 +34,38 @@ from openeo_processes_dask.process_implementations.exceptions import (
 # }
 __all__ = ["load_stac"]
 
+logger = logging.getLogger(__name__)
+
+
+def _validate_stac(url):
+    logger.debug(f"Validating the provided STAC url: {url}")
+    stac = stac_validator.StacValidate(url)
+    is_valid_stac = stac.run()
+    if not is_valid_stac:
+        raise Exception(
+            f"The provided link is not a valid STAC. stac-validator message: {stac.message}"
+        )
+    if len(stac.message) == 1:
+        try:
+            asset_type = stac.message[0]["asset_type"]
+        except:
+            raise Exception(f"stac-validator returned an error: {stac.message}")
+    else:
+        raise Exception(
+            f"stac-validator returned multiple items, not supported yet. {stac.message}"
+        )
+    return asset_type
+
 
 def load_stac(
     url: str,
     spatial_extent: BoundingBox = None,
-    temporal_extent: Optional[
-        list[Union[str, datetime.datetime, datetime.date]]
-    ] = None,
+    temporal_extent: Optional[TemporalInterval] = None,
     bands: Optional[list[str]] = None,
     properties: Optional[dict] = None,
     **kwargs,
 ) -> RasterCube:
-    def validate_stac(url):
-        stac = stac_validator.StacValidate(url)
-        is_valid_stac = stac.run()
-        if not is_valid_stac:
-            raise Exception(
-                f"The provided link is not a valid STAC. stac-validator message: {stac.message}"
-            )
-        if len(stac.message) == 1:
-            try:
-                asset_type = stac.message[0]["asset_type"]
-            except:
-                raise Exception(f"stac-validator returned an error: {stac.message}")
-        else:
-            raise Exception(
-                f"stac-validator returned multiple items, not supported yet. {stac.message}"
-            )
-        return is_valid_stac, asset_type
-
-    is_valid_stac, asset_type = validate_stac(url)
-
-    if not is_valid_stac:
-        raise Exception("The provided link is not a valid STAC.")
+    asset_type = _validate_stac(url)
 
     if asset_type == "COLLECTION":
         # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
@@ -81,12 +81,13 @@ def load_stac(
                 if p != "/":
                     catalog_url = catalog_url + "/" + p
                 try:
-                    is_valid_stac, asset_type = validate_stac(catalog_url)
-                except:
+                    asset_type = _validate_stac(catalog_url)
+                except Exception as e:
+                    logger.debug(e)
                     continue
-                if is_valid_stac and asset_type == "CATALOG":
+                if asset_type == "CATALOG":
                     break
-            if not is_valid_stac:
+            if asset_type != "CATALOG":
                 raise Exception(
                     "It was not possible to find the root STAC Catalog starting from the provided Collection."
                 )
@@ -117,10 +118,13 @@ def load_stac(
                     raise Exception(f"Unable to parse the provided spatial extent: {e}")
 
             if temporal_extent is not None:
-                query_params["datetime"] = [
-                    str(temporal_extent[0].to_numpy()),
-                    str(temporal_extent[1].to_numpy()),
-                ]
+                start_date = None
+                end_date = None
+                if temporal_extent[0] is not None:
+                    start_date = str(temporal_extent[0].to_numpy())
+                if temporal_extent[1] is not None:
+                    end_date = str(temporal_extent[1].to_numpy())
+                query_params["datetime"] = [start_date, end_date]
 
             if properties is not None:
                 query_params["query"] = properties
