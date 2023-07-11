@@ -57,6 +57,29 @@ def _validate_stac(url):
     return asset_type
 
 
+def _search_for_parent_catalog(url):
+    parsed_url = urlparse(url)
+    root_url = parsed_url.scheme + "://" + parsed_url.netloc
+    catalog_url = root_url
+    url_parts = PurePosixPath(unquote(parsed_url.path)).parts
+    collection_id = url_parts[-1]
+    for p in url_parts:
+        if p != "/":
+            catalog_url = catalog_url + "/" + p
+        try:
+            asset_type = _validate_stac(catalog_url)
+        except Exception as e:
+            logger.debug(e)
+            continue
+        if asset_type == "CATALOG":
+            break
+    if asset_type != "CATALOG":
+        raise Exception(
+            "It was not possible to find the root STAC Catalog starting from the provided Collection."
+        )
+    return catalog_url
+
+
 def load_stac(
     url: str,
     spatial_extent: Optional[BoundingBox] = None,
@@ -70,28 +93,9 @@ def load_stac(
         # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
         if spatial_extent or temporal_extent or bands or properties:
             # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
-            # url = "https://earth-search.aws.element84.com/v0/collections/sentinel-s2-l2a-cogs"
-            parsed_url = urlparse(url)
-            root_url = parsed_url.scheme + "://" + parsed_url.netloc
-            catalog_url = root_url
-            url_parts = PurePosixPath(unquote(parsed_url.path)).parts
-            collection_id = url_parts[-1]
-            for p in url_parts:
-                if p != "/":
-                    catalog_url = catalog_url + "/" + p
-                try:
-                    asset_type = _validate_stac(catalog_url)
-                except Exception as e:
-                    logger.debug(e)
-                    continue
-                if asset_type == "CATALOG":
-                    break
-            if asset_type != "CATALOG":
-                raise Exception(
-                    "It was not possible to find the root STAC Catalog starting from the provided Collection."
-                )
+            catalog_url = _search_for_parent_catalog(url)
 
-            ## Check if we are connecting to Microsoft Planetary Computer, where we need to sign the connection
+            # Check if we are connecting to Microsoft Planetary Computer, where we need to sign the connection
             modifier = pc.sign_inplace if "planetarycomputer" in catalog_url else None
 
             catalog = pystac_client.Client.open(catalog_url, modifier=modifier)
@@ -129,13 +133,6 @@ def load_stac(
                 query_params["query"] = properties
 
             items = catalog.search(**query_params).item_collection()
-            if bands is not None:
-                stack = stackstac.stack(items, assets=bands)
-            else:
-                stack = stackstac.stack(items)
-            if spatial_extent is not None:
-                stack = filter_bbox(stack, spatial_extent)
-            return stack
 
         else:
             # Load the whole collection wihout filters
@@ -146,22 +143,22 @@ def load_stac(
     elif asset_type == "ITEM":
         stac_api = pystac_client.stac_api_io.StacApiIO()
         stac_dict = json.loads(stac_api.read_text(url))
-        stac_item = stac_api.stac_object_from_dict(stac_dict)
-
-        assets = None
-        if bands is not None:
-            assets = bands
-
-        stack = stackstac.stack(stac_item, assets=assets)
-
-        if spatial_extent is not None:
-            stack = filter_bbox(stack, spatial_extent)
-
-        if temporal_extent is not None:
-            stack = filter_temporal(stack, temporal_extent)
-        return stack
+        items = stac_api.stac_object_from_dict(stac_dict)
 
     else:
         raise Exception(
-            f"The provided URL is a STAC {asset_type}, which is not yet supported. Please provide a valid URL to a STAC Collection."
+            f"The provided URL is a STAC {asset_type}, which is not yet supported. Please provide a valid URL to a STAC Collection or Item."
         )
+
+    if bands is not None:
+        stack = stackstac.stack(items, assets=bands)
+    else:
+        stack = stackstac.stack(items)
+
+    if spatial_extent is not None:
+        stack = filter_bbox(stack, spatial_extent)
+
+    if temporal_extent is not None and asset_type == "ITEM":
+        stack = filter_temporal(stack, temporal_extent)
+
+    return stack
