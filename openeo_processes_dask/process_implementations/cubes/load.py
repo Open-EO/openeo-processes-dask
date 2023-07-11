@@ -77,7 +77,7 @@ def _search_for_parent_catalog(url):
         raise Exception(
             "It was not possible to find the root STAC Catalog starting from the provided Collection."
         )
-    return catalog_url
+    return catalog_url, collection_id
 
 
 def load_stac(
@@ -93,7 +93,7 @@ def load_stac(
         # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
         if spatial_extent or temporal_extent or bands or properties:
             # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
-            catalog_url = _search_for_parent_catalog(url)
+            catalog_url, collection_id = _search_for_parent_catalog(url)
 
             # Check if we are connecting to Microsoft Planetary Computer, where we need to sign the connection
             modifier = pc.sign_inplace if "planetarycomputer" in catalog_url else None
