@@ -63,7 +63,6 @@ def load_stac(
     temporal_extent: Optional[TemporalInterval] = None,
     bands: Optional[list[str]] = None,
     properties: Optional[dict] = None,
-    **kwargs,
 ) -> RasterCube:
     asset_type = _validate_stac(url)
 
