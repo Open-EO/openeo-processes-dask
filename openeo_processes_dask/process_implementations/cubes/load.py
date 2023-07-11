@@ -59,7 +59,7 @@ def _validate_stac(url):
 
 def load_stac(
     url: str,
-    spatial_extent: BoundingBox = None,
+    spatial_extent: Optional[BoundingBox] = None,
     temporal_extent: Optional[TemporalInterval] = None,
     bands: Optional[list[str]] = None,
     properties: Optional[dict] = None,
