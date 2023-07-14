@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -34,11 +35,17 @@ def create_fake_rastercube(
         max(spatial_extent.south, spatial_extent.north),
         step=len_y / data.shape[1],
     )
-    t_coords = pd.date_range(
-        start=np.datetime64(temporal_extent.__root__[0].__root__),
-        end=np.datetime64(temporal_extent.__root__[1].__root__),
-        periods=data.shape[2],
-    ).values
+
+    # This line raises a deprecation warning, which according to this thread
+    # will never actually be deprecated:
+    # https://github.com/numpy/numpy/issues/23904
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        t_coords = pd.date_range(
+            start=np.datetime64(temporal_extent.__root__[0].__root__),
+            end=np.datetime64(temporal_extent.__root__[1].__root__),
+            periods=data.shape[2],
+        ).values
 
     coords = {"x": x_coords, "y": y_coords, "t": t_coords, "bands": bands}
 
