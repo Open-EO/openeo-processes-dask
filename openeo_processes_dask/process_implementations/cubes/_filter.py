@@ -47,6 +47,9 @@ def filter_temporal(
             )
     applicable_temporal_dimension = temporal_dims[0]
 
+    # This line raises a deprecation warning, which according to this thread
+    # will never actually be deprecated:
+    # https://github.com/numpy/numpy/issues/23904
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         start_time = extent[0]
