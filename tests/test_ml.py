@@ -6,6 +6,7 @@ import pytest
 import xgboost as xgb
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
+from openeo_processes_dask.process_implementations.core import process
 from openeo_processes_dask.process_implementations.cubes.apply import apply_dimension
 from openeo_processes_dask.process_implementations.ml import (
     fit_curve,
@@ -57,8 +58,18 @@ def test_fit_curve(
         backend="dask",
     )
 
-    def fitFunction(t, a, b, c):
-        t0 = 2 * np.pi / 31557600 * t
-        return a + b * np.cos(t0) + c * np.sin(t0)
+    @process
+    def fitFunction(x, parameters):
+        t0 = 2 * np.pi / 31557600 * x
+        return parameters[0] + parameters[1] * np.cos(t0) + parameters[2] * np.sin(t0)
 
-    result = fit_curve(origin_cube, parameters={}, function=fitFunction, dimension="t")
+    _process = partial(
+        fitFunction,
+        x=ParameterReference(from_parameter="x"),
+        parameters=ParameterReference(from_parameter="parameters"),
+    )
+
+    result = fit_curve(
+        origin_cube, parameters=[0, 0, 0], function=fitFunction, dimension="t"
+    )
+    assert len(result.param) == 3
