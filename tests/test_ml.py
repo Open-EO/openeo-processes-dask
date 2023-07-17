@@ -70,6 +70,6 @@ def test_fit_curve(
     )
 
     result = fit_curve(
-        origin_cube, parameters=[0, 0, 0], function=fitFunction, dimension="t"
+        origin_cube, parameters=[0, 0, 0], function=_process, dimension="t"
     )
     assert len(result.param) == 3
