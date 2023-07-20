@@ -1,5 +1,6 @@
 from functools import partial
 
+import dask
 import geopandas as gpd
 import numpy as np
 import pytest
@@ -73,3 +74,4 @@ def test_fit_curve(
         origin_cube, parameters=[0, 0, 0], function=_process, dimension="t"
     )
     assert len(result.param) == 3
+    assert isinstance(result.to_array().data, dask.array.Array)
