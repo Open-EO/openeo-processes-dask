@@ -33,7 +33,7 @@ xgboost = { version = "^1.5.1", optional = true }
 rioxarray = { version = ">=0.12.0,<1", optional = true }
 odc-algo = { version = "==0.2.3", optional = true }
 openeo-pg-parser-networkx = { version = ">=2023.5.1", optional = true }
-odc-geo = { version = "^0.3.2", optional = true }
+odc-geo = { version = ">=0.3.2,<1", optional = true }
 stac_validator = { version = ">=3.3.1", optional = true }
 stackstac = { version = ">=0.4.3", optional = true }
 pystac_client = { version = ">=0.6.1", optional = true }
