@@ -31,7 +31,6 @@ rasterio = { version = "^1.3.4", optional = true }
 dask-geopandas = { version = ">=0.2.0,<1", optional = true }
 xgboost = { version = "^1.5.1", optional = true }
 rioxarray = { version = ">=0.12.0,<1", optional = true }
-odc-algo = { version = "==0.2.3", optional = true }
 openeo-pg-parser-networkx = { version = ">=2023.5.1", optional = true }
 odc-geo = { version = ">=0.3.2,<1", optional = true }
 stac_validator = { version = ">=3.3.1", optional = true }
@@ -50,7 +49,6 @@ pytest-cov = "^4.0.0"
 
 [tool.poetry.extras]
 implementations = ["geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "stackstac", "planetary_computer", "pystac_client", "stac_validator"]
-experimental = ["odc-algo"]
 ml = ["xgboost"]
 
 [tool.pytest.ini_options]
