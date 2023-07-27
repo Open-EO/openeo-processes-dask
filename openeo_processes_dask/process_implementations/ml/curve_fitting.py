@@ -1,5 +1,6 @@
 from typing import Callable
 
+from openeo_processes_dask.process_implementations.cubes import apply_dimension
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
@@ -29,5 +30,12 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
     return fit_result
 
 
-def predict_curve():
+def predict_curve(
+    data: RasterCube,
+    function: Callable,
+    parameters: RasterCube,
+    dimension: str,
+    labels: list,
+):
+    # TODO: constrain prediction to nodata values
     pass

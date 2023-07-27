@@ -48,7 +48,7 @@ def test_fit_regr_random_forest_inline_geojson(
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 3)])
 @pytest.mark.parametrize("dtype", [np.float64])
-def test_fit_curve(
+def test_curve_fitting(
     temporal_interval, bounding_box, random_raster_data, process_registry
 ):
     origin_cube = create_fake_rastercube(
