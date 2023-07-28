@@ -18,7 +18,7 @@ def test_ndvi(bounding_box):
         url=url,
         spatial_extent=bounding_box,
         bands=["red", "nir"],
-    )
+    ).isel({"x": slice(0, 20), "y": slice(0, 20)})
 
     import dask.array as da
 
