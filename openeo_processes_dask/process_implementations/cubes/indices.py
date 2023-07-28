@@ -26,7 +26,7 @@ def ndvi(data: RasterCube, nir="nir", red="red", target_band=None):
 
         if (
             nir not in available_bands
-            and "common_name" not in data.xindexes._coord_name_id.keys()
+            and "common_name" in data.xindexes._coord_name_id.keys()
             and nir not in data.coords["common_name"].data
         ):
             raise NirBandAmbiguous(
@@ -34,7 +34,7 @@ def ndvi(data: RasterCube, nir="nir", red="red", target_band=None):
             )
         elif (
             red not in available_bands
-            and "common_name" not in data.xindexes._coord_name_id.keys()
+            and "common_name" in data.xindexes._coord_name_id.keys()
             and red not in data.coords["common_name"].data
         ):
             raise RedBandAmbiguous(

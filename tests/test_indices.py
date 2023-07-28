@@ -1,8 +1,15 @@
 import numpy as np
+import pytest
 
 from openeo_processes_dask.process_implementations.cubes.indices import ndvi
 from openeo_processes_dask.process_implementations.cubes.load import load_stac
+from openeo_processes_dask.process_implementations.exceptions import (
+    BandExists,
+    NirBandAmbiguous,
+    RedBandAmbiguous,
+)
 from tests.conftest import _random_raster_data
+from tests.general_checks import general_output_checks
 
 
 def test_ndvi(bounding_box):
@@ -20,3 +27,40 @@ def test_ndvi(bounding_box):
     input_cube.data = da.from_array(numpy_data, chunks=("auto", "auto", "auto", -1))
 
     output = ndvi(input_cube)
+
+    band_dim = input_cube.openeo.band_dims[0]
+    assert band_dim not in output.dims
+
+    expected_results = (
+        input_cube.sel({band_dim: "nir"}) - input_cube.sel({band_dim: "red"})
+    ) / (input_cube.sel({band_dim: "nir"}) + input_cube.sel({band_dim: "red"}))
+
+    general_output_checks(
+        input_cube=input_cube, output_cube=output, expected_results=expected_results
+    )
+
+    cube_with_resolvable_coords = input_cube.assign_coords({"band": ["blue", "yellow"]})
+    output = ndvi(cube_with_resolvable_coords)
+    general_output_checks(
+        input_cube=cube_with_resolvable_coords,
+        output_cube=output,
+        expected_results=expected_results,
+    )
+
+    cube_with_nir_unresolvable = cube_with_resolvable_coords
+    cube_with_nir_unresolvable.common_name.data = np.array(["blue", "red"])
+
+    with pytest.raises(NirBandAmbiguous):
+        ndvi(cube_with_nir_unresolvable)
+
+    cube_with_red_unresolvable = cube_with_resolvable_coords
+    cube_with_red_unresolvable.common_name.data = np.array(["nir", "yellow"])
+
+    with pytest.raises(RedBandAmbiguous):
+        ndvi(cube_with_nir_unresolvable)
+
+    output_with_extra_dim = ndvi(input_cube, target_band="yay")
+    assert len(output_with_extra_dim.dims) == len(output.dims) + 1
+
+    with pytest.raises(BandExists):
+        output_with_extra_dim = ndvi(input_cube, target_band="time")

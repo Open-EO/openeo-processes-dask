@@ -59,7 +59,6 @@ __all__ = [
     "quantiles",
     "product",
     "normalized_difference",
-    "ndvi",
 ]
 
 
