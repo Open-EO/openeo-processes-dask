@@ -64,3 +64,19 @@ class NoDataAvailable(OpenEOException):
 
 class TemporalExtentEmpty(OpenEOException):
     pass
+
+
+class DimensionAmbiguous(OpenEOException):
+    pass
+
+
+class NirBandAmbiguous(OpenEOException):
+    pass
+
+
+class RedBandAmbiguous(OpenEOException):
+    pass
+
+
+class BandExists(OpenEOException):
+    pass
