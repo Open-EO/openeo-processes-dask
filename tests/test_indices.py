@@ -5,6 +5,7 @@ from openeo_processes_dask.process_implementations.cubes.indices import ndvi
 from openeo_processes_dask.process_implementations.cubes.load import load_stac
 from openeo_processes_dask.process_implementations.exceptions import (
     BandExists,
+    DimensionAmbiguous,
     NirBandAmbiguous,
     RedBandAmbiguous,
 )
@@ -52,6 +53,9 @@ def test_ndvi(bounding_box):
         expected_results=expected_results,
     )
 
+    with pytest.raises(DimensionAmbiguous):
+        ndvi(output)
+
     cube_with_nir_unresolvable = cube_with_resolvable_coords
     cube_with_nir_unresolvable.common_name.data = np.array(["blue", "red"])
 
@@ -64,9 +68,18 @@ def test_ndvi(bounding_box):
     with pytest.raises(RedBandAmbiguous):
         ndvi(cube_with_red_unresolvable)
 
+    cube_with_nothing_resolvable = cube_with_resolvable_coords
+    cube_with_nothing_resolvable = cube_with_nothing_resolvable.drop_vars("common_name")
+    with pytest.raises(KeyError):
+        ndvi(cube_with_nothing_resolvable)
+
     target_band = "yay"
     output_with_extra_dim = ndvi(input_cube, target_band=target_band)
     assert len(output_with_extra_dim.dims) == len(output.dims) + 1
+    assert (
+        len(output_with_extra_dim.coords[band_dim])
+        == len(input_cube.coords[band_dim]) + 1
+    )
 
     with pytest.raises(BandExists):
         output_with_extra_dim = ndvi(input_cube, target_band="time")

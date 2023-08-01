@@ -1,3 +1,5 @@
+import xarray as xr
+
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     BandExists,
@@ -21,7 +23,7 @@ def ndvi(data: RasterCube, nir="nir", red="red", target_band=None):
     if nir not in available_bands or red not in available_bands:
         try:
             data = data.set_xindex("common_name")
-        except ValueError:
+        except (ValueError, KeyError):
             pass
 
         if (
@@ -51,6 +53,7 @@ def ndvi(data: RasterCube, nir="nir", red="red", target_band=None):
     if target_band is not None:
         if target_band in data.coords:
             raise BandExists("A band with the specified target name exists.")
-        nd = nd.assign_coords(bands=target_band).expand_dims(target_band)
+        nd = nd.expand_dims(band_dim).assign_coords({band_dim: [target_band]})
+        nd = xr.merge([data, nd])
     nd.attrs = data.attrs
     return nd
