@@ -20,6 +20,9 @@ def test_ndvi(bounding_box):
         bands=["red", "nir"],
     ).isel({"x": slice(0, 20), "y": slice(0, 20)})
 
+    # Test whether this works with different band names
+    input_cube = input_cube.rename({"band": "b"})
+
     import dask.array as da
 
     numpy_data = _random_raster_data(input_cube.data.shape, dtype=np.float64)
@@ -39,7 +42,9 @@ def test_ndvi(bounding_box):
         input_cube=input_cube, output_cube=output, expected_results=expected_results
     )
 
-    cube_with_resolvable_coords = input_cube.assign_coords({"band": ["blue", "yellow"]})
+    cube_with_resolvable_coords = input_cube.assign_coords(
+        {band_dim: ["blue", "yellow"]}
+    )
     output = ndvi(cube_with_resolvable_coords)
     general_output_checks(
         input_cube=cube_with_resolvable_coords,
@@ -59,7 +64,8 @@ def test_ndvi(bounding_box):
     with pytest.raises(RedBandAmbiguous):
         ndvi(cube_with_nir_unresolvable)
 
-    output_with_extra_dim = ndvi(input_cube, target_band="yay")
+    target_band = "yay"
+    output_with_extra_dim = ndvi(input_cube, target_band=target_band)
     assert len(output_with_extra_dim.dims) == len(output.dims) + 1
 
     with pytest.raises(BandExists):
