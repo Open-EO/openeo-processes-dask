@@ -57,7 +57,7 @@ def test_ndvi(bounding_box):
     cube_with_red_unresolvable.common_name.data = np.array(["nir", "yellow"])
 
     with pytest.raises(RedBandAmbiguous):
-        ndvi(cube_with_nir_unresolvable)
+        ndvi(cube_with_red_unresolvable)
 
     output_with_extra_dim = ndvi(input_cube, target_band="yay")
     assert len(output_with_extra_dim.dims) == len(output.dims) + 1
