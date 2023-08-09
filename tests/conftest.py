@@ -28,12 +28,16 @@ def dask_client():
     client.shutdown()
 
 
-@pytest.fixture
-def random_raster_data(size, dtype, seed=42):
+def _random_raster_data(size, dtype, seed=42):
     rng = np.random.default_rng(seed)
     data = rng.integers(-100, 100, size=size)
     data = data.astype(dtype)
     return data
+
+
+@pytest.fixture
+def random_raster_data(size, dtype, seed=42):
+    return _random_raster_data(size, dtype, seed=seed)
 
 
 @pytest.fixture
