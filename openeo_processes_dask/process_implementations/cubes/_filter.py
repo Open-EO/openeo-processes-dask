@@ -62,10 +62,6 @@ def filter_temporal(
         # The specified instance in time is excluded from the interval.
         # See https://processes.openeo.org/#filter_temporal
 
-    timestamps = data[applicable_temporal_dimension].values
-    # If the timestamps along the temporal dimensions are not equally spaced the simple slice will fail
-    # Therefore we need to find firstly exactly what are the closest timestamps available and use them
-    # for slicing
     try:
         filtered = data.loc[
             {applicable_temporal_dimension: slice(start_time, end_time)}
