@@ -112,24 +112,10 @@ def merge_cubes(
                     ]
                     cube1 = cube1.to_dataset(cube1.openeo.band_dims[0])
                     cube2 = cube2.to_dataset(cube2.openeo.band_dims[0])
-                try:
-                    merged_cube = xr.combine_by_coords(
-                        [cube1, cube2], combine_attrs="drop_conflicts"
-                    )
-                except:
-                    to_drop = []
-                    for d in cube1.coords:
-                        if d not in cube1.dims:
-                            to_drop.append(d)
-                    cube1 = cube1.drop(to_drop)
-                    to_drop = []
-                    for d in cube2.coords:
-                        if d not in cube2.dims:
-                            to_drop.append(d)
-                    cube2 = cube2.drop(to_drop)
-                    merged_cube = xr.combine_by_coords(
-                        [cube1, cube2], combine_attrs="drop_conflicts"
-                    )
+
+                merged_cube = xr.combine_by_coords(
+                    [cube1, cube2], combine_attrs="drop_conflicts", compat="override"
+                )
                 if isinstance(merged_cube, xr.Dataset):
                     merged_cube = merged_cube.to_array(dim="bands")
                     merged_cube = merged_cube.reindex({"bands": previous_band_order})
