@@ -68,7 +68,7 @@ def filter_temporal(
         ]
     except:
         try:
-            data = data.where(~np.isnat(data.time), drop=True)
+            data = data.where(~np.isnat(data[applicable_temporal_dimension]), drop=True)
             filtered = data.loc[
                 {applicable_temporal_dimension: slice(start_time, end_time)}
             ]
