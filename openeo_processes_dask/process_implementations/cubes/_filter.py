@@ -62,24 +62,6 @@ def filter_temporal(
         # The specified instance in time is excluded from the interval.
         # See https://processes.openeo.org/#filter_temporal
 
-    def nearest_lower(items, timestamp):  # x must be >= timestamp
-        deltas = [abs(x - timestamp) for x in timestamps]
-        closest = min(deltas)
-        idx = deltas.index(closest)
-        closest_t = items[idx]
-        if closest_t < timestamp:
-            closest_t = items[idx + 1]
-        return closest_t
-
-    def nearest_upper(items, timestamp):  # x must be <= timestamp
-        deltas = [abs(x - timestamp) for x in timestamps]
-        closest = min(deltas)
-        idx = deltas.index(closest)
-        closest_t = items[idx]
-        if closest_t > timestamp:
-            closest_t = items[idx - 1]
-        return closest_t
-
     timestamps = data[applicable_temporal_dimension].values
     # If the timestamps along the temporal dimensions are not equally spaced the simple slice will fail
     # Therefore we need to find firstly exactly what are the closest timestamps available and use them
@@ -89,14 +71,13 @@ def filter_temporal(
             {applicable_temporal_dimension: slice(start_time, end_time)}
         ]
     except:
-        filtered = data.loc[
-            {
-                applicable_temporal_dimension: slice(
-                    nearest_lower(timestamps, start_time),
-                    nearest_upper(timestamps, end_time),
-                )
-            }
-        ]
+        try:
+            data = data.where(~np.isnat(data.time), drop=True)
+            filtered = data.loc[
+                {applicable_temporal_dimension: slice(start_time, end_time)}
+            ]
+        except Exception as e:
+            raise e
 
     return filtered
 
