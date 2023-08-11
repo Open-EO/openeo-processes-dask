@@ -1,6 +1,8 @@
+import copy
 from functools import partial
 
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
@@ -58,6 +60,11 @@ def test_filter_temporal(temporal_interval, bounding_box, random_raster_data):
         output_cube,
         input_cube.loc[dict(t=slice("2018-05-01T00:00:00", "2018-05-02T23:59:59"))],
     )
+
+    new_coords = list(copy.deepcopy(input_cube.coords["t"].data))
+    new_coords[1] = pd.NaT
+    invalid_input_cube = input_cube.assign_coords({"t": np.array(new_coords)})
+    filter_temporal(invalid_input_cube, temporal_interval)
 
 
 @pytest.mark.parametrize("size", [(1, 1, 1, 2)])
