@@ -145,3 +145,32 @@ def test_merge_cubes_type_4(
 
     assert isinstance(merged_cube_2.data, dask.array.Array)
     xr.testing.assert_equal(merged_cube_2, cube_1 + 1)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 4, 1)])
+@pytest.mark.parametrize("dtype", [np.float64])
+def test_conflicting_coords(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    # See https://github.com/Open-EO/openeo-processes-dask/pull/148 for why is is necessary
+    # This is basically broadcasting the smaller datacube and then applying the overlap resolver.
+    cube_1 = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B01"],
+        backend="dask",
+    )
+    cube_1["s2:processing_baseline"] = "05.8"
+    cube_2 = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02"],
+        backend="dask",
+    )
+    cube_2["s2:processing_baseline"] = "05.9"
+
+    merged_cube_1 = merge_cubes(cube_1, cube_2)
+
+    assert isinstance(merged_cube_1.data, dask.array.Array)

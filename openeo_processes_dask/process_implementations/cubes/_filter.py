@@ -62,7 +62,10 @@ def filter_temporal(
         # The specified instance in time is excluded from the interval.
         # See https://processes.openeo.org/#filter_temporal
 
-    filtered = data.loc[{applicable_temporal_dimension: slice(start_time, end_time)}]
+        data = data.where(~np.isnat(data[applicable_temporal_dimension]), drop=True)
+        filtered = data.loc[
+            {applicable_temporal_dimension: slice(start_time, end_time)}
+        ]
 
     return filtered
 
