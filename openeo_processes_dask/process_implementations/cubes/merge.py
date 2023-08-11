@@ -113,6 +113,8 @@ def merge_cubes(
                     cube1 = cube1.to_dataset(cube1.openeo.band_dims[0])
                     cube2 = cube2.to_dataset(cube2.openeo.band_dims[0])
 
+                # compat="override" to deal with potentially conflicting coords
+                # see https://github.com/Open-EO/openeo-processes-dask/pull/148 for context
                 merged_cube = xr.combine_by_coords(
                     [cube1, cube2], combine_attrs="drop_conflicts", compat="override"
                 )

@@ -149,9 +149,10 @@ def test_merge_cubes_type_4(
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 1)])
 @pytest.mark.parametrize("dtype", [np.float64])
-def test_merge_cubes_type_5(
+def test_conflicting_coords(
     temporal_interval, bounding_box, random_raster_data, process_registry
 ):
+    # See https://github.com/Open-EO/openeo-processes-dask/pull/148 for why is is necessary
     # This is basically broadcasting the smaller datacube and then applying the overlap resolver.
     cube_1 = create_fake_rastercube(
         data=random_raster_data,
