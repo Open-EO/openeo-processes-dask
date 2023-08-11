@@ -60,7 +60,7 @@ def test_curve_fitting(
     )
 
     @process
-    def fitFunction(x, parameters):
+    def fitFunction(x, *parameters):
         t0 = 2 * np.pi / 31557600 * x
         return parameters[0] + parameters[1] * np.cos(t0) + parameters[2] * np.sin(t0)
 
@@ -75,3 +75,4 @@ def test_curve_fitting(
     )
     assert len(result.param) == 3
     assert isinstance(result.to_array().data, dask.array.Array)
+    result.compute()

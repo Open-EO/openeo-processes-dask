@@ -44,14 +44,25 @@ def process(f):
         resolved_args = []
         resolved_kwargs = {}
 
+        already_resolved_params = []
         # If an arg is specified in positional_parameters, put the correct key-value pair into named_parameters
         for arg_name, i in positional_parameters.items():
-            named_parameters[arg_name] = args[i]
+            if isinstance(i, slice):
+                for n, arg_in_slice in enumerate(args[i]):
+                    resolved_args.insert(i.start + n, arg_in_slice)
+            else:
+                resolved_args.insert(i, args[i])
+            already_resolved_params.append(arg_name)
 
         for arg in args:
             if isinstance(arg, ParameterReference):
-                if arg.from_parameter in named_parameters:
+                if (
+                    arg.from_parameter in named_parameters
+                    and arg.from_parameter not in already_resolved_params
+                ):
                     resolved_args.append(named_parameters[arg.from_parameter])
+                elif arg.from_parameter in already_resolved_params:
+                    continue
                 else:
                     raise ProcessParameterMissing(
                         f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"
@@ -61,6 +72,8 @@ def process(f):
             if isinstance(arg, ParameterReference):
                 if arg.from_parameter in named_parameters:
                     resolved_kwargs[k] = named_parameters[arg.from_parameter]
+                elif arg.from_parameter in already_resolved_params:
+                    continue
                 else:
                     raise ProcessParameterMissing(
                         f"Error: Process Parameter {arg.from_parameter} was missing for process {f.__name__}"

@@ -22,10 +22,20 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
     # The dimension along which to predict cannot be chunked!
     rechunked_data = data.chunk({dimension: -1})
 
+    def wrapper(f):
+        def _wrap(*args, **kwargs):
+            return f(
+                *args,
+                **kwargs,
+                positional_parameters={"x": 0, "parameters": slice(1, None)},
+            )
+
+        return _wrap
+
     # .curvefit returns some extra information that isn't required by the OpenEO process
     # so we simply drop these here.
     fit_result = rechunked_data.curvefit(
-        dimension, function, p0=parameters, param_names=list(parameters.keys())
+        dimension, wrapper(function), p0=parameters, param_names=list(parameters.keys())
     ).drop_dims(["cov_i", "cov_j"])
     return fit_result
 
