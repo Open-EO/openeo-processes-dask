@@ -34,9 +34,17 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
 
     # .curvefit returns some extra information that isn't required by the OpenEO process
     # so we simply drop these here.
-    fit_result = rechunked_data.curvefit(
-        dimension, wrapper(function), p0=parameters, param_names=list(parameters.keys())
-    ).drop_dims(["cov_i", "cov_j"])
+    fit_result = (
+        rechunked_data.curvefit(
+            dimension,
+            wrapper(function),
+            p0=parameters,
+            param_names=list(parameters.keys()),
+        )
+        .drop_dims(["cov_i", "cov_j"])
+        .to_array()
+        .squeeze()
+    )
     return fit_result
 
 

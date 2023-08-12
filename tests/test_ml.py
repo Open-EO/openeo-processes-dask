@@ -70,9 +70,15 @@ def test_curve_fitting(
         parameters=ParameterReference(from_parameter="parameters"),
     )
 
+    parameters = [1, 0, 0]
     result = fit_curve(
-        origin_cube, parameters=[0, 0, 0], function=_process, dimension="t"
+        origin_cube, parameters=parameters, function=_process, dimension="t"
     )
     assert len(result.param) == 3
-    assert isinstance(result.to_array().data, dask.array.Array)
+    assert isinstance(result.data, dask.array.Array)
     output = result.compute()
+
+    assert len(output.coords["bands"]) == len(origin_cube.coords["bands"])
+    assert len(output.coords["x"]) == len(origin_cube.coords["x"])
+    assert len(output.coords["y"]) == len(origin_cube.coords["y"])
+    assert len(output.coords["param"]) == len(parameters)
