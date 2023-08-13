@@ -1,4 +1,7 @@
-from typing import Callable
+from typing import Callable, Optional
+
+import numpy as np
+import xarray as xr
 
 from openeo_processes_dask.process_implementations.cubes import apply_dimension
 from openeo_processes_dask.process_implementations.data_model import RasterCube
@@ -53,7 +56,27 @@ def predict_curve(
     function: Callable,
     parameters: RasterCube,
     dimension: str,
-    labels: list,
+    labels: Optional[list] = None,
 ):
-    # TODO: constrain prediction to nodata values
-    pass
+    # data: (x, y, t, bands)
+    # parameters: (x, y, bands, param)
+    labels = data.coords[dimension]
+    if np.issubdtype(labels.coords[dimension].dtype, np.datetime64):
+        labels = labels.astype(int)
+
+    def wrapper(f):
+        def _wrap(*args, **kwargs):
+            return f(
+                parameters=args[0],
+                x=labels,
+            )
+
+        return _wrap
+
+    xr.apply_ufunc(
+        wrapper(function),
+        parameters,
+        input_core_dims=[["param"]],
+        output_core_dims=[[dimension]],
+        dask="allowed",
+    )

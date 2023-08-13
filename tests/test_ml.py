@@ -12,6 +12,7 @@ from openeo_processes_dask.process_implementations.cubes.apply import apply_dime
 from openeo_processes_dask.process_implementations.ml import (
     fit_curve,
     fit_regr_random_forest,
+    predict_curve,
 )
 from tests.mockdata import create_fake_rastercube
 
@@ -82,3 +83,7 @@ def test_curve_fitting(
     assert len(output.coords["x"]) == len(origin_cube.coords["x"])
     assert len(output.coords["y"]) == len(origin_cube.coords["y"])
     assert len(output.coords["param"]) == len(parameters)
+
+    predictions = predict_curve(
+        origin_cube, _process, output, origin_cube.openeo.temporal_dims[0]
+    )
