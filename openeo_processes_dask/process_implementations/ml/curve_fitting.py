@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike
 
@@ -58,8 +59,10 @@ def predict_curve(
     dimension: str,
     labels: Optional[ArrayLike] = None,
 ):
+    labels_were_datetime = False
     if np.issubdtype(labels.dtype, np.datetime64):
         labels = labels.astype(int)
+        labels_were_datetime = True
 
     def wrapper(f):
         def _wrap(*args, **kwargs):
@@ -72,7 +75,7 @@ def predict_curve(
 
         return _wrap
 
-    return xr.apply_ufunc(
+    predictions = xr.apply_ufunc(
         wrapper(function),
         parameters,
         vectorize=True,
@@ -85,3 +88,10 @@ def predict_curve(
             "output_sizes": {dimension: len(labels)},
         },
     )
+
+    predictions = predictions.assign_coords({dimension: labels.data})
+
+    if labels_were_datetime:
+        predictions[dimension] = pd.DatetimeIndex(predictions[dimension].values)
+
+    return predictions

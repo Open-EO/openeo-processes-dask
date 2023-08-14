@@ -86,5 +86,7 @@ def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
         result,
         _process,
         origin_cube.openeo.temporal_dims[0],
-        labels=dimension_labels(origin_cube, "t"),
+        labels=dimension_labels(origin_cube, origin_cube.openeo.temporal_dims[0]),
     ).compute()
+
+    assert True
