@@ -58,7 +58,6 @@ def predict_curve(
     dimension: str,
     labels: Optional[ArrayLike] = None,
 ):
-    # parameters: (x, y, bands, param)
     if np.issubdtype(labels.dtype, np.datetime64):
         labels = labels.astype(int)
 
@@ -80,7 +79,7 @@ def predict_curve(
         input_core_dims=[["param"]],
         output_core_dims=[[dimension]],
         dask="parallelized",
-        output_dtypes=[np.float32],
+        output_dtypes=[np.float64],
         dask_gufunc_kwargs={
             "allow_rechunk": True,
             "output_sizes": {dimension: len(labels)},
