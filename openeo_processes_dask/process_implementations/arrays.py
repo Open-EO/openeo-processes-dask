@@ -126,7 +126,7 @@ def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
     return concat
 
 
-def array_contains(data: ArrayLike, value: Any) -> bool:
+def array_contains(data: ArrayLike, value: Any, axis=None) -> bool:
     # TODO: Contrary to the process spec, our implementation does interpret temporal strings before checking them here
     # This is somewhat implicit in how we currently parse parameters, so cannot be easily changed.
 
@@ -137,13 +137,10 @@ def array_contains(data: ArrayLike, value: Any) -> bool:
             value_is_valid = True
     if not value_is_valid:
         return False
-
-    if len(np.shape(data)) != 1:
-        return False
     if pd.isnull(value):
-        return np.isnan(data).any()
+        return np.isnan(data).any(axis=axis)
     else:
-        return np.isin(data, value).any()
+        return np.isin(data, value).any(axis=axis)
 
 
 def array_find(

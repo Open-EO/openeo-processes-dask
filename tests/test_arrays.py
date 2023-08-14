@@ -145,7 +145,6 @@ def test_array_concat(array1, array2, expected):
         ([1, 2, 3], "2", False),
         ([1, 2, np.nan], np.nan, True),
         ([[2, 1], [3, 4]], [1, 2], False),
-        ([[2, 1], [3, 4]], 2, False),
         ([1, 2, 3], np.int64(2), True),
         ([1.1, 2.2, 3.3], np.float64(2.2), True),
         ([True, False, False], np.bool_(True), True),
@@ -157,6 +156,11 @@ def test_array_contains(data, value, expected):
 
     dask_result = array_contains(da.from_array(np.array(data)), value)
     assert dask_result == expected or dask_result.compute() == expected
+
+
+def test_array_contains_axis():
+    data = np.array([[4, 5, 6], [5, 7, 9]])
+    result = array_contains(data, 5, axis=1)
 
 
 def test_array_contains_object_dtype():
