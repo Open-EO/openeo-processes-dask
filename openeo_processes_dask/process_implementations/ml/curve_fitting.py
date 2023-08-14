@@ -2,6 +2,7 @@ from typing import Callable, Optional
 
 import numpy as np
 import xarray as xr
+from numpy.typing import ArrayLike
 
 from openeo_processes_dask.process_implementations.cubes import apply_dimension
 from openeo_processes_dask.process_implementations.data_model import RasterCube
@@ -52,31 +53,36 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
 
 
 def predict_curve(
-    data: RasterCube,
-    function: Callable,
     parameters: RasterCube,
+    function: Callable,
     dimension: str,
-    labels: Optional[list] = None,
+    labels: Optional[ArrayLike] = None,
 ):
-    # data: (x, y, t, bands)
     # parameters: (x, y, bands, param)
-    labels = data.coords[dimension]
-    if np.issubdtype(labels.coords[dimension].dtype, np.datetime64):
+    if np.issubdtype(labels.dtype, np.datetime64):
         labels = labels.astype(int)
 
     def wrapper(f):
         def _wrap(*args, **kwargs):
             return f(
-                parameters=args[0],
-                x=labels,
+                *args,
+                positional_parameters={"parameters": 0},
+                named_parameters={"x": labels},
+                **kwargs,
             )
 
         return _wrap
 
-    xr.apply_ufunc(
+    return xr.apply_ufunc(
         wrapper(function),
         parameters,
+        vectorize=True,
         input_core_dims=[["param"]],
         output_core_dims=[[dimension]],
-        dask="allowed",
+        dask="parallelized",
+        output_dtypes=[np.float32],
+        dask_gufunc_kwargs={
+            "allow_rechunk": True,
+            "output_sizes": {dimension: len(labels)},
+        },
     )

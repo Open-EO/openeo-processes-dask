@@ -9,6 +9,7 @@ from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.process_implementations.core import process
 from openeo_processes_dask.process_implementations.cubes.apply import apply_dimension
+from openeo_processes_dask.process_implementations.cubes.general import dimension_labels
 from openeo_processes_dask.process_implementations.ml import (
     fit_curve,
     fit_regr_random_forest,
@@ -49,9 +50,7 @@ def test_fit_regr_random_forest_inline_geojson(
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 3)])
 @pytest.mark.parametrize("dtype", [np.float64])
-def test_curve_fitting(
-    temporal_interval, bounding_box, random_raster_data, process_registry
-):
+def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
     origin_cube = create_fake_rastercube(
         data=random_raster_data,
         spatial_extent=bounding_box,
@@ -77,13 +76,15 @@ def test_curve_fitting(
     )
     assert len(result.param) == 3
     assert isinstance(result.data, dask.array.Array)
-    output = result.compute()
 
-    assert len(output.coords["bands"]) == len(origin_cube.coords["bands"])
-    assert len(output.coords["x"]) == len(origin_cube.coords["x"])
-    assert len(output.coords["y"]) == len(origin_cube.coords["y"])
-    assert len(output.coords["param"]) == len(parameters)
+    assert len(result.coords["bands"]) == len(origin_cube.coords["bands"])
+    assert len(result.coords["x"]) == len(origin_cube.coords["x"])
+    assert len(result.coords["y"]) == len(origin_cube.coords["y"])
+    assert len(result.coords["param"]) == len(parameters)
 
     predictions = predict_curve(
-        origin_cube, _process, output, origin_cube.openeo.temporal_dims[0]
-    )
+        result,
+        _process,
+        origin_cube.openeo.temporal_dims[0],
+        labels=dimension_labels(origin_cube, "t"),
+    ).compute()
