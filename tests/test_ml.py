@@ -82,11 +82,13 @@ def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
     assert len(result.coords["y"]) == len(origin_cube.coords["y"])
     assert len(result.coords["param"]) == len(parameters)
 
+    labels = dimension_labels(origin_cube, origin_cube.openeo.temporal_dims[0])
     predictions = predict_curve(
         result,
         _process,
         origin_cube.openeo.temporal_dims[0],
-        labels=dimension_labels(origin_cube, origin_cube.openeo.temporal_dims[0]),
+        labels=labels,
     ).compute()
 
-    assert True
+    assert len(predictions.coords[origin_cube.openeo.temporal_dims[0]]) == len(labels)
+    assert "param" not in predictions.dims

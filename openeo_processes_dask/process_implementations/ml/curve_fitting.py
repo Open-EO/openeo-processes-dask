@@ -64,6 +64,7 @@ def predict_curve(
         labels = labels.astype(int)
         labels_were_datetime = True
 
+    # This is necessary to pipe the arguments correctly through @process
     def wrapper(f):
         def _wrap(*args, **kwargs):
             return f(
