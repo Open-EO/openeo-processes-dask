@@ -1,7 +1,7 @@
 import logging
 from typing import Union
 
-import odc.geo
+import odc.geo.xr
 from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
 
@@ -60,7 +60,7 @@ def resample_spatial(
         raise CRSError(f"{projection} Can not be parsed to CRS.")
 
     if not resolution:
-        resolution = resolution_from_affine(data_cp.geobox.affine).x
+        resolution = resolution_from_affine(data_cp.odc.geobox.affine).x
 
     reprojected = data_cp.odc.reproject(
         how=projection, resolution=resolution, resampling=method
@@ -73,8 +73,5 @@ def resample_spatial(
         reprojected = reprojected.rename({"latitude": "y"})
 
     reprojected.attrs["crs"] = data_cp.rio.crs
-
-    # Undo odc specific re-ordering.
-    reprojected = reprojected.transpose(*data.dims)
 
     return reprojected

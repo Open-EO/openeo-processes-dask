@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import Callable
 
 import numpy as np
@@ -46,17 +47,25 @@ def filter_temporal(
             )
     applicable_temporal_dimension = temporal_dims[0]
 
-    start_time = extent[0]
-    if start_time is not None:
-        start_time = start_time.to_numpy()
-    end_time = extent[1]
-    if end_time is not None:
-        end_time = extent[1].to_numpy() - np.timedelta64(1, "ms")
-    # The second element is the end of the temporal interval.
-    # The specified instance in time is excluded from the interval.
-    # See https://processes.openeo.org/#filter_temporal
+    # This line raises a deprecation warning, which according to this thread
+    # will never actually be deprecated:
+    # https://github.com/numpy/numpy/issues/23904
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        start_time = extent[0]
+        if start_time is not None:
+            start_time = start_time.to_numpy()
+        end_time = extent[1]
+        if end_time is not None:
+            end_time = extent[1].to_numpy() - np.timedelta64(1, "ms")
+        # The second element is the end of the temporal interval.
+        # The specified instance in time is excluded from the interval.
+        # See https://processes.openeo.org/#filter_temporal
 
-    filtered = data.loc[{applicable_temporal_dimension: slice(start_time, end_time)}]
+        data = data.where(~np.isnat(data[applicable_temporal_dimension]), drop=True)
+        filtered = data.loc[
+            {applicable_temporal_dimension: slice(start_time, end_time)}
+        ]
 
     return filtered
 

@@ -148,11 +148,10 @@ def test_apply_dimension_target_dimension(
     output_cube_reduced = apply_dimension(
         data=input_cube, process=_process, dimension="x", target_dimension="y"
     )
-
     expected_output = (
-        (input_cube.mean(dim="x"))
+        input_cube.mean(dim="x")
         .expand_dims("target")
-        .drop("y")
+        .drop_vars("y")
         .rename({"target": "y"})
     )
 

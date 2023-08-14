@@ -6,7 +6,7 @@ import dask_geopandas
 import geopandas as gpd
 import numpy as np
 import xarray as xr
-import xgboost as xgb
+from xgboost.core import Booster
 
 from openeo_processes_dask.process_implementations.cubes.experimental import (
     load_vector_cube,
@@ -27,7 +27,9 @@ def fit_regr_random_forest(
     predictors_vars: Optional[list[str]] = None,
     target_var: str = None,
     **kwargs,
-) -> xgb.core.Booster:
+) -> Booster:
+    import xgboost as xgb
+
     params = {
         "learning_rate": 1,
         "max_depth": 5,
@@ -72,9 +74,11 @@ def fit_regr_random_forest(
 
 def predict_random_forest(
     data: RasterCube,
-    model: xgb.Booster,
+    model: Booster,
     axis: int = -1,
 ) -> RasterCube:
+    import xgboost as xgb
+
     n_features = len(model.feature_names)
     if n_features != data.shape[axis]:
         raise Exception(
