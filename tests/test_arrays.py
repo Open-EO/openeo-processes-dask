@@ -145,6 +145,7 @@ def test_array_concat(array1, array2, expected):
         ([1, 2, 3], "2", False),
         ([1, 2, np.nan], np.nan, True),
         ([[2, 1], [3, 4]], [1, 2], False),
+        ([[2, 1], [3, 4]], 2, False),
         ([1, 2, 3], np.int64(2), True),
         ([1.1, 2.2, 3.3], np.float64(2.2), True),
         ([True, False, False], np.bool_(True), True),

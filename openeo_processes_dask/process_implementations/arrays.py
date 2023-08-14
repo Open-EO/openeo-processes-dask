@@ -135,6 +135,8 @@ def array_contains(data: ArrayLike, value: Any, axis=None) -> bool:
     for dtype in valid_dtypes:
         if np.issubdtype(type(value), dtype):
             value_is_valid = True
+    if len(np.shape(data)) != 1 and axis is None:
+        return False
     if not value_is_valid:
         return False
     if pd.isnull(value):
