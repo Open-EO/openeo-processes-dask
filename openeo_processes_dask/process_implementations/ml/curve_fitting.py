@@ -20,6 +20,8 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
+    dims_before = list(data.dims)
+
     # In the spec, parameters is a list, but xr.curvefit requires names for them,
     # so we do this to generate names locally
     parameters = {f"param_{i}": v for i, v in enumerate(parameters)}
@@ -37,6 +39,9 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
 
         return _wrap
 
+    expected_dims_after = list(dims_before)
+    expected_dims_after[dims_before.index(dimension)] = "param"
+
     # .curvefit returns some extra information that isn't required by the OpenEO process
     # so we simply drop these here.
     fit_result = (
@@ -49,7 +54,9 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
         .drop_dims(["cov_i", "cov_j"])
         .to_array()
         .squeeze()
+        .transpose(*expected_dims_after)
     )
+
     return fit_result
 
 
@@ -60,6 +67,8 @@ def predict_curve(
     labels: Optional[ArrayLike] = None,
 ):
     labels_were_datetime = False
+    dims_before = list(parameters.dims)
+
     if np.issubdtype(labels.dtype, np.datetime64):
         labels = labels.astype(int)
         labels_were_datetime = True
@@ -76,6 +85,9 @@ def predict_curve(
 
         return _wrap
 
+    expected_dims_after = list(dims_before)
+    expected_dims_after[dims_before.index("param")] = dimension
+
     predictions = xr.apply_ufunc(
         wrapper(function),
         parameters,
@@ -88,7 +100,7 @@ def predict_curve(
             "allow_rechunk": True,
             "output_sizes": {dimension: len(labels)},
         },
-    )
+    ).transpose(*expected_dims_after)
 
     predictions = predictions.assign_coords({dimension: labels.data})
 
