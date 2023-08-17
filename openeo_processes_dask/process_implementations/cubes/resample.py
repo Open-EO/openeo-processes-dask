@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import Optional, Union
 
 import odc.geo.xr
 from odc.geo.geobox import resolution_from_affine
@@ -58,7 +58,9 @@ def resample_spatial(
     try:
         projection = CRS.from_user_input(projection)
     except CRSError as e:
-        raise CRSError(f"Provided projection string: '{projection}' can not be parsed to CRS.") from e
+        raise CRSError(
+            f"Provided projection string: '{projection}' can not be parsed to CRS."
+        ) from e
 
     if resolution == 0:
         resolution = resolution_from_affine(data_cp.odc.geobox.affine).x
