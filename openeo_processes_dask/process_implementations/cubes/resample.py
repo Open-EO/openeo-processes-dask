@@ -27,7 +27,7 @@ resample_methods_list = [
 
 def resample_spatial(
     data: RasterCube,
-    projection: Union[str, int] = None,
+    projection: Optional[Union[str, int]] = None,
     resolution: int = 0,
     method: str = "near",
 ):
