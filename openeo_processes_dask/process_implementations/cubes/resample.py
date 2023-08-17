@@ -51,7 +51,7 @@ def resample_spatial(
         data.openeo.x_dim,
     )
 
-    if not projection:
+    if projection is None:
         projection = data_cp.rio.crs
 
     try:
