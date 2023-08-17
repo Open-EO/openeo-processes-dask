@@ -6,6 +6,7 @@ from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
+from openeo_processes_dask.process_implementations.exceptions import OpenEOException
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def resample_spatial(
         method = "nearest"
 
     elif method not in resample_methods_list:
-        raise Exception(
+        raise OpenEOException(
             f'Selected resampling method "{method}" is not available! Please select one of '
             f"[{', '.join(resample_methods_list)}]"
         )
@@ -66,10 +67,10 @@ def resample_spatial(
         how=projection, resolution=resolution, resampling=method
     )
 
-    if "longitude" in reprojected.dims:
+    if "longitude" in reprojected.dims and "longitude" in data.dims:
         reprojected = reprojected.rename({"longitude": "x"})
 
-    if "latitude" in reprojected.dims:
+    if "latitude" in reprojected.dims and "latitude" in data.dims:
         reprojected = reprojected.rename({"latitude": "y"})
 
     reprojected.attrs["crs"] = data_cp.rio.crs

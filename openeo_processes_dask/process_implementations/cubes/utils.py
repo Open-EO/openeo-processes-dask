@@ -2,7 +2,6 @@ try:
     import dask
 except ImportError:
     dask = None
-import math
 
 from xarray.core.duck_array_ops import isnull as xr_isnull
 
