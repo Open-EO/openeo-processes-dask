@@ -57,6 +57,8 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
         .transpose(*expected_dims_after)
     )
 
+    fit_result.attrs = data.attrs
+
     return fit_result
 
 
