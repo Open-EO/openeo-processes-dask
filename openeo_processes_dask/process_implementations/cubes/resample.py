@@ -69,10 +69,10 @@ def resample_spatial(
         how=projection, resolution=resolution, resampling=method
     )
 
-    if "longitude" in reprojected.dims and "longitude" in data.dims:
+    if "longitude" in reprojected.dims and "x" in data.dims:
         reprojected = reprojected.rename({"longitude": "x"})
 
-    if "latitude" in reprojected.dims and "latitude" in data.dims:
+    if "latitude" in reprojected.dims and "y" in data.dims:
         reprojected = reprojected.rename({"latitude": "y"})
 
     reprojected.attrs["crs"] = data_cp.rio.crs
