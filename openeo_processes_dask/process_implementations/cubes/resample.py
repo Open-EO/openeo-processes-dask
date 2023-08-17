@@ -28,7 +28,7 @@ resample_methods_list = [
 
 def resample_spatial(
     data: RasterCube,
-    projection: Union[str, int] = None,
+    projection: Optional[Union[str, int]] = None,
     resolution: int = 0,
     method: str = "near",
 ):
@@ -52,15 +52,15 @@ def resample_spatial(
         data.openeo.x_dim,
     )
 
-    if not projection:
+    if projection is None:
         projection = data_cp.rio.crs
 
     try:
         projection = CRS.from_user_input(projection)
     except CRSError as e:
-        raise CRSError(f"{projection} Can not be parsed to CRS.")
+        raise CRSError(f"Provided projection string: '{projection}' can not be parsed to CRS.") from e
 
-    if not resolution:
+    if resolution == 0:
         resolution = resolution_from_affine(data_cp.odc.geobox.affine).x
 
     reprojected = data_cp.odc.reproject(
