@@ -59,7 +59,7 @@ def resample_spatial(
     except CRSError as e:
         raise CRSError(f"{projection} Can not be parsed to CRS.")
 
-    if not resolution:
+    if resolution == 0:
         resolution = resolution_from_affine(data_cp.odc.geobox.affine).x
 
     reprojected = data_cp.odc.reproject(
