@@ -64,10 +64,16 @@ def predict_curve(
     parameters: RasterCube,
     function: Callable,
     dimension: str,
-    labels: Optional[ArrayLike] = None,
+    labels: ArrayLike,
 ):
     labels_were_datetime = False
     dims_before = list(parameters.dims)
+
+    try:
+        # Try parsing as datetime first
+        labels = np.asarray(labels, dtype=np.datetime64)
+    except ValueError:
+        labels = np.asarray(labels)
 
     if np.issubdtype(labels.dtype, np.datetime64):
         labels = labels.astype(int)
