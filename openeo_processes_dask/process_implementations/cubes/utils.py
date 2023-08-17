@@ -1,6 +1,5 @@
 try:
     import dask
-
 except ImportError:
     dask = None
 
