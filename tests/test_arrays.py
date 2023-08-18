@@ -161,7 +161,12 @@ def test_array_contains(data, value, expected):
 
 def test_array_contains_axis():
     data = np.array([[4, 5, 6], [5, 7, 9]])
-    result = array_contains(data, 5, axis=1)
+
+    result_0 = array_contains(data, 5, axis=0)
+    np.testing.assert_array_equal(result_0, np.array([True, True, False]))
+
+    result_1 = array_contains(data, 5, axis=1)
+    np.testing.assert_array_equal(result_1, np.array([True, True]))
 
 
 def test_array_contains_object_dtype():
