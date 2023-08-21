@@ -26,7 +26,7 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
     # so we do this to generate names locally
     parameters = {f"param_{i}": v for i, v in enumerate(parameters)}
 
-    # The dimension along which to predict cannot be chunked!
+    # The dimension along which to fit the curves cannot be chunked!
     rechunked_data = data.chunk({dimension: -1})
 
     def wrapper(f):
