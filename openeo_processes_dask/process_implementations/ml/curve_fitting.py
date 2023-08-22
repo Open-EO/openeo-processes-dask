@@ -14,7 +14,13 @@ from openeo_processes_dask.process_implementations.exceptions import (
 __all__ = ["fit_curve", "predict_curve"]
 
 
-def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension: str):
+def fit_curve(
+    data: RasterCube,
+    parameters: list,
+    function: Callable,
+    dimension: str,
+    ignore_nodata: bool = True,
+):
     if dimension not in data.dims:
         raise DimensionNotAvailable(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
@@ -50,6 +56,7 @@ def fit_curve(data: RasterCube, parameters: list, function: Callable, dimension:
             wrapper(function),
             p0=parameters,
             param_names=list(parameters.keys()),
+            skipna=ignore_nodata,
         )
         .drop_dims(["cov_i", "cov_j"])
         .to_array()
