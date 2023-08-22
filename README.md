@@ -1,5 +1,6 @@
 # OpenEO Processes Dask
 
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 ![PyPI - Status](https://img.shields.io/pypi/status/openeo-processes-dask)
 ![PyPI](https://img.shields.io/pypi/v/openeo-processes-dask)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/openeo-processes-dask)
