@@ -85,12 +85,12 @@ def constant(x):
     return x
 
 
-def divide(x, y):
+def divide(x, y, **kwargs):
     result = x / y
     return result
 
 
-def subtract(x, y):
+def subtract(x, y, **kwargs):
     result = x - y
     return result
 
@@ -100,7 +100,7 @@ def multiply(x, y):
     return result
 
 
-def add(x, y):
+def add(x, y, **kwargs):
     result = x + y
     return result
 
