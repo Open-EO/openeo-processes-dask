@@ -65,6 +65,7 @@ def fit_curve(
     )
 
     fit_result.attrs = data.attrs
+    fit_result = fit_result.rio.write_crs(rechunked_data.rio.crs)
 
     return fit_result
 
