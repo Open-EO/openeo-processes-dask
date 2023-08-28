@@ -76,6 +76,7 @@ def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
     )
     assert len(result.param) == 3
     assert isinstance(result.data, dask.array.Array)
+    assert result.rio.crs == origin_cube.rio.crs
 
     assert len(result.coords["bands"]) == len(origin_cube.coords["bands"])
     assert len(result.coords["x"]) == len(origin_cube.coords["x"])
@@ -92,3 +93,4 @@ def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
 
     assert len(predictions.coords[origin_cube.openeo.temporal_dims[0]]) == len(labels)
     assert "param" not in predictions.dims
+    assert result.rio.crs == predictions.rio.crs
