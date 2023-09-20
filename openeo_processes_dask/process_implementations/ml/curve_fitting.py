@@ -75,6 +75,7 @@ def predict_curve(
     function: Callable,
     dimension: str,
     labels: ArrayLike,
+    data: RasterCube = None,
 ):
     labels_were_datetime = False
     dims_before = list(parameters.dims)
