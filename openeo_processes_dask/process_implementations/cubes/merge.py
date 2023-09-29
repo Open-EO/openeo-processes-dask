@@ -119,8 +119,10 @@ def merge_cubes(
                     [cube1, cube2], combine_attrs="drop_conflicts", compat="override"
                 )
                 if isinstance(merged_cube, xr.Dataset):
-                    merged_cube = merged_cube.to_array(dim="bands")
-                    merged_cube = merged_cube.reindex({"bands": previous_band_order})
+                    merged_cube = merged_cube.to_array(dim=cube1.openeo.band_dims[0])
+                    merged_cube = merged_cube.reindex(
+                        {cube1.openeo.band_dims[0]: previous_band_order}
+                    )
 
                 merged_cube = merged_cube.transpose(*previous_dim_order)
 
