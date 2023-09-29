@@ -65,6 +65,7 @@ def fit_curve(
     )
 
     fit_result.attrs = data.attrs
+    fit_result = fit_result.rio.write_crs(rechunked_data.rio.crs)
 
     return fit_result
 
@@ -74,6 +75,7 @@ def predict_curve(
     function: Callable,
     dimension: str,
     labels: ArrayLike,
+    data: RasterCube = None,
 ):
     labels_were_datetime = False
     dims_before = list(parameters.dims)
