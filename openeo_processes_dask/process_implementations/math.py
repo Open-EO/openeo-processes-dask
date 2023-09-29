@@ -59,7 +59,6 @@ __all__ = [
     "quantiles",
     "product",
     "normalized_difference",
-    "ndvi",
 ]
 
 
@@ -229,6 +228,7 @@ def arctan2(y, x):
 
 
 def linear_scale_range(x, inputMin, inputMax, outputMin=0.0, outputMax=1.0):
+    x = clip(x, inputMin, inputMax)
     lsr = ((x - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin
     return lsr
 
@@ -325,42 +325,4 @@ def product(data, ignore_nodata=True, axis=None, keepdims=False):
 
 def normalized_difference(x, y):
     nd = (x - y) / (x + y)
-    return nd
-
-
-def ndvi(data, nir="nir", red="red", target_band=None):
-    r = np.nan
-    n = np.nan
-    if "bands" in data.dims:
-        if red == "red":
-            if "B04" in data["bands"].values:
-                r = data.sel(bands="B04")
-        elif red == "rededge":
-            if "B05" in data["bands"].values:
-                r = data.sel(bands="B05")
-            elif "B06" in data["bands"].values:
-                r = data.sel(bands="B06")
-            elif "B07" in data["bands"].values:
-                r = data.sel(bands="B07")
-        if nir == "nir":
-            n = data.sel(bands="B08")
-        elif nir == "nir08":
-            if "B8a" in data["bands"].values:
-                n = data.sel(bands="B8a")
-            elif "B8A" in data["bands"].values:
-                n = data.sel(bands="B8A")
-            elif "B05" in data["bands"].values:
-                n = data.sel(bands="B05")
-        elif nir == "nir09":
-            if "B09" in data["bands"].values:
-                n = data.sel(bands="B09")
-        if red in data["bands"].values:
-            r = data.sel(bands=red)
-        if nir in data["bands"].values:
-            n = data.sel(bands=nir)
-    nd = normalized_difference(n, r)
-    if target_band is not None:
-        nd = nd.assign_coords(bands=target_band)
-    # TODO: Remove this once we have the .openeo accessor
-    nd.attrs = data.attrs
     return nd

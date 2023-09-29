@@ -159,6 +159,16 @@ def test_array_contains(data, value, expected):
     assert dask_result == expected or dask_result.compute() == expected
 
 
+def test_array_contains_axis():
+    data = np.array([[4, 5, 6], [5, 7, 9]])
+
+    result_0 = array_contains(data, 5, axis=0)
+    np.testing.assert_array_equal(result_0, np.array([True, True, False]))
+
+    result_1 = array_contains(data, 5, axis=1)
+    np.testing.assert_array_equal(result_1, np.array([True, True]))
+
+
 def test_array_contains_object_dtype():
     assert not array_contains([{"a": "b"}, {"c": "d"}], {"a": "b"})
     assert not array_contains(np.array([{"a": "b"}, {"c": "d"}]), {"a": "b"})
@@ -397,3 +407,19 @@ def test_reduce_dimension(
     )
     assert output_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(output_cube, xr.ones_like(output_cube))
+
+    input_cube[0, 0, 0, 0] = 99999
+    _process = partial(
+        process_registry["array_contains"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        value=99999,
+    )
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube[0, 0, 0].data.compute().item() is True
+    assert not output_cube[slice(1, None), :, :].data.compute().any()

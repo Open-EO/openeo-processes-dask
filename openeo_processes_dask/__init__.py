@@ -1,1 +1,3 @@
-__version__ = "2023.5.0"
+import importlib.metadata
+
+__version__ = importlib.metadata.version("openeo_processes_dask")

@@ -54,10 +54,10 @@ def test_sum():
 def test_product(array, expected, ignore_nodata, axis):
     array = np.array(array)
     result_np = product(array, ignore_nodata=ignore_nodata, axis=axis)
-    if expected != "nan":
-        assert np.array_equal(result_np, expected, equal_nan=True)
-    else:
+    if isinstance(expected, str) and "nan" == expected:
         assert np.isnan(result_np)
+    else:
+        assert np.array_equal(result_np, expected, equal_nan=True)
 
     result_dask = product(
         da.from_array(array), ignore_nodata=ignore_nodata, axis=axis

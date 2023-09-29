@@ -56,3 +56,27 @@ class DimensionMissing(OpenEOException):
 
 class BandFilterParameterMissing(OpenEOException):
     pass
+
+
+class NoDataAvailable(OpenEOException):
+    pass
+
+
+class TemporalExtentEmpty(OpenEOException):
+    pass
+
+
+class DimensionAmbiguous(OpenEOException):
+    pass
+
+
+class NirBandAmbiguous(OpenEOException):
+    pass
+
+
+class RedBandAmbiguous(OpenEOException):
+    pass
+
+
+class BandExists(OpenEOException):
+    pass

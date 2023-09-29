@@ -28,8 +28,7 @@ def dask_client():
     client.shutdown()
 
 
-@pytest.fixture
-def random_raster_data(size, dtype, seed=42):
+def _random_raster_data(size, dtype, seed=42):
     rng = np.random.default_rng(seed)
     data = rng.integers(-100, 100, size=size)
     data = data.astype(dtype)
@@ -37,8 +36,27 @@ def random_raster_data(size, dtype, seed=42):
 
 
 @pytest.fixture
+def random_raster_data(size, dtype, seed=42):
+    return _random_raster_data(size, dtype, seed=seed)
+
+
+@pytest.fixture
 def bounding_box(
     west=10.45, east=10.5, south=46.1, north=46.2, crs="EPSG:4326"
+) -> BoundingBox:
+    spatial_extent = {
+        "west": west,
+        "east": east,
+        "south": south,
+        "north": north,
+        "crs": crs,
+    }
+    return BoundingBox.parse_obj(spatial_extent)
+
+
+@pytest.fixture
+def bounding_box_small(
+    west=10.47, east=10.48, south=46.12, north=46.18, crs="EPSG:4326"
 ) -> BoundingBox:
     spatial_extent = {
         "west": west,

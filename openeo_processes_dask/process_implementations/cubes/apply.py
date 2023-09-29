@@ -43,6 +43,8 @@ def apply_dimension(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
+    is_new_dim_added = target_dimension is not None
+
     if target_dimension is None:
         target_dimension = dimension
 
@@ -75,5 +77,8 @@ def apply_dimension(
 
     if len(data[dimension]) == len(reordered_result[target_dimension]):
         reordered_result.rio.write_crs(data.rio.crs, inplace=True)
+
+    if is_new_dim_added:
+        reordered_result.openeo.add_dim_type(name=target_dimension, type="other")
 
     return reordered_result
