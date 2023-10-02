@@ -1,11 +1,16 @@
 import logging
 from typing import Callable
 
+import numpy as np
+
+from openeo_processes_dask.process_implementations.cubes.utils import notnull
+from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionLabelCountMismatch,
     DimensionMismatch,
     LabelMismatch,
 )
+from openeo_processes_dask.process_implementations.logic import _not
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +18,9 @@ __all__ = ["mask"]
 
 
 def mask(data: RasterCube, mask: RasterCube, replacement=None) -> RasterCube:
+    if replacement is None:
+        replacement = np.nan
+
     # Check if spatial dimensions have the same name
     data_spatial_dims = data.openeo.spatial_dims
     mask_spatial_dims = mask.openeo.spatial_dims
@@ -46,41 +54,4 @@ def mask(data: RasterCube, mask: RasterCube, replacement=None) -> RasterCube:
                 f"data and mask temporal dimensions do no match: data has temporal dimensions ({data_temporal_dims}) and mask {mask_temporal_dims}"
             )
 
-        #
-
-    # if data.openeo.band_dims[0] == "bands"
-    # if data.openeo.temporal_dims[0] == mask.openeo.temporal_dims[0]
-    assert output_cube.openeo.spatial_dims == ("y", "x")
-    assert output_cube.openeo.other_dims[0] == "other"
-
-    maskSource = node.arguments["mask"]["from_node"]
-    dataSource = node.arguments["data"]["from_node"]
-    # If the mask has a variable dimension, it will keep only the values of the input with the same variable name.
-    # Solution is to take the min over the variable dim to drop that dimension. (Problems if there are more than 1 band/variable)
-    if (
-        "variable" in self.partialResults[maskSource].dims
-        and len(self.partialResults[maskSource]["variable"]) == 1
-    ):
-        mask = self.partialResults[maskSource].min(dim="variable")
-    else:
-        mask = self.partialResults[maskSource]
-    self.partialResults[node.id] = self.partialResults[dataSource].where(
-        np.logical_not(mask)
-    )
-    if "replacement" in node.arguments and node.arguments["replacement"] is not None:
-        burnValue = node.arguments["replacement"]
-        if isinstance(burnValue, int) or isinstance(burnValue, float):
-            self.partialResults[node.id] = self.partialResults[node.id].fillna(
-                burnValue
-            )  # Replace the na with the burnValue
-
-    if dimension not in data.dims:
-        raise DimensionNotAvailable(
-            f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
-        )
-
-    labels = data[dimension].values
-    label_mask = condition(x=labels)
-    label = labels[label_mask]
-    data = data.sel(**{dimension: label})
-    return data
+    return data.where(_not(mask), replacement)
