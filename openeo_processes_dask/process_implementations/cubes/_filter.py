@@ -6,8 +6,11 @@ import numpy as np
 import pyproj
 import rioxarray
 import xarray as xr
+import shapely
+import rasterio
+import geopandas as gpd
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
-
+from collections.abc import Sequence
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     BandFilterParameterMissing,
@@ -18,7 +21,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["filter_labels", "filter_temporal", "filter_bands", "filter_bbox"]
+__all__ = ["filter_labels", "filter_temporal", "filter_bands", "filter_bbox", "filter_spatial"]
 
 
 def filter_temporal(
@@ -100,6 +103,75 @@ def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
             f"The provided bands: {bands} are not all available in the datacube. Please modify the bands parameter of filter_bands and choose among: {data[band_dim].values}."
         )
     return data
+
+
+
+def filter_spatial(data: RasterCube, geometries)-> RasterCube:
+    data = data.to_dataset()
+    
+    # Get the Affine transformer
+    transform = data.rio.transform()
+    
+    # Get the name of first variable in the data "RasterCube" 
+    var = next(iter(data.data_vars))
+    
+    # Fetch the data variable 
+    xar_chunk = data[var]
+    
+    # Initialize an empty mask
+    if xar_chunk.ndim == 3:
+        final_mask = np.zeros((xar_chunk.shape[1], xar_chunk.shape[2]), dtype=bool)
+    elif xar_chunk.ndim == 4:
+        final_mask = np.zeros((xar_chunk.shape[2], xar_chunk.shape[3]), dtype=bool)
+    
+    # CHECK IF the input single polygon or multiple Polygons
+    if 'type' in data and data['type'] == 'FeatureCollection':
+        for feature in geometries['features']:
+            polygon = shapely.geometry.Polygon(feature['geometry']['coordinates'][0])
+            
+            # Create a GeoSeries from the geometry
+            geo_series = gpd.GeoSeries(polygon)
+            
+            # Convert the GeoSeries to a GeometryArray
+            geometry_array = geo_series.geometry.array
+            
+            mask = rasterio.features.geometry_mask(
+                geometry_array, 
+                out_shape=(xar_chunk.shape[2], xar_chunk.shape[3]), 
+                transform=transform,
+                invert=True
+            )
+            final_mask |= mask
+        
+        
+    elif 'type' in data and data['type'] == 'Polygon': 
+        polygon = shapely.geometry.Polygon(geometries['coordinates'][0])
+        geo_series = gpd.GeoSeries(polygon)
+        
+        # Convert the GeoSeries to a GeometryArray
+        geometry_array = geo_series.geometry.array
+        mask = rasterio.features.geometry_mask(
+            geometry_array, 
+            out_shape=(xar_chunk.shape[2], xar_chunk.shape[3]), 
+            transform=transform,
+            invert=True
+        )
+        final_mask |= mask
+        
+
+
+    # Convert the final mask to a 3D mask   
+    if xar_chunk.ndim == 3:
+        mask_3d = final_mask[np.newaxis, :, :]
+        filtered_ds = data.where(mask_3d)
+    elif xar_chunk.ndim == 4:
+        mask_4d = final_mask[np.newaxis, np.newaxis, :, :]
+        filtered_ds = data.where(mask_4d)
+    
+    # Uncomment the following line if want to reduce the size - remove the pixels outside the polygons
+    #filtered_ds2 = filtered_ds2.dropna(dim='y', how='all').dropna(dim='x', how='all')
+    
+    return filtered_ds
 
 
 def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:

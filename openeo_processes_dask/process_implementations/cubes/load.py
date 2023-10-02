@@ -11,6 +11,8 @@ import pyproj
 import pystac_client
 import stackstac
 import xarray as xr
+import shapely
+from collections.abc import Sequence
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 from stac_validator import stac_validator
 
@@ -154,10 +156,10 @@ def load_stac(
         stack = stackstac.stack(items, assets=bands)
     else:
         stack = stackstac.stack(items)
-
+        
     if spatial_extent is not None:
-        stack = filter_bbox(stack, spatial_extent)
-
+        stack = filter_bbox(stack, spatial_extent)   
+        
     if temporal_extent is not None and asset_type == "ITEM":
         stack = filter_temporal(stack, temporal_extent)
 
