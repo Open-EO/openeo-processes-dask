@@ -56,6 +56,7 @@ def reduce_spatial(
         reducer,
         dim=spatial_dims,
         keep_attrs=True,
+        context=context,
         positional_parameters=positional_parameters,
         named_parameters=named_parameters,
     )
