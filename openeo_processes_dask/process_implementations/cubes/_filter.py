@@ -8,6 +8,7 @@ import rioxarray
 import xarray as xr
 import shapely
 import rasterio
+import dask.array as da
 import geopandas as gpd
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 from collections.abc import Sequence
@@ -107,6 +108,9 @@ def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
 
 
 def filter_spatial(data: RasterCube, geometries)-> RasterCube:
+    x_dim = data.sizes[data.openeo.x_dim[0]] 
+    y_dim = data.sizes[data.openeo.y_dim[0]] 
+
     data = data.to_dataset()
     
     # Get the Affine transformer
@@ -119,10 +123,9 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
     xar_chunk = data[var]
     
     # Initialize an empty mask
-    if xar_chunk.ndim == 3:
-        final_mask = np.zeros((xar_chunk.shape[1], xar_chunk.shape[2]), dtype=bool)
-    elif xar_chunk.ndim == 4:
-        final_mask = np.zeros((xar_chunk.shape[2], xar_chunk.shape[3]), dtype=bool)
+    final_mask = da.zeros((y_dim, x_dim), chunks=dict(x=100,y=100), dtype=bool)
+    
+    dask_out_shape = da.from_array((y_dim, x_dim), chunks=dict(x=100,y=100))
     
     # CHECK IF the input single polygon or multiple Polygons
     if 'type' in data and data['type'] == 'FeatureCollection':
@@ -135,12 +138,15 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
             # Convert the GeoSeries to a GeometryArray
             geometry_array = geo_series.geometry.array
             
-            mask = rasterio.features.geometry_mask(
-                geometry_array, 
-                out_shape=(xar_chunk.shape[2], xar_chunk.shape[3]), 
-                transform=transform,
+            mask = da.map_blocks(
+                rasterio.features.geometry_mask,
+                geometry_array,
+                transform= transform,
+                out_shape=dask_out_shape,
+                dtype=bool,
                 invert=True
-            )
+            ).compute()
+                  
             final_mask |= mask
         
         
@@ -150,15 +156,17 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
         
         # Convert the GeoSeries to a GeometryArray
         geometry_array = geo_series.geometry.array
-        mask = rasterio.features.geometry_mask(
-            geometry_array, 
-            out_shape=(xar_chunk.shape[2], xar_chunk.shape[3]), 
-            transform=transform,
+        mask = da.map_blocks(
+            rasterio.features.geometry_mask,
+            geometry_array,
+            transform= transform,
+            out_shape=dask_out_shape,
+            dtype=bool,
             invert=True
-        )
+        ).compute()
+        
         final_mask |= mask
         
-
 
     # Convert the final mask to a 3D mask   
     if xar_chunk.ndim == 3:
@@ -171,6 +179,7 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
     # Uncomment the following line if want to reduce the size - remove the pixels outside the polygons
     #filtered_ds2 = filtered_ds2.dropna(dim='y', how='all').dropna(dim='x', how='all')
     
+    filtered_ds = filtered_ds.to_array()
     return filtered_ds
 
 
