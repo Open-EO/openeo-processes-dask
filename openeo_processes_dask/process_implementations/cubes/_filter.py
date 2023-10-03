@@ -110,6 +110,8 @@ def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
 def filter_spatial(data: RasterCube, geometries)-> RasterCube:
     x_dim = data.sizes[data.openeo.x_dim[0]] 
     y_dim = data.sizes[data.openeo.y_dim[0]] 
+    
+    xr_name = data.name
 
     data = data.to_dataset()
     
@@ -178,9 +180,8 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
     
     # Uncomment the following line if want to reduce the size - remove the pixels outside the polygons
     #filtered_ds2 = filtered_ds2.dropna(dim='y', how='all').dropna(dim='x', how='all')
-    
-    filtered_ds = filtered_ds.to_array()
-    return filtered_ds
+
+    return filtered_ds[xr_name]
 
 
 def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
