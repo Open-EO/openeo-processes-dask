@@ -110,7 +110,6 @@ def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
 def filter_spatial(data: RasterCube, geometries)-> RasterCube:
     x_dim = data.sizes[data.openeo.x_dim[0]] 
     y_dim = data.sizes[data.openeo.y_dim[0]] 
-    
     xr_name = data.name
 
     data = data.to_dataset()
@@ -147,7 +146,7 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
                 out_shape=dask_out_shape,
                 dtype=bool,
                 invert=True
-            ).compute()
+            )
                   
             final_mask |= mask
         
@@ -165,7 +164,7 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
             out_shape=dask_out_shape,
             dtype=bool,
             invert=True
-        ).compute()
+        )
         
         final_mask |= mask
         
