@@ -10,6 +10,7 @@ import shapely
 import rasterio
 import dask.array as da
 import geopandas as gpd
+import json
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 from collections.abc import Sequence
 from openeo_processes_dask.process_implementations.data_model import RasterCube
@@ -19,6 +20,9 @@ from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
     TooManyDimensions,
 )
+
+DEFAULT_CRS = 'EPSG:4326'
+
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +115,37 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
     x_dim = data.sizes[data.openeo.x_dim[0]] 
     y_dim = data.sizes[data.openeo.y_dim[0]] 
     xr_name = data.name
+    #  Reproject vector data to match the raster data cube.
+    ## Get the CRS of data cube
+    if 'crs' in data.attrs:
+        data_crs = data.attrs['crs']
+    else:
+        data_crs = 'PROJCS["Azimuthal_Equidistant",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]],PROJECTION["Azimuthal_Equidistant"],PARAMETER["latitude_of_center",53],PARAMETER["longitude_of_center",24],PARAMETER["false_easting",5837287.81977],PARAMETER["false_northing",2121415.69617],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]'
+     
+    
+    data = data.rio.set_crs(data_crs)
+    
+    print(type(geometries))
+    ## Reproject vector data if the input vector data is Polygon or Multi Polygon
+    if 'type' in geometries and geometries['type'] == 'FeatureCollection':
+        geometries = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
+        geometries = geometries.to_crs(data_crs)
+        geometries = geometries.to_dict()
+        
+    elif 'type' in geometries and geometries['type'] in ['Polygon']: 
+        polygon = shapely.geometry.Polygon(geometries['coordinates'][0])
+        geometries = gpd.GeoDataFrame(geometry=[polygon])
+        geometries.crs = DEFAULT_CRS
+        geometries = geometries.to_crs(data_crs)
+        geometries = geometries.to_json()
+        geometries = json.loads(geometries)
+        
+    else:
+        raise ValueError("Unsupported or missing geometry type. Expected 'Polygon' or 'FeatureCollection'.")
+        
 
+    
+    # Convert the data array to dataset to continue the process faster and easier 
     data = data.to_dataset()
     
     # Get the Affine transformer
@@ -128,8 +162,9 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
     
     dask_out_shape = da.from_array((y_dim, x_dim), chunks=dict(x=100,y=100))
     
+
     # CHECK IF the input single polygon or multiple Polygons
-    if 'type' in data and data['type'] == 'FeatureCollection':
+    if 'type' in geometries and geometries['type'] == 'FeatureCollection':
         for feature in geometries['features']:
             polygon = shapely.geometry.Polygon(feature['geometry']['coordinates'][0])
             
@@ -151,7 +186,7 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
             final_mask |= mask
         
         
-    elif 'type' in data and data['type'] == 'Polygon': 
+    elif 'type' in geometries and geometries['type'] in ['Polygon']: 
         polygon = shapely.geometry.Polygon(geometries['coordinates'][0])
         geo_series = gpd.GeoSeries(polygon)
         
@@ -166,8 +201,7 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
             invert=True
         )
         
-        final_mask |= mask
-        
+        final_mask |= mask    
 
     # Convert the final mask to a 3D mask   
     if xar_chunk.ndim == 3:
