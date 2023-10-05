@@ -84,6 +84,19 @@ def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
     assert len(result.coords["param"]) == len(parameters)
 
     labels = dimension_labels(origin_cube, origin_cube.openeo.temporal_dims[0])
+    labels = [float(l) for l in labels]
+    predictions = predict_curve(
+        result,
+        _process,
+        origin_cube.openeo.temporal_dims[0],
+        labels=labels,
+    ).compute()
+
+    assert len(predictions.coords[origin_cube.openeo.temporal_dims[0]]) == len(labels)
+    assert "param" not in predictions.dims
+    assert result.rio.crs == predictions.rio.crs
+
+    labels = ["2020-02-02", "2020-03-02", "2020-04-02", "2020-05-02"]
     predictions = predict_curve(
         result,
         _process,
