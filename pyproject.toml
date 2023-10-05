@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openeo-processes-dask"
-version = "2023.9.1"
+version = "2023.9.2"
 description = "Python implementations of many OpenEO processes, dask-friendly by default."
 authors = ["Lukas Weidenholzer <lukas.weidenholzer@eodc.eu>", "Sean Hoyal <sean.hoyal@eodc.eu>", "Valentina Hutter <valentina.hutter@eodc.eu>"]
 maintainers = ["EODC Staff <support@eodc.eu>"]
