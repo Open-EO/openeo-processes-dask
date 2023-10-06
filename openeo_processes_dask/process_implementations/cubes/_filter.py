@@ -12,7 +12,6 @@ import dask.array as da
 import geopandas as gpd
 import json
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
-from collections.abc import Sequence
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     BandFilterParameterMissing,
