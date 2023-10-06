@@ -125,13 +125,12 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
     
     data = data.rio.set_crs(data_crs)
     
-    print(type(geometries))
     ## Reproject vector data if the input vector data is Polygon or Multi Polygon
     if 'type' in geometries and geometries['type'] == 'FeatureCollection':
         geometries = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
         geometries = geometries.to_crs(data_crs)
-        geometries = geometries.to_dict()
-        
+        geometries = geometries.to_json()
+        geometries = json.loads(geometries)
     elif 'type' in geometries and geometries['type'] in ['Polygon']: 
         polygon = shapely.geometry.Polygon(geometries['coordinates'][0])
         geometries = gpd.GeoDataFrame(geometry=[polygon])
