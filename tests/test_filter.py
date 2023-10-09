@@ -78,11 +78,11 @@ def test_filter_bands(temporal_interval, bounding_box, random_raster_data):
         bands=["B02", "SCL"],
         backend="dask",
     )
-    
+
     output_cube = filter_bands(data=input_cube, bands=["SCL"])
 
     assert output_cube["bands"].values == "SCL"
-    
+
 
 @pytest.mark.parametrize("size", [(30, 30, 30, 1)])
 @pytest.mark.parametrize("dtype", [np.uint8])
@@ -99,14 +99,13 @@ def test_filter_spatial(
         bands=["B02"],
         backend="dask",
     )
-    
+
     output_cube = filter_spatial(data=input_cube, geometries=polygon_geometry_small)
 
     assert len(output_cube.y) < len(input_cube.y)
     assert len(output_cube.x) < len(input_cube.x)
-    
-         
-        
+
+
 @pytest.mark.parametrize("size", [(30, 30, 1, 1)])
 @pytest.mark.parametrize("dtype", [np.uint8])
 def test_filter_bbox(
@@ -123,8 +122,7 @@ def test_filter_bbox(
         bands=["B02"],
         backend="dask",
     )
-    
-    
+
     output_cube = filter_bbox(data=input_cube, extent=bounding_box_small)
 
     assert len(output_cube.y) < len(input_cube.y)

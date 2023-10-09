@@ -1,17 +1,18 @@
+import json
 import logging
 import warnings
 from typing import Callable
 
-import numpy as np
-import pyproj
-import rioxarray
-import xarray as xr
-import shapely
-import rasterio
 import dask.array as da
 import geopandas as gpd
-import json
+import numpy as np
+import pyproj
+import rasterio
+import rioxarray
+import shapely
+import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
+
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     BandFilterParameterMissing,
@@ -20,12 +21,18 @@ from openeo_processes_dask.process_implementations.exceptions import (
     TooManyDimensions,
 )
 
-DEFAULT_CRS = 'EPSG:4326'
+DEFAULT_CRS = "EPSG:4326"
 
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["filter_labels", "filter_temporal", "filter_bands", "filter_bbox", "filter_spatial"]
+__all__ = [
+    "filter_labels",
+    "filter_temporal",
+    "filter_bands",
+    "filter_bbox",
+    "filter_spatial",
+]
 
 
 def filter_temporal(
@@ -109,18 +116,17 @@ def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
     return data
 
 
-
-def filter_spatial(data: RasterCube, geometries)-> RasterCube:
+def filter_spatial(data: RasterCube, geometries) -> RasterCube:
     y_dim = data.openeo.y_dim
     x_dim = data.openeo.x_dim
     t_dim = data.openeo.temporal_dims
     b_dim = data.openeo.band_dims
 
-    if len(t_dim)==0:
+    if len(t_dim) == 0:
         t_dim = None
     else:
         t_dim = t_dim[0]
-    if len(b_dim)==0:
+    if len(b_dim) == 0:
         b_dim = None
     else:
         b_dim = b_dim[0]
@@ -136,14 +142,14 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
         raise Exception(f"Not possible to estimate the input data projection! {e}")
 
     data = data.rio.set_crs(data_crs)
-    
+
     ## Reproject vector data if the input vector data is Polygon or Multi Polygon
     if "type" in geometries and geometries["type"] == "FeatureCollection":
         geometries = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
         geometries = geometries.to_crs(data_crs)
         geometries = geometries.to_json()
         geometries = json.loads(geometries)
-    elif "type" in geometries and geometries["type"] in ["Polygon"]: 
+    elif "type" in geometries and geometries["type"] in ["Polygon"]:
         polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
         geometries = gpd.GeoDataFrame(geometry=[polygon])
         geometries.crs = DEFAULT_CRS
@@ -151,49 +157,55 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
         geometries = geometries.to_json()
         geometries = json.loads(geometries)
     else:
-        raise ValueError("Unsupported or missing geometry type. Expected 'Polygon' or 'FeatureCollection'.")   
+        raise ValueError(
+            "Unsupported or missing geometry type. Expected 'Polygon' or 'FeatureCollection'."
+        )
 
     data_dims = list(data.dims)
 
     # Get the Affine transformer
     transform = data.rio.transform()
-    
+
     # Initialize an empty mask
     # Set the same chunk size as the input data
     data_chunks = {}
     chunks_shapes = data.chunks
-    for i,d in enumerate(data_dims):
+    for i, d in enumerate(data_dims):
         data_chunks[d] = chunks_shapes[i][0]
 
-    final_mask = da.zeros((y_dim_size, x_dim_size),
-                          chunks={y_dim:data_chunks[y_dim],x_dim:data_chunks[x_dim]},
-                          dtype=bool)
-    
-    dask_out_shape = da.from_array((y_dim_size, x_dim_size),
-                                   chunks={y_dim:data_chunks[y_dim],x_dim:data_chunks[x_dim]})
+    final_mask = da.zeros(
+        (y_dim_size, x_dim_size),
+        chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
+        dtype=bool,
+    )
+
+    dask_out_shape = da.from_array(
+        (y_dim_size, x_dim_size),
+        chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
+    )
 
     # CHECK IF the input single polygon or multiple Polygons
     if "type" in geometries and geometries["type"] == "FeatureCollection":
         for feature in geometries["features"]:
             polygon = shapely.geometry.Polygon(feature["geometry"]["coordinates"][0])
-            
+
             # Create a GeoSeries from the geometry
             geo_series = gpd.GeoSeries(polygon)
-            
+
             # Convert the GeoSeries to a GeometryArray
             geometry_array = geo_series.geometry.array
-            
+
             mask = da.map_blocks(
                 rasterio.features.geometry_mask,
                 geometry_array,
-                transform = transform,
-                out_shape = dask_out_shape,
-                dtype = bool,
-                invert = True
+                transform=transform,
+                out_shape=dask_out_shape,
+                dtype=bool,
+                invert=True,
             )
             final_mask |= mask
 
-    elif "type" in geometries and geometries["type"] in ["Polygon"]: 
+    elif "type" in geometries and geometries["type"] in ["Polygon"]:
         polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
         geo_series = gpd.GeoSeries(polygon)
 
@@ -205,17 +217,17 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
             transform=transform,
             out_shape=dask_out_shape,
             dtype=bool,
-            invert=True
+            invert=True,
         )
-        final_mask |= mask    
+        final_mask |= mask
 
     if t_dim is not None:
-        final_mask = np.expand_dims(final_mask,axis=data_dims.index(t_dim))
+        final_mask = np.expand_dims(final_mask, axis=data_dims.index(t_dim))
     if b_dim is not None:
-        final_mask = np.expand_dims(final_mask,axis=data_dims.index(b_dim))
+        final_mask = np.expand_dims(final_mask, axis=data_dims.index(b_dim))
 
     filtered_ds = data.where(final_mask)
-    
+
     # Remove the pixels outside the polygons
     filtered_ds = filtered_ds.dropna(dim=y_dim, how="all").dropna(dim=x_dim, how="all")
 
