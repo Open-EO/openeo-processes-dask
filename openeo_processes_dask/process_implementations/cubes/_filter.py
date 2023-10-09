@@ -130,10 +130,10 @@ def filter_spatial(data: RasterCube, geometries)-> RasterCube:
 
     #  Reproject vector data to match the raster data cube.
     ## Get the CRS of data cube
-    if "crs" in data.attrs:
-        data_crs = data.attrs["crs"]
-    else:
-        raise Exception("Can't get the data projection to reproject the provided Vector Cube.")
+    try:
+        data_crs = str(data.rio.crs)
+    except Exception as e:
+        raise Exception(f"Not possible to estimate the input data projection! {e}")
 
     data = data.rio.set_crs(data_crs)
     
