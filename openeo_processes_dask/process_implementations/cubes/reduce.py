@@ -54,7 +54,7 @@ def reduce_spatial(
     spatial_dims = data.openeo.spatial_dims if data.openeo.spatial_dims else None
     return data.reduce(
         reducer,
-        dimension=spatial_dims,
+        dim=spatial_dims,
         keep_attrs=True,
         context=context,
         positional_parameters=positional_parameters,
