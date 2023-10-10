@@ -26,6 +26,23 @@ def fit_curve(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
+    try:
+        # Try parsing as datetime first
+        dates = data[dimension].values
+        dates = np.asarray(dates, dtype=np.datetime64)
+    except ValueError:
+        dates = np.asarray(data[dimension].values)
+
+    if np.issubdtype(dates.dtype, np.datetime64):
+        timestep = [
+            (
+                (np.datetime64(x) - np.datetime64("1970-01-01", "s"))
+                / np.timedelta64(1, "s")
+            )
+            for x in dates
+        ]
+        data[dimension] = np.array(timestep)
+
     dims_before = list(data.dims)
 
     # In the spec, parameters is a list, but xr.curvefit requires names for them,
@@ -75,6 +92,7 @@ def predict_curve(
     function: Callable,
     dimension: str,
     labels: ArrayLike,
+    data: RasterCube = None,
 ):
     labels_were_datetime = False
     dims_before = list(parameters.dims)
@@ -86,8 +104,16 @@ def predict_curve(
         labels = np.asarray(labels)
 
     if np.issubdtype(labels.dtype, np.datetime64):
-        labels = labels.astype(int)
         labels_were_datetime = True
+        initial_labels = labels
+        timestep = [
+            (
+                (np.datetime64(x) - np.datetime64("1970-01-01", "s"))
+                / np.timedelta64(1, "s")
+            )
+            for x in labels
+        ]
+        labels = np.array(timestep)
 
     # This is necessary to pipe the arguments correctly through @process
     def wrapper(f):
@@ -121,6 +147,6 @@ def predict_curve(
     predictions = predictions.assign_coords({dimension: labels.data})
 
     if labels_were_datetime:
-        predictions[dimension] = pd.DatetimeIndex(predictions[dimension].values)
+        predictions[dimension] = initial_labels
 
     return predictions
