@@ -99,6 +99,7 @@ def predict_curve(
 ):
     labels_were_datetime = False
     dims_before = list(parameters.dims)
+    initial_labels = labels
 
     try:
         # Try parsing as datetime first
@@ -108,7 +109,6 @@ def predict_curve(
 
     if np.issubdtype(labels.dtype, np.datetime64):
         labels_were_datetime = True
-        initial_labels = labels
         timestep = [
             (
                 (np.datetime64(x) - np.datetime64("1970-01-01", "s"))
