@@ -95,7 +95,7 @@ def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
     assert "param" not in predictions.dims
     assert result.rio.crs == predictions.rio.crs
 
-    labels = ["2020-02-02", "2020-03-02", "2020-04-02", "2020-05-02"]
+    labels = [0, 1, 2, 3]
     predictions = predict_curve(
         result,
         _process,
