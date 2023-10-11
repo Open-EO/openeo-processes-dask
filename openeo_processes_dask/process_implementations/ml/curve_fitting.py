@@ -25,6 +25,10 @@ def fit_curve(
         raise DimensionNotAvailable(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
+    bands_required = False
+    if "bands" in data.dims:
+        if len(data["bands"].values) == 1:
+            bands_required = data["bands"].values[0]
 
     try:
         # Try parsing as datetime first
@@ -81,11 +85,15 @@ def fit_curve(
         .drop_dims(["cov_i", "cov_j"])
         .to_array()
         .squeeze()
-        .transpose(*expected_dims_after)
     )
 
     fit_result.attrs = data.attrs
     fit_result = fit_result.rio.write_crs(rechunked_data.rio.crs)
+    if bands_required and not "bands" in fit_result.dims:
+        fit_result = fit_result.assign_coords(**{"bands": bands_required})
+        fit_result = fit_result.expand_dims(dim="bands")
+
+    fit_result = fit_result.transpose(*expected_dims_after)
 
     return fit_result
 
@@ -99,6 +107,7 @@ def predict_curve(
 ):
     labels_were_datetime = False
     dims_before = list(parameters.dims)
+    initial_labels = labels
 
     try:
         # Try parsing as datetime first
@@ -108,7 +117,6 @@ def predict_curve(
 
     if np.issubdtype(labels.dtype, np.datetime64):
         labels_were_datetime = True
-        initial_labels = labels
         timestep = [
             (
                 (np.datetime64(x) - np.datetime64("1970-01-01", "s"))

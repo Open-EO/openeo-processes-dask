@@ -83,8 +83,14 @@ def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
     assert len(result.coords["y"]) == len(origin_cube.coords["y"])
     assert len(result.coords["param"]) == len(parameters)
 
+    origin_cube_B02 = origin_cube.sel(bands=["B02"])
+    result_B02 = fit_curve(
+        origin_cube_B02, parameters=parameters, function=_process, dimension="t"
+    )
+    assert "bands" in result_B02.dims
+    assert result_B02["bands"].values == "B02"
+
     labels = dimension_labels(origin_cube, origin_cube.openeo.temporal_dims[0])
-    labels = [float(l) for l in labels]
     predictions = predict_curve(
         result,
         _process,
@@ -96,7 +102,7 @@ def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
     assert "param" not in predictions.dims
     assert result.rio.crs == predictions.rio.crs
 
-    labels = ["2020-02-02", "2020-03-02", "2020-04-02", "2020-05-02"]
+    labels = [0, 1, 2, 3]
     predictions = predict_curve(
         result,
         _process,
