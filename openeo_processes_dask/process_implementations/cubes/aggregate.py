@@ -1,6 +1,17 @@
 from typing import Callable, Optional, Union
+import gc
+import numpy as np 
+import pandas as pd
 
 import rasterio
+import xarray as xr
+import xvec
+from joblib import Parallel, delayed
+from tqdm import tqdm
+import geopandas as gpd
+import dask.array as da
+from openeo.internal.graph_building import PGNode
+
 from openeo_pg_parser_networkx.pg_schema import TemporalInterval, TemporalIntervals
 
 from openeo_processes_dask.process_implementations.data_model import (
@@ -11,6 +22,9 @@ from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
     TooManyDimensions,
 )
+
+DEFAULT_CRS = "EPSG:4326"
+
 
 __all__ = ["aggregate_temporal", "aggregate_temporal_period", "aggregate_spatial"]
 
@@ -111,9 +125,155 @@ def aggregate_temporal_period(
 
 def aggregate_spatial(
     data: RasterCube,
-    geometries: VectorCube,
+    geometries,
+    reducer: dict,
+    chunk_size: int = 2,
+):
+    #print(reducer)
+    # print(reducer[0])
+    # #process_graph = reducer.process_graph
+    # #print(process_graph)
+    # print(dir(reducer))
+    # print(reducer.__getattribute__)
+    # print(reducer.__delattr__)
+    # print(reducer.__dir__)
+    # print(reducer.__reduce__)
+    # print(reducer.keywords)
+    # print(reducer.func)
+    # print(reducer.args)
+
+    
+    #reducer = reducer.process_id
+    t_dim = data.openeo.temporal_dims
+    b_dim = data.openeo.band_dims
+    
+    if len(t_dim) == 0:
+        t_dim = None
+    else:
+        t_dim = t_dim[0]    
+    if len(b_dim) == 0:
+        b_dim = None
+    else:
+        b_dim = b_dim[0]
+        
+        
+    if "type" in geometries and geometries["type"] == "FeatureCollection":
+        gdf = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
+    elif "type" in geometries and geometries["type"] in ["Polygon"]:
+        polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
+        gdf = gpd.GeoDataFrame(geometry=[polygon])
+        gdf.crs = DEFAULT_CRS
+        
+    
+    transform = data.rio.transform()
+    geometries = gdf.geometry.values
+    
+    geometry_chunks = [geometries[i:i + chunk_size] for i in range(0, len(geometries), chunk_size)]
+    
+    computed_results = []
+    for chunk in tqdm(geometry_chunks):
+        # Create a list of delayed objects for the current chunk
+        chunk_results =  Parallel(n_jobs=-1)(
+            delayed(_aggregate_geometry)(data, geom, transform= transform , reducer="mean") for geom in chunk
+        )
+        computed_results.extend(chunk_results)
+        
+    final_results = np.stack(computed_results)
+    del chunk_results,geometry_chunks, computed_results; gc.collect()
+    
+    df = pd.DataFrame()
+    keys_items = {}
+
+    for idx, b in enumerate(data[b_dim].values):
+        columns = []
+        for t in range(len(data.time)):
+            columns.append(f'{b}_time{t+1}')
+
+        keys_items[b] = columns 
+        aggregated_data = final_results[:,idx, :]
+        # Create a new DataFrame with the current data and columns
+        band_df = pd.DataFrame(aggregated_data, columns=columns)
+        # Concatenate the new DataFrame with the existing DataFrame
+        df = pd.concat([df, band_df], axis=1)
+        
+    df = gpd.GeoDataFrame(df, geometry=gdf.geometry)
+    
+    
+    times = list(data.time.values)
+
+    data_vars = {}
+    for key in keys_items.keys():
+        data_vars[key] = (["geometry", t_dim], df[keys_items[key]])
+
+    ## Create VectorCube    
+    vec_cube = xr.Dataset(data_vars=data_vars, coords=dict(geometry=df.geometry, time=times)
+                     ).xvec.set_geom_indexes("geometry", crs=df.crs) 
+    
+    return vec_cube
+
+    
+    
+    
+def _aggregate_geometry(
+    data: RasterCube,
+    geom,
+    transform,
     reducer: Callable,
-    target_dimension: str = "result",
-    **kwargs,
-) -> VectorCube:
-    raise NotImplementedError
+):
+    reducer1 = 'mean'
+    data_dims = list(data.dims)
+    y_dim = data.openeo.y_dim
+    x_dim = data.openeo.x_dim
+    t_dim = data.openeo.temporal_dims
+    b_dim = data.openeo.band_dims
+    
+    y_dim_size = data.sizes[y_dim]
+    x_dim_size = data.sizes[x_dim]
+
+    if len(t_dim) == 0:
+        t_dim = None
+    else:
+        t_dim = t_dim[0]
+    if len(b_dim) == 0:
+        b_dim = None
+    else:
+        b_dim = b_dim[0]
+        
+    
+    #Create a GeoSeries from the geometry
+    geo_series = gpd.GeoSeries(geom)
+    
+    # Convert the GeoSeries to a GeometryArray
+    geometry_array = geo_series.geometry.array
+
+    mask = rasterio.features.geometry_mask(geometry_array, out_shape=(y_dim_size, x_dim_size), transform= transform)
+    
+    if t_dim is not None:
+        mask = np.expand_dims(mask, axis=data_dims.index(t_dim))
+    if b_dim is not None:
+        mask = np.expand_dims(mask, axis=data_dims.index(b_dim))
+        
+    masked_data = data * mask
+    del mask, data; gc.collect()
+#     positional_parameters = {"data": 0}
+    
+#     stat_within_polygon = masked_data.reduce(reducer,axis=(data_dims.index(y_dim), data_dims.index(x_dim)),
+#                                              keep_attrs=True, positional_parameters=positional_parameters)
+
+    if reducer1 == 'sum':
+        stat_within_polygon = da.nansum(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+    elif reducer1 == 'mean':
+        stat_within_polygon = da.nanmean(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+    elif reducer1 == 'median':
+        stat_within_polygon = da.nanmedian(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+    elif reducer1 == 'max':
+        stat_within_polygon = da.nanmax(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+    elif reducer1 == 'min':
+        stat_within_polygon = da.nanmin(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+        
+    result = stat_within_polygon.compute()
+    del masked_data ; gc.collect()
+    
+    #result = stat_within_polygon.values
+    return result.T
+    
