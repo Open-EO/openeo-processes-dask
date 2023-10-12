@@ -53,7 +53,8 @@ def fit_curve(
     # so we do this to generate names locally
     parameters = {f"param_{i}": v for i, v in enumerate(parameters)}
 
-    chunking = {key: "auto" for key in data.dims}
+    chunking = {key: "auto" for key in data.dims if key != dimension}
+    chunking[dimension] = -1
 
     # The dimension along which to fit the curves cannot be chunked!
     rechunked_data = data.chunk(chunking)
