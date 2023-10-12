@@ -13,6 +13,9 @@ import shapely
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 
+from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
+    mask_polygon,
+)
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     BandFilterParameterMissing,
@@ -133,105 +136,22 @@ def filter_spatial(data: RasterCube, geometries) -> RasterCube:
 
     y_dim_size = data.sizes[y_dim]
     x_dim_size = data.sizes[x_dim]
-
-    #  Reproject vector data to match the raster data cube.
-    ## Get the CRS of data cube
-    try:
-        data_crs = str(data.rio.crs)
-    except Exception as e:
-        raise Exception(f"Not possible to estimate the input data projection! {e}")
-
-    data = data.rio.set_crs(data_crs)
-
-    ## Reproject vector data if the input vector data is Polygon or Multi Polygon
     if "type" in geometries and geometries["type"] == "FeatureCollection":
-        geometries = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
-        geometries = geometries.to_crs(data_crs)
-        geometries = geometries.to_json()
-        geometries = json.loads(geometries)
+        gdf = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
     elif "type" in geometries and geometries["type"] in ["Polygon"]:
         polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
-        geometries = gpd.GeoDataFrame(geometry=[polygon])
-        geometries.crs = DEFAULT_CRS
-        geometries = geometries.to_crs(data_crs)
-        geometries = geometries.to_json()
-        geometries = json.loads(geometries)
-    else:
-        raise ValueError(
-            "Unsupported or missing geometry type. Expected 'Polygon' or 'FeatureCollection'."
-        )
+        gdf = gpd.GeoDataFrame(geometry=[polygon])
+        gdf.crs = DEFAULT_CRS
 
-    data_dims = list(data.dims)
-
-    # Get the Affine transformer
-    transform = data.rio.transform()
-
-    # Initialize an empty mask
-    # Set the same chunk size as the input data
-    data_chunks = {}
-    chunks_shapes = data.chunks
-    for i, d in enumerate(data_dims):
-        data_chunks[d] = chunks_shapes[i][0]
-
-    final_mask = da.zeros(
-        (y_dim_size, x_dim_size),
-        chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
-        dtype=bool,
+    bbox = gdf.total_bounds
+    spatial_extent = BoundingBox(
+        west=bbox[0], east=bbox[2], south=bbox[1], north=bbox[3]
     )
 
-    dask_out_shape = da.from_array(
-        (y_dim_size, x_dim_size),
-        chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
-    )
+    data = filter_bbox(data, spatial_extent)
+    data = mask_polygon(data, geometries)
 
-    # CHECK IF the input single polygon or multiple Polygons
-    if "type" in geometries and geometries["type"] == "FeatureCollection":
-        for feature in geometries["features"]:
-            polygon = shapely.geometry.Polygon(feature["geometry"]["coordinates"][0])
-
-            # Create a GeoSeries from the geometry
-            geo_series = gpd.GeoSeries(polygon)
-
-            # Convert the GeoSeries to a GeometryArray
-            geometry_array = geo_series.geometry.array
-
-            mask = da.map_blocks(
-                rasterio.features.geometry_mask,
-                geometry_array,
-                transform=transform,
-                out_shape=dask_out_shape,
-                dtype=bool,
-                invert=True,
-            )
-            final_mask |= mask
-
-    elif "type" in geometries and geometries["type"] in ["Polygon"]:
-        polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
-        geo_series = gpd.GeoSeries(polygon)
-
-        # Convert the GeoSeries to a GeometryArray
-        geometry_array = geo_series.geometry.array
-        mask = da.map_blocks(
-            rasterio.features.geometry_mask,
-            geometry_array,
-            transform=transform,
-            out_shape=dask_out_shape,
-            dtype=bool,
-            invert=True,
-        )
-        final_mask |= mask
-
-    if t_dim is not None:
-        final_mask = np.expand_dims(final_mask, axis=data_dims.index(t_dim))
-    if b_dim is not None:
-        final_mask = np.expand_dims(final_mask, axis=data_dims.index(b_dim))
-
-    filtered_ds = data.where(final_mask)
-
-    # Remove the pixels outside the polygons
-    filtered_ds = filtered_ds.dropna(dim=y_dim, how="all").dropna(dim=x_dim, how="all")
-
-    return filtered_ds
+    return data
 
 
 def filter_bbox(data: RasterCube, extent: BoundingBox) -> RasterCube:
