@@ -58,6 +58,7 @@ def fit_curve(
 
     # The dimension along which to fit the curves cannot be chunked!
     rechunked_data = data.chunk(chunking)
+    rechunked_data.persist()
 
     def wrapper(f):
         def _wrap(*args, **kwargs):
