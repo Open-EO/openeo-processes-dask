@@ -78,16 +78,28 @@ def mask_polygon(data: RasterCube, geometries) -> RasterCube:
     for i, d in enumerate(data_dims):
         data_chunks[d] = chunks_shapes[i][0]
 
-    final_mask = da.zeros(
-        (y_dim_size, x_dim_size),
-        chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
-        dtype=bool,
-    )
+    if data_dims.index(x_dim[0]) < data_dims.index(y_dim[0]):
+        final_mask = da.zeros(
+            (x_dim_size, y_dim_size),
+            chunks={x_dim: data_chunks[x_dim], y_dim: data_chunks[y_dim]},
+            dtype=bool,
+        )
 
-    dask_out_shape = da.from_array(
-        (y_dim_size, x_dim_size),
-        chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
-    )
+        dask_out_shape = da.from_array(
+            (x_dim_size, y_dim_size),
+            chunks={x_dim: data_chunks[x_dim], y_dim: data_chunks[y_dim]},
+        )
+    else:
+        final_mask = da.zeros(
+            (y_dim_size, x_dim_size),
+            chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
+            dtype=bool,
+        )
+
+        dask_out_shape = da.from_array(
+            (y_dim_size, x_dim_size),
+            chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
+        )
 
     # CHECK IF the input single polygon or multiple Polygons
     if "type" in geometries and geometries["type"] == "FeatureCollection":
