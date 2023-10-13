@@ -125,23 +125,9 @@ def aggregate_temporal_period(
 def aggregate_spatial(
     data: RasterCube,
     geometries,
-    reducer: dict,
+    reducer: Callable,
     chunk_size: int = 2,
-):
-    # print(reducer)
-    # print(reducer[0])
-    # #process_graph = reducer.process_graph
-    # #print(process_graph)
-    # print(dir(reducer))
-    # print(reducer.__getattribute__)
-    # print(reducer.__delattr__)
-    # print(reducer.__dir__)
-    # print(reducer.__reduce__)
-    # print(reducer.keywords)
-    # print(reducer.func)
-    # print(reducer.args)
-
-    # reducer = reducer.process_id
+) -> VectorCube:
     t_dim = data.openeo.temporal_dims
     b_dim = data.openeo.band_dims
 
@@ -173,7 +159,7 @@ def aggregate_spatial(
         # Create a list of delayed objects for the current chunk
         chunk_results = Parallel(n_jobs=-1)(
             delayed(_aggregate_geometry)(
-                data, geom, transform=transform, reducer="mean"
+                data, geom, transform=transform, reducer=reducer
             )
             for geom in chunk
         )
@@ -220,7 +206,6 @@ def _aggregate_geometry(
     transform,
     reducer: Callable,
 ):
-    reducer1 = "mean"
     data_dims = list(data.dims)
     y_dim = data.openeo.y_dim
     x_dim = data.openeo.x_dim
@@ -257,35 +242,31 @@ def _aggregate_geometry(
     masked_data = data * mask
     del mask, data
     gc.collect()
-    #     positional_parameters = {"data": 0}
 
-    #     stat_within_polygon = masked_data.reduce(reducer,axis=(data_dims.index(y_dim), data_dims.index(x_dim)),
-    #                                              keep_attrs=True, positional_parameters=positional_parameters)
+    positional_parameters = {"data": 0}
 
-    if reducer1 == "sum":
-        stat_within_polygon = da.nansum(
-            masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim))
-        )
-    elif reducer1 == "mean":
-        stat_within_polygon = da.nanmean(
-            masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim))
-        )
-    elif reducer1 == "median":
-        stat_within_polygon = da.nanmedian(
-            masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim))
-        )
-    elif reducer1 == "max":
-        stat_within_polygon = da.nanmax(
-            masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim))
-        )
-    elif reducer1 == "min":
-        stat_within_polygon = da.nanmin(
-            masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim))
-        )
+    stat_within_polygon = masked_data.reduce(
+        reducer,
+        axis=(data_dims.index(y_dim), data_dims.index(x_dim)),
+        keep_attrs=True,
+        ignore_nodata=True,
+        positional_parameters=positional_parameters,
+    )
+    result = stat_within_polygon.values
 
-    result = stat_within_polygon.compute()
-    del masked_data
+    #     if reducer == 'sum':
+    #         stat_within_polygon = da.nansum(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+    #     elif reducer == 'mean':
+    #         stat_within_polygon = da.nanmean(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+    #     elif reducer == 'median':
+    #         stat_within_polygon = da.median(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+    #     elif reducer == 'max':
+    #         stat_within_polygon = da.nanmax(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+    #     elif reducer == 'min':
+    #         stat_within_polygon = da.nanmin(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
+
+    #     result = stat_within_polygon.compute()
+    del masked_data, stat_within_polygon
     gc.collect()
 
-    # result = stat_within_polygon.values
     return result.T
