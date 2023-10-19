@@ -24,7 +24,7 @@ def test_mask_polygon(
         backend="dask",
     )
 
-    output_cube = mask_polygon(data=input_cube, geometries=polygon_geometry_small)
+    output_cube = mask_polygon(data=input_cube, mask=polygon_geometry_small)
 
     assert np.isnan(output_cube).sum() > np.isnan(input_cube).sum()
     assert len(output_cube.y) == len(input_cube.y)
