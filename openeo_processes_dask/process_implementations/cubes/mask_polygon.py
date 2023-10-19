@@ -1,6 +1,5 @@
 import json
 import logging
-from typing import Any, Union
 
 import dask.array as da
 import geopandas as gpd
@@ -9,12 +8,11 @@ import rasterio
 import rioxarray
 import shapely
 import xarray as xr
-from xarray.core import dtypes
 
-from openeo_processes_dask.process_implementations.data_model import (
-    RasterCube,
-    VectorCube,
-)
+from xarray.core import dtypes
+from typing import Any, Union
+
+from openeo_processes_dask.process_implementations.data_model import RasterCube, VectorCube
 
 DEFAULT_CRS = "EPSG:4326"
 
@@ -26,12 +24,11 @@ __all__ = [
 ]
 
 
-def mask_polygon(
-    data: RasterCube,
-    mask: Union[VectorCube, str],
-    replacement: Any = dtypes.NA,
-    inside: bool = True,
-) -> RasterCube:
+def mask_polygon(data: RasterCube, 
+                 mask: Union[VectorCube, str],
+                 replacement: Any = dtypes.NA,
+                 inside: bool = True,
+                ) -> RasterCube:
     y_dim = data.openeo.y_dim
     x_dim = data.openeo.x_dim
     t_dim = data.openeo.temporal_dims
@@ -48,7 +45,7 @@ def mask_polygon(
 
     y_dim_size = data.sizes[y_dim]
     x_dim_size = data.sizes[x_dim]
-
+    
     #  Reproject vector data to match the raster data cube.
     ## Get the CRS of data cube
     try:
@@ -98,7 +95,7 @@ def mask_polygon(
         dask_out_shape = da.from_array(
             (x_dim_size, y_dim_size),
             chunks={x_dim: data_chunks[x_dim], y_dim: data_chunks[y_dim]},
-        )
+        )        
     else:
         final_mask = da.zeros(
             (y_dim_size, x_dim_size),
@@ -110,6 +107,7 @@ def mask_polygon(
             (y_dim_size, x_dim_size),
             chunks={y_dim: data_chunks[y_dim], x_dim: data_chunks[x_dim]},
         )
+    
 
     # CHECK IF the input single polygon or multiple Polygons
     if "type" in geometries and geometries["type"] == "FeatureCollection":
@@ -148,18 +146,19 @@ def mask_polygon(
         )
         final_mask |= mask
 
+    
     masked_dims = len(final_mask.shape)
 
     diff_axes = []
     for axis in range(len(data_dims)):
         try:
-            if final_mask.shape[axis] != data.shape[axis]:
+            if (final_mask.shape[axis] != data.shape[axis]) and (axis not in diff_axes):
                 diff_axes.append(axis)
         except:
-            if len(diff_axes) < (len(data_dims) - 2):
+            if len(diff_axes) < (len(data_dims)-2): 
                 diff_axes.append(axis)
-
+        
     final_mask = np.expand_dims(final_mask, axis=diff_axes)
-    filtered_ds = data.where(final_mask, other=replacement)
+    filtered_ds = data.where(final_mask, other= replacement)
 
     return filtered_ds
