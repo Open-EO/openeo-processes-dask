@@ -146,12 +146,19 @@ def mask_polygon(data: RasterCube,
         )
         final_mask |= mask
 
-    if t_dim is not None:
-        final_mask = np.expand_dims(final_mask, axis=data_dims.index(t_dim))
-    if b_dim is not None:
-        final_mask = np.expand_dims(final_mask, axis=data_dims.index(b_dim))
-        
+    
+    masked_dims = len(final_mask.shape)
 
+    diff_axes = []
+    for axis in range(len(data_dims)):
+        try:
+            if (final_mask.shape[axis] != data.shape[axis]) and (axis not in diff_axes):
+                diff_axes.append(axis)
+        except:
+            if len(diff_axes) < (len(data_dims)-2): 
+                diff_axes.append(axis)
+        
+    final_mask = np.expand_dims(final_mask, axis=diff_axes)
     filtered_ds = data.where(final_mask, other= replacement)
 
     return filtered_ds
