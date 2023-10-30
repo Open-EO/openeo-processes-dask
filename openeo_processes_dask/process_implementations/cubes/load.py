@@ -36,6 +36,7 @@ __all__ = ["load_stac"]
 
 logger = logging.getLogger(__name__)
 
+pc.settings.set_subscription_key("842a352438e84c89b53450135e2ba06b")
 
 def _validate_stac(url):
     logger.debug(f"Validating the provided STAC url: {url}")

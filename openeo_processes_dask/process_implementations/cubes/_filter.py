@@ -13,9 +13,7 @@ import shapely
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 
-from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
-    mask_polygon,
-)
+from openeo_processes_dask.process_implementations.cubes.mask_polygon import mask_polygon
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     BandFilterParameterMissing,
@@ -120,37 +118,19 @@ def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
 
 
 def filter_spatial(data: RasterCube, geometries) -> RasterCube:
-    y_dim = data.openeo.y_dim
-    x_dim = data.openeo.x_dim
-    t_dim = data.openeo.temporal_dims
-    b_dim = data.openeo.band_dims
-
-    if len(t_dim) == 0:
-        t_dim = None
-    else:
-        t_dim = t_dim[0]
-    if len(b_dim) == 0:
-        b_dim = None
-    else:
-        b_dim = b_dim[0]
-
-    y_dim_size = data.sizes[y_dim]
-    x_dim_size = data.sizes[x_dim]
     if "type" in geometries and geometries["type"] == "FeatureCollection":
         gdf = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
     elif "type" in geometries and geometries["type"] in ["Polygon"]:
         polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
         gdf = gpd.GeoDataFrame(geometry=[polygon])
         gdf.crs = DEFAULT_CRS
-
+        
     bbox = gdf.total_bounds
-    spatial_extent = BoundingBox(
-        west=bbox[0], east=bbox[2], south=bbox[1], north=bbox[3]
-    )
-
+    spatial_extent  = BoundingBox(west=bbox[0],east=bbox[2] ,south=bbox[1] ,north=bbox[3])
+    
     data = filter_bbox(data, spatial_extent)
     data = mask_polygon(data, geometries)
-
+        
     return data
 
 
