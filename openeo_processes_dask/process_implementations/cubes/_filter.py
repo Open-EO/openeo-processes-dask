@@ -13,7 +13,9 @@ import shapely
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 
-from openeo_processes_dask.process_implementations.cubes.mask_polygon import mask_polygon
+from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
+    mask_polygon,
+)
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     BandFilterParameterMissing,
@@ -124,13 +126,15 @@ def filter_spatial(data: RasterCube, geometries) -> RasterCube:
         polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
         gdf = gpd.GeoDataFrame(geometry=[polygon])
         gdf.crs = DEFAULT_CRS
-        
+
     bbox = gdf.total_bounds
-    spatial_extent  = BoundingBox(west=bbox[0],east=bbox[2] ,south=bbox[1] ,north=bbox[3])
-    
+    spatial_extent = BoundingBox(
+        west=bbox[0], east=bbox[2], south=bbox[1], north=bbox[3]
+    )
+
     data = filter_bbox(data, spatial_extent)
     data = mask_polygon(data, geometries)
-        
+
     return data
 
 
