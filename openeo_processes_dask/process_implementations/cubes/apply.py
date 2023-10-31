@@ -104,12 +104,12 @@ def apply_kernel(
             convolved,
             data_masked,
             vectorize=True,
-            dask="allowed",
+            dask="parallelized",
             input_core_dims=[dims],
             output_core_dims=[dims],
             output_dtypes=[data.dtype],
             dask_gufunc_kwargs={"allow_rechunk": True},
-        )
+        ).transpose(*data.dims)
 
     openeo_scipy_modes = {
         "replicate": "nearest",
