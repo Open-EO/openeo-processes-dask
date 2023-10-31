@@ -104,7 +104,7 @@ def apply_kernel(
             convolved,
             data_masked,
             vectorize=True,
-            dask="parallelized",
+            dask="allowed",
             input_core_dims=[dims],
             output_core_dims=[dims],
             output_dtypes=[data.dtype],
