@@ -1,6 +1,7 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 import numpy as np
+import scipy.ndimage
 import xarray as xr
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
@@ -8,7 +9,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
 )
 
-__all__ = ["apply", "apply_dimension"]
+__all__ = ["apply", "apply_dimension", "apply_kernel"]
 
 
 def apply(
@@ -82,3 +83,45 @@ def apply_dimension(
         reordered_result.openeo.add_dim_type(name=target_dimension, type="other")
 
     return reordered_result
+
+
+def apply_kernel(
+    data: RasterCube,
+    kernel: np.ndarray,
+    factor: Optional[float] = 1,
+    border: Union[float, str, None] = 0,
+    replace_invalid: Optional[float] = 0,
+) -> RasterCube:
+    def convolve(data, kernel, mode="constant", cval=0, fill_value=0):
+        dims = ("y", "x")
+        convolved = lambda data: scipy.ndimage.convolve(
+            data, kernel, mode=mode, cval=cval
+        )
+
+        data_masked = data.fillna(fill_value)
+
+        return xr.apply_ufunc(
+            convolved,
+            data_masked,
+            vectorize=True,
+            dask="parallelized",
+            input_core_dims=[dims],
+            output_core_dims=[dims],
+            output_dtypes=[data.dtype],
+            dask_gufunc_kwargs={"allow_rechunk": True},
+        )
+
+    openeo_scipy_modes = {
+        "replicate": "nearest",
+        "reflect": "reflect",
+        "reflect_pixel": "mirror",
+        "wrap": "wrap",
+    }
+    if isinstance(border, int) or isinstance(border, float):
+        mode = "constant"
+        cval = border
+    else:
+        mode = openeo_scipy_modes[border]
+        cval = 0
+
+    return convolve(data, kernel, mode, cval, replace_invalid) * factor
