@@ -42,7 +42,7 @@ def test_add_dimension(temporal_interval, bounding_box, random_raster_data):
     assert output_cube_2.openeo.temporal_dims[1] == "weird"
 
 
-@pytest.mark.parametrize("size", [(30, 30, 20, 2)])
+@pytest.mark.parametrize("size", [(30, 30, 1, 2)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_drop_dimension(temporal_interval, bounding_box, random_raster_data):
     input_cube = create_fake_rastercube(
@@ -63,4 +63,6 @@ def test_drop_dimension(temporal_interval, bounding_box, random_raster_data):
     suitable_cube = input_cube.where(input_cube.bands == "B02", drop=True)
 
     output_cube = drop_dimension(suitable_cube, DIM_TO_DROP)
+    DIMS_TO_KEEP = tuple(filter(lambda y: y != DIM_TO_DROP, input_cube.dims))
     assert DIM_TO_DROP not in output_cube.dims
+    assert DIMS_TO_KEEP == output_cube.dims
