@@ -6,3 +6,4 @@ from .indices import *
 from .load import *
 from .merge import *
 from .reduce import *
+from .mask import *
