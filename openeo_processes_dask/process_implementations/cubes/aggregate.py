@@ -122,6 +122,66 @@ def aggregate_temporal_period(
     )
 
 
+def _aggregate_geometry(
+    data: RasterCube,
+    geom,
+    transform,
+    reducer: Callable,
+):
+    data_dims = list(data.dims)
+    y_dim = data.openeo.y_dim
+    x_dim = data.openeo.x_dim
+    t_dim = data.openeo.temporal_dims
+    b_dim = data.openeo.band_dims
+
+    y_dim_size = data.sizes[y_dim]
+    x_dim_size = data.sizes[x_dim]
+
+    if len(t_dim) == 0:
+        t_dim = None
+    else:
+        t_dim = t_dim[0]
+    if len(b_dim) == 0:
+        b_dim = None
+    else:
+        b_dim = b_dim[0]
+
+    # Create a GeoSeries from the geometry
+    geo_series = gpd.GeoSeries(geom)
+
+    # Convert the GeoSeries to a GeometryArray
+    geometry_array = geo_series.geometry.array
+
+    mask = rasterio.features.geometry_mask(
+        geometry_array, out_shape=(y_dim_size, x_dim_size), transform=transform
+    )
+
+    if t_dim is not None:
+        mask = np.expand_dims(mask, axis=data_dims.index(t_dim))
+    if b_dim is not None:
+        mask = np.expand_dims(mask, axis=data_dims.index(b_dim))
+
+    masked_data = data * mask
+    del mask, data
+    gc.collect()
+
+    positional_parameters = {"data": 0}
+
+    stat_within_polygon = masked_data.reduce(
+        reducer,
+        axis=(data_dims.index(y_dim), data_dims.index(x_dim)),
+        keep_attrs=True,
+        ignore_nodata=True,
+        positional_parameters=positional_parameters,
+    )
+    result = stat_within_polygon.values
+
+    del masked_data, stat_within_polygon
+    gc.collect()
+
+    return result.T
+
+
 def aggregate_spatial(
     data: RasterCube,
     geometries,
@@ -198,75 +258,3 @@ def aggregate_spatial(
     ).xvec.set_geom_indexes("geometry", crs=df.crs)
 
     return vec_cube
-
-
-def _aggregate_geometry(
-    data: RasterCube,
-    geom,
-    transform,
-    reducer: Callable,
-):
-    data_dims = list(data.dims)
-    y_dim = data.openeo.y_dim
-    x_dim = data.openeo.x_dim
-    t_dim = data.openeo.temporal_dims
-    b_dim = data.openeo.band_dims
-
-    y_dim_size = data.sizes[y_dim]
-    x_dim_size = data.sizes[x_dim]
-
-    if len(t_dim) == 0:
-        t_dim = None
-    else:
-        t_dim = t_dim[0]
-    if len(b_dim) == 0:
-        b_dim = None
-    else:
-        b_dim = b_dim[0]
-
-    # Create a GeoSeries from the geometry
-    geo_series = gpd.GeoSeries(geom)
-
-    # Convert the GeoSeries to a GeometryArray
-    geometry_array = geo_series.geometry.array
-
-    mask = rasterio.features.geometry_mask(
-        geometry_array, out_shape=(y_dim_size, x_dim_size), transform=transform
-    )
-
-    if t_dim is not None:
-        mask = np.expand_dims(mask, axis=data_dims.index(t_dim))
-    if b_dim is not None:
-        mask = np.expand_dims(mask, axis=data_dims.index(b_dim))
-
-    masked_data = data * mask
-    del mask, data
-    gc.collect()
-
-    positional_parameters = {"data": 0}
-
-    stat_within_polygon = masked_data.reduce(
-        reducer,
-        axis=(data_dims.index(y_dim), data_dims.index(x_dim)),
-        keep_attrs=True,
-        ignore_nodata=True,
-        positional_parameters=positional_parameters,
-    )
-    result = stat_within_polygon.values
-
-    #     if reducer == 'sum':
-    #         stat_within_polygon = da.nansum(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
-    #     elif reducer == 'mean':
-    #         stat_within_polygon = da.nanmean(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
-    #     elif reducer == 'median':
-    #         stat_within_polygon = da.median(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
-    #     elif reducer == 'max':
-    #         stat_within_polygon = da.nanmax(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
-    #     elif reducer == 'min':
-    #         stat_within_polygon = da.nanmin(masked_data, axis=(data_dims.index(y_dim), data_dims.index(x_dim)))
-
-    #     result = stat_within_polygon.compute()
-    del masked_data, stat_within_polygon
-    gc.collect()
-
-    return result.T
