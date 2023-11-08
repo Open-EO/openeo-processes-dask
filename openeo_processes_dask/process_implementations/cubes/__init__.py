@@ -4,6 +4,7 @@ from .apply import *
 from .general import *
 from .indices import *
 from .load import *
+from .mask_polygon import *
 from .merge import *
 from .reduce import *
 from .mask import *

@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import json
 import logging
 
 import dask_geopandas
@@ -14,6 +15,7 @@ from openeo_pg_parser_networkx.pg_schema import (
     BoundingBox,
     TemporalInterval,
 )
+from shapely.geometry import Polygon
 
 from openeo_processes_dask.process_implementations.core import process
 from openeo_processes_dask.process_implementations.data_model import VectorCube
@@ -66,6 +68,29 @@ def bounding_box_small(
         "crs": crs,
     }
     return BoundingBox.parse_obj(spatial_extent)
+
+
+@pytest.fixture
+def polygon_geometry_small(
+    west=10.47, east=10.48, south=46.12, north=46.18, crs="EPSG:4326"
+):
+    # Bounding box coordinates
+    west, east, south, north = 10.47, 10.48, 46.12, 46.18
+
+    # Create a small polygon
+    geometry = [
+        Polygon(
+            [(west, south), (west, north), (east, north), (east, south), (west, south)]
+        )
+    ]
+
+    # Create a GeoDataFrame with a single polygon and default CRS 'wgs84'
+    gdf = gpd.GeoDataFrame(geometry=geometry, crs=crs)
+
+    geometries = gdf.to_json()
+    geometries = json.loads(geometries)
+
+    return geometries
 
 
 @pytest.fixture
