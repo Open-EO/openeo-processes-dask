@@ -21,7 +21,7 @@ def drop_dimension(data: RasterCube, name: str) -> RasterCube:
         raise DimensionLabelCountMismatch(
             f"The number of dimension labels exceeds one, which requires a reducer. Dimension ({name}) has {len(data[name])} labels."
         )
-    return data.drop_vars(name).squeeze()
+    return data.drop_vars(name).squeeze(name)
 
 
 def create_raster_cube() -> RasterCube:

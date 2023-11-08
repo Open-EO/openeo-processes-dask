@@ -120,22 +120,6 @@ def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
 
 
 def filter_spatial(data: RasterCube, geometries) -> RasterCube:
-    y_dim = data.openeo.y_dim
-    x_dim = data.openeo.x_dim
-    t_dim = data.openeo.temporal_dims
-    b_dim = data.openeo.band_dims
-
-    if len(t_dim) == 0:
-        t_dim = None
-    else:
-        t_dim = t_dim[0]
-    if len(b_dim) == 0:
-        b_dim = None
-    else:
-        b_dim = b_dim[0]
-
-    y_dim_size = data.sizes[y_dim]
-    x_dim_size = data.sizes[x_dim]
     if "type" in geometries and geometries["type"] == "FeatureCollection":
         gdf = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
     elif "type" in geometries and geometries["type"] in ["Polygon"]:

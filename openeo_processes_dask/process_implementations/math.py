@@ -126,21 +126,21 @@ def median(data, ignore_nodata=True, axis=None, keepdims=False):
         return np.median(data, axis=axis, keepdims=keepdims)
 
 
-def mean(data, ignore_nodata=False, axis=None, keepdims=False):
+def mean(data, ignore_nodata=True, axis=None, keepdims=False):
     if ignore_nodata:
         return np.nanmean(data, axis=axis, keepdims=keepdims)
     else:
         return np.mean(data, axis=axis, keepdims=keepdims)
 
 
-def sd(data, ignore_nodata=False, axis=None, keepdims=False):
+def sd(data, ignore_nodata=True, axis=None, keepdims=False):
     if ignore_nodata:
         return np.nanstd(data, axis=axis, ddof=1, keepdims=keepdims)
     else:
         return np.std(data, axis=axis, ddof=1, keepdims=keepdims)
 
 
-def variance(data, ignore_nodata=False, axis=None, keepdims=False):
+def variance(data, ignore_nodata=True, axis=None, keepdims=False):
     if ignore_nodata:
         return np.nanvar(data, axis=axis, ddof=1, keepdims=keepdims)
     else:
