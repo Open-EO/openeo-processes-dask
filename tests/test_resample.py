@@ -4,8 +4,8 @@ from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS
 
 from openeo_processes_dask.process_implementations.cubes.resample import (
-    resample_spatial,
     resample_cube_spatial,
+    resample_spatial,
 )
 from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
@@ -64,6 +64,8 @@ def test_resample_spatial(
 
         assert min(output_cube.y) >= -90
         assert max(output_cube.y) <= 90
+
+
 @pytest.mark.parametrize(
     "output_crs",
     [
@@ -73,7 +75,6 @@ def test_resample_spatial(
         "4326",
     ],
 )
-
 @pytest.mark.parametrize("output_res", [5, 30, 60])
 @pytest.mark.parametrize("size", [(30, 30, 20, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
@@ -105,7 +106,7 @@ def test_resample_cube_spatial(
     general_output_checks(
         input_cube=input_cube,
         output_cube=output_cube,
-        expected_dims = input_cube.dims,
+        expected_dims=input_cube.dims,
         verify_attrs=False,
         verify_crs=False,
     )

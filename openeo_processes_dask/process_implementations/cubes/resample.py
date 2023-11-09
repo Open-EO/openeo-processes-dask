@@ -2,16 +2,19 @@ import logging
 from typing import Optional, Union
 
 import odc.geo.xr
+import rioxarray  # needs to be imported to set .rio accessor on xarray objects.
 from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
-import rioxarray  # needs to be imported to set .rio accessor on xarray objects.
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
-from openeo_processes_dask.process_implementations.exceptions import OpenEOException, DimensionMissing
+from openeo_processes_dask.process_implementations.exceptions import (
+    DimensionMissing,
+    OpenEOException,
+)
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["resample_spatial","resample_cube_spatial"]
+__all__ = ["resample_spatial", "resample_cube_spatial"]
 
 resample_methods_list = [
     "near",
@@ -34,12 +37,14 @@ def resample_spatial(
     projection: Optional[Union[str, int]] = None,
     resolution: int = 0,
     method: str = "near",
-    align = "upper-left",
+    align="upper-left",
 ):
     """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
-    
-    logger.info("resample_spatial: in the current implementation the align parameter is not considered!")
-    
+
+    logger.info(
+        "resample_spatial: in the current implementation the align parameter is not considered!"
+    )
+
     # Assert resampling method is correct.
     if method == "near":
         method = "nearest"
@@ -85,6 +90,7 @@ def resample_spatial(
 
     return reprojected
 
+
 def resample_cube_spatial(
     data: RasterCube, target: RasterCube, method="near", options=None
 ) -> RasterCube:
@@ -103,8 +109,15 @@ def resample_cube_spatial(
         "q3",
     ]
 
-    if data.openeo.y_dim is None or data.openeo.x_dim is None or target.openeo.y_dim is None or target.openeo.x_dim is None:
-        raise DimensionMissing(f"Spatial dimension missing from data or target. Available dimensions for data: {data.dims} for target: {target.dims}")
+    if (
+        data.openeo.y_dim is None
+        or data.openeo.x_dim is None
+        or target.openeo.y_dim is None
+        or target.openeo.x_dim is None
+    ):
+        raise DimensionMissing(
+            f"Spatial dimension missing from data or target. Available dimensions for data: {data.dims} for target: {target.dims}"
+        )
 
     # ODC reproject requires y to be before x
     required_dim_order = (..., data.openeo.y_dim, data.openeo.x_dim)

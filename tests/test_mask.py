@@ -1,15 +1,12 @@
 from functools import partial
+
 import numpy as np
 import pytest
-from openeo_pg_parser_networkx.pg_schema import (
-    TemporalInterval,
-    ParameterReference,
-)
+from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
+
+from openeo_processes_dask.process_implementations.cubes.mask import mask
 from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
     mask_polygon,
-)
-from openeo_processes_dask.process_implementations.cubes.mask import (
-    mask,
 )
 from openeo_processes_dask.process_implementations.cubes.reduce import (
     reduce_dimension,
@@ -39,6 +36,7 @@ def test_mask_polygon(
     assert np.isnan(output_cube).sum() > np.isnan(input_cube).sum()
     assert len(output_cube.y) == len(input_cube.y)
     assert len(output_cube.x) == len(input_cube.x)
+
 
 @pytest.mark.parametrize("size", [(30, 30, 20, 2)])
 @pytest.mark.parametrize("dtype", [np.float32])
@@ -75,14 +73,19 @@ def test_mask(
         output_cube = mask(data=input_cube, mask=mask_cube_no_x)
 
     # Mask should work without bands
-    mask_cube_no_bands = reduce_dimension(data=mask_cube, dimension="bands", reducer=_process)
+    mask_cube_no_bands = reduce_dimension(
+        data=mask_cube, dimension="bands", reducer=_process
+    )
     output_cube = mask(data=input_cube, mask=mask_cube_no_bands)
 
     # Mask should work without time
-    mask_cube_no_time = reduce_dimension(data=mask_cube, dimension="t", reducer=_process)
+    mask_cube_no_time = reduce_dimension(
+        data=mask_cube, dimension="t", reducer=_process
+    )
     output_cube = mask(data=input_cube, mask=mask_cube_no_time)
 
     # Mask should work without time and bands
-    mask_cube_no_time_bands = reduce_dimension(data=mask_cube_no_bands, dimension="t", reducer=_process)
+    mask_cube_no_time_bands = reduce_dimension(
+        data=mask_cube_no_bands, dimension="t", reducer=_process
+    )
     output_cube = mask(data=input_cube, mask=mask_cube_no_time_bands)
-

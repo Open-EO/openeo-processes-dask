@@ -3,8 +3,10 @@ from typing import Callable
 
 import numpy as np
 
+from openeo_processes_dask.process_implementations.cubes.resample import (
+    resample_cube_spatial,
+)
 from openeo_processes_dask.process_implementations.cubes.utils import notnull
-from openeo_processes_dask.process_implementations.cubes.resample import resample_cube_spatial
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionLabelCountMismatch,
@@ -43,7 +45,7 @@ def mask(data: RasterCube, mask: RasterCube, replacement=None) -> RasterCube:
             mask_temporal_labels = mask[n].values
             data_n_labels = len(data_temporal_labels)
             mask_n_labels = len(mask_temporal_labels)
-    
+
             if not data_n_labels == mask_n_labels:
                 raise DimensionLabelCountMismatch(
                     f"data and mask temporal dimensions do no match: data has {data_n_labels} temporal dimensions labels and mask {mask_n_labels}."
@@ -84,32 +86,34 @@ def mask(data: RasterCube, mask: RasterCube, replacement=None) -> RasterCube:
             )
 
     if apply_resample_cube_spatial:
-        logger.info(
-                f"mask is aligned to data using resample_cube_spatial."
-            )
-        mask = resample_cube_spatial(data=mask,target=data)
+        logger.info(f"mask is aligned to data using resample_cube_spatial.")
+        mask = resample_cube_spatial(data=mask, target=data)
 
     original_dim_order = data.dims
     # If bands dimension in data but not in mask, ensure that it comes first and all the other dimensions at the end
-    if (len(data_band_dims) !=0 and len(mask_band_dims) == 0):
-        required_dim_order =  (data_band_dims[0] if len(data_band_dims)>0 else (),
-                               data_temporal_dims[0] if len(data_temporal_dims)>0 else (),
-                               data.openeo.y_dim,
-                               data.openeo.x_dim)
+    if len(data_band_dims) != 0 and len(mask_band_dims) == 0:
+        required_dim_order = (
+            data_band_dims[0] if len(data_band_dims) > 0 else (),
+            data_temporal_dims[0] if len(data_temporal_dims) > 0 else (),
+            data.openeo.y_dim,
+            data.openeo.x_dim,
+        )
         data = data.transpose(*required_dim_order, missing_dims="ignore")
         mask = mask.transpose(*required_dim_order, missing_dims="ignore")
 
-    elif (len(data_temporal_dims) !=0 and len(mask_temporal_dims) == 0):
-        required_dim_order =  (data_temporal_dims[0] if len(data_temporal_dims)>0 else (),
-                               data_band_dims[0] if len(data_band_dims)>0 else (),
-                               data.openeo.y_dim,
-                               data.openeo.x_dim)
+    elif len(data_temporal_dims) != 0 and len(mask_temporal_dims) == 0:
+        required_dim_order = (
+            data_temporal_dims[0] if len(data_temporal_dims) > 0 else (),
+            data_band_dims[0] if len(data_band_dims) > 0 else (),
+            data.openeo.y_dim,
+            data.openeo.x_dim,
+        )
         data = data.transpose(*required_dim_order, missing_dims="ignore")
         mask = mask.transpose(*required_dim_order, missing_dims="ignore")
-    
+
     data = data.where(_not(mask), replacement)
 
-    if len(data_band_dims) !=0 and len(mask_band_dims) ==0:
+    if len(data_band_dims) != 0 and len(mask_band_dims) == 0:
         # Order axes back to how they were before
         data = data.transpose(*original_dim_order)
 
