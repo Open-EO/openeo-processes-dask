@@ -8,3 +8,4 @@ from .mask_polygon import *
 from .merge import *
 from .reduce import *
 from .mask import *
+from .resample import *
