@@ -38,7 +38,7 @@ def resample_spatial(
 ):
     """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
     
-    logger.warning("resample_spatial: in the current implementation the align parameter is not considered!")
+    logger.info("resample_spatial: in the current implementation the align parameter is not considered!")
     
     # Assert resampling method is correct.
     if method == "near":
