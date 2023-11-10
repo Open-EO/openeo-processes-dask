@@ -100,18 +100,17 @@ def merge_cubes(
                 previous_dim_order = list(cube1.dims) + [
                     dim for dim in cube2.dims if dim not in cube1.dims
                 ]
-
+                band_dim1 = cube1.openeo.band_dims[0]
+                band_dim2 = cube2.openeo.band_dims[0]
                 if len(cube1.openeo.band_dims) > 0 or len(cube2.openeo.band_dims) > 0:
                     # Same reordering issue mentioned above
-                    previous_band_order = list(
-                        cube1[cube1.openeo.band_dims[0]].values
-                    ) + [
+                    previous_band_order = list(cube1[band_dim1].values) + [
                         band
                         for band in list(cube2[cube2.openeo.band_dims[0]].values)
-                        if band not in list(cube1[cube1.openeo.band_dims[0]].values)
+                        if band not in list(cube1[band_dim1].values)
                     ]
-                    cube1 = cube1.to_dataset(cube1.openeo.band_dims[0])
-                    cube2 = cube2.to_dataset(cube2.openeo.band_dims[0])
+                    cube1 = cube1.to_dataset(band_dim1)
+                    cube2 = cube2.to_dataset(band_dim2)
 
                 # compat="override" to deal with potentially conflicting coords
                 # see https://github.com/Open-EO/openeo-processes-dask/pull/148 for context
@@ -119,8 +118,8 @@ def merge_cubes(
                     [cube1, cube2], combine_attrs="drop_conflicts", compat="override"
                 )
                 if isinstance(merged_cube, xr.Dataset):
-                    merged_cube = merged_cube.to_array(dim="bands")
-                    merged_cube = merged_cube.reindex({"bands": previous_band_order})
+                    merged_cube = merged_cube.to_array(dim=band_dim1)
+                    merged_cube = merged_cube.reindex({band_dim1: previous_band_order})
 
                 merged_cube = merged_cube.transpose(*previous_dim_order)
 

@@ -1,13 +1,21 @@
+import json
 import logging
 import warnings
 from typing import Callable
 
+import dask.array as da
+import geopandas as gpd
 import numpy as np
 import pyproj
+import rasterio
 import rioxarray
+import shapely
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 
+from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
+    mask_polygon,
+)
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     BandFilterParameterMissing,
@@ -16,9 +24,18 @@ from openeo_processes_dask.process_implementations.exceptions import (
     TooManyDimensions,
 )
 
+DEFAULT_CRS = "EPSG:4326"
+
+
 logger = logging.getLogger(__name__)
 
-__all__ = ["filter_labels", "filter_temporal", "filter_bands", "filter_bbox"]
+__all__ = [
+    "filter_labels",
+    "filter_temporal",
+    "filter_bands",
+    "filter_bbox",
+    "filter_spatial",
+]
 
 
 def filter_temporal(
@@ -99,6 +116,25 @@ def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
         raise Exception(
             f"The provided bands: {bands} are not all available in the datacube. Please modify the bands parameter of filter_bands and choose among: {data[band_dim].values}."
         )
+    return data
+
+
+def filter_spatial(data: RasterCube, geometries) -> RasterCube:
+    if "type" in geometries and geometries["type"] == "FeatureCollection":
+        gdf = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
+    elif "type" in geometries and geometries["type"] in ["Polygon"]:
+        polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
+        gdf = gpd.GeoDataFrame(geometry=[polygon])
+        gdf.crs = DEFAULT_CRS
+
+    bbox = gdf.total_bounds
+    spatial_extent = BoundingBox(
+        west=bbox[0], east=bbox[2], south=bbox[1], north=bbox[3]
+    )
+
+    data = filter_bbox(data, spatial_extent)
+    data = mask_polygon(data, geometries)
+
     return data
 
 

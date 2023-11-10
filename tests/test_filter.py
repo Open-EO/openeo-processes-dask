@@ -10,6 +10,7 @@ from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInte
 from openeo_processes_dask.process_implementations.cubes._filter import (
     filter_bands,
     filter_bbox,
+    filter_spatial,
     filter_temporal,
 )
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
@@ -81,6 +82,28 @@ def test_filter_bands(temporal_interval, bounding_box, random_raster_data):
     output_cube = filter_bands(data=input_cube, bands=["SCL"])
 
     assert output_cube["bands"].values == "SCL"
+
+
+@pytest.mark.parametrize("size", [(30, 30, 30, 1)])
+@pytest.mark.parametrize("dtype", [np.uint8])
+def test_filter_spatial(
+    temporal_interval,
+    bounding_box,
+    random_raster_data,
+    polygon_geometry_small,
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02"],
+        backend="dask",
+    )
+
+    output_cube = filter_spatial(data=input_cube, geometries=polygon_geometry_small)
+
+    assert len(output_cube.y) < len(input_cube.y)
+    assert len(output_cube.x) < len(input_cube.x)
 
 
 @pytest.mark.parametrize("size", [(30, 30, 1, 1)])
