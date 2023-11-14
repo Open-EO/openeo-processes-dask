@@ -5,6 +5,7 @@ import pytest
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 
 from openeo_processes_dask.process_implementations.cubes.aggregate import (
+    aggregate_spatial,
     aggregate_temporal_period,
 )
 from openeo_processes_dask.process_implementations.math import mean
@@ -90,3 +91,32 @@ def test_aggregate_temporal_period_numpy_equals_dask(
     assert_numpy_equals_dask_numpy(
         numpy_cube=numpy_cube, dask_cube=dask_cube, func=func
     )
+
+
+@pytest.mark.parametrize("size", [(30, 30, 30, 3)])
+@pytest.mark.parametrize("dtype", [np.int8])
+def test_aggregate_spatial(
+    random_raster_data,
+    bounding_box,
+    temporal_interval,
+    polygon_geometry_small,
+    process_registry,
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04"],
+        backend="dask",
+    )
+
+    reducer = partial(
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube = aggregate_spatial(
+        data=input_cube, geometries=polygon_geometry_small, reducer=reducer
+    )
+
+    assert len(output_cube.dims) < len(input_cube.dims)

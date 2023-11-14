@@ -9,7 +9,6 @@ import rasterio
 import xarray as xr
 import xvec
 from joblib import Parallel, delayed
-from openeo.internal.graph_building import PGNode
 from openeo_pg_parser_networkx.pg_schema import TemporalInterval, TemporalIntervals
 from tqdm import tqdm
 
@@ -189,6 +188,7 @@ def aggregate_spatial(
     chunk_size: int = 2,
 ) -> VectorCube:
     t_dim = data.openeo.temporal_dims
+    t_dim_name = t_dim[0]
     b_dim = data.openeo.band_dims
 
     if len(t_dim) == 0:
@@ -234,7 +234,7 @@ def aggregate_spatial(
 
     for idx, b in enumerate(data[b_dim].values):
         columns = []
-        for t in range(len(data.time)):
+        for t in range(len(data[t_dim_name])):
             columns.append(f"{b}_time{t+1}")
 
         keys_items[b] = columns
@@ -246,7 +246,7 @@ def aggregate_spatial(
 
     df = gpd.GeoDataFrame(df, geometry=gdf.geometry)
 
-    times = list(data.time.values)
+    times = list(data[t_dim_name].values)
 
     data_vars = {}
     for key in keys_items.keys():
