@@ -1,4 +1,5 @@
 import gc
+import logging
 from typing import Callable, Optional, Union
 
 import dask.array as da
@@ -10,7 +11,6 @@ import xarray as xr
 import xvec
 from joblib import Parallel, delayed
 from openeo_pg_parser_networkx.pg_schema import TemporalInterval, TemporalIntervals
-from tqdm import tqdm
 
 from openeo_processes_dask.process_implementations.data_model import (
     RasterCube,
@@ -25,6 +25,8 @@ DEFAULT_CRS = "EPSG:4326"
 
 
 __all__ = ["aggregate_temporal", "aggregate_temporal_period", "aggregate_spatial"]
+
+logger = logging.getLogger(__name__)
 
 
 def geometry_mask(geoms, geobox, all_touched=False, invert=False):
@@ -215,15 +217,21 @@ def aggregate_spatial(
     ]
 
     computed_results = []
-    for chunk in tqdm(geometry_chunks):
-        # Create a list of delayed objects for the current chunk
-        chunk_results = Parallel(n_jobs=-1)(
-            delayed(_aggregate_geometry)(
-                data, geom, transform=transform, reducer=reducer
+    logger.info(f"Running aggregate_spatial process")
+    try:
+        for i, chunk in enumerate(geometry_chunks):
+            # Create a list of delayed objects for the current chunk
+            chunk_results = Parallel(n_jobs=-1)(
+                delayed(_aggregate_geometry)(
+                    data, geom, transform=transform, reducer=reducer
+                )
+                for geom in chunk
             )
-            for geom in chunk
-        )
-        computed_results.extend(chunk_results)
+            computed_results.extend(chunk_results)
+    except:
+        logger.debug(f"Running process failed at {(i+1) *2} geometry")
+
+    logger.info(f"Finish aggregate_spatial process for {len(geometries)}")
 
     final_results = np.stack(computed_results)
     del chunk_results, geometry_chunks, computed_results
