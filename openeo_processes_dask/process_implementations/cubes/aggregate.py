@@ -133,19 +133,12 @@ def _aggregate_geometry(
     y_dim = data.openeo.y_dim
     x_dim = data.openeo.x_dim
     t_dim = data.openeo.temporal_dims
+    t_dim = None if len(t_dim) == 0 else t_dim[0]
     b_dim = data.openeo.band_dims
-
+    b_dim = None if len(b_dim) == 0 else b_dim[0]
+    
     y_dim_size = data.sizes[y_dim]
     x_dim_size = data.sizes[x_dim]
-
-    if len(t_dim) == 0:
-        t_dim = None
-    else:
-        t_dim = t_dim[0]
-    if len(b_dim) == 0:
-        b_dim = None
-    else:
-        b_dim = b_dim[0]
 
     # Create a GeoSeries from the geometry
     geo_series = gpd.GeoSeries(geom)
@@ -191,17 +184,10 @@ def aggregate_spatial(
 ) -> VectorCube:
     t_dim = data.openeo.temporal_dims
     t_dim_name = t_dim[0]
+    t_dim = None if len(t_dim) == 0 else t_dim[0]
     b_dim = data.openeo.band_dims
-
-    if len(t_dim) == 0:
-        t_dim = None
-    else:
-        t_dim = t_dim[0]
-    if len(b_dim) == 0:
-        b_dim = None
-    else:
-        b_dim = b_dim[0]
-
+    b_dim = None if len(b_dim) == 0 else b_dim[0]
+    
     if "type" in geometries and geometries["type"] == "FeatureCollection":
         gdf = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
     elif "type" in geometries and geometries["type"] in ["Polygon"]:
