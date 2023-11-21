@@ -194,7 +194,7 @@ def aggregate_spatial(
         polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
         gdf = gpd.GeoDataFrame(geometry=[polygon])
         gdf.crs = DEFAULT_CRS
-
+        
     transform = data.rio.transform()
     geometries = gdf.geometry.values
 
