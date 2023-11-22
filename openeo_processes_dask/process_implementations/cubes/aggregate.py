@@ -247,7 +247,7 @@ def aggregate_spatial(
 
     ## Create VectorCube
     vec_cube = xr.Dataset(
-        data_vars=data_vars, coords=dict(geometry=df.geometry, t_dim=times)
+        data_vars=data_vars, coords={"geometry": df.geometry, t_dim: times}
     ).xvec.set_geom_indexes("geometry", crs=df.crs)
 
     return vec_cube
