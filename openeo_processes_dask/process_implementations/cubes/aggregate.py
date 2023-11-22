@@ -191,9 +191,10 @@ def aggregate_spatial(
 ) -> VectorCube:
     t_dim = data.openeo.temporal_dims
     t_dim_name = t_dim[0]
+    
     b_dim = data.openeo.band_dims
-
-    if len(t_dim) == 0:
+    
+    if t_dim_len == 0:
         t_dim = None
     else:
         t_dim = t_dim[0]
