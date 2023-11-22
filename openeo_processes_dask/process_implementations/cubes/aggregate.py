@@ -136,7 +136,7 @@ def _aggregate_geometry(
     t_dim = None if len(t_dim) == 0 else t_dim[0]
     b_dim = data.openeo.band_dims
     b_dim = None if len(b_dim) == 0 else b_dim[0]
-    
+
     y_dim_size = data.sizes[y_dim]
     x_dim_size = data.sizes[x_dim]
 
@@ -183,18 +183,17 @@ def aggregate_spatial(
     chunk_size: int = 2,
 ) -> VectorCube:
     t_dim = data.openeo.temporal_dims
-    t_dim_name = t_dim[0]
     t_dim = None if len(t_dim) == 0 else t_dim[0]
     b_dim = data.openeo.band_dims
     b_dim = None if len(b_dim) == 0 else b_dim[0]
-    
+
     if "type" in geometries and geometries["type"] == "FeatureCollection":
         gdf = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
     elif "type" in geometries and geometries["type"] in ["Polygon"]:
         polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
         gdf = gpd.GeoDataFrame(geometry=[polygon])
         gdf.crs = DEFAULT_CRS
-        
+
     transform = data.rio.transform()
     geometries = gdf.geometry.values
 
@@ -228,7 +227,7 @@ def aggregate_spatial(
 
     for idx, b in enumerate(data[b_dim].values):
         columns = []
-        for t in range(len(data[t_dim_name])):
+        for t in range(len(data[t_dim])):
             columns.append(f"{b}_time{t+1}")
 
         keys_items[b] = columns
@@ -240,7 +239,7 @@ def aggregate_spatial(
 
     df = gpd.GeoDataFrame(df, geometry=gdf.geometry)
 
-    times = list(data[t_dim_name].values)
+    times = list(data[t_dim].values)
 
     data_vars = {}
     for key in keys_items.keys():
@@ -248,7 +247,7 @@ def aggregate_spatial(
 
     ## Create VectorCube
     vec_cube = xr.Dataset(
-        data_vars=data_vars, coords=dict(geometry=df.geometry, time=times)
+        data_vars=data_vars, coords=dict(geometry=df.geometry, t_dim=times)
     ).xvec.set_geom_indexes("geometry", crs=df.crs)
 
     return vec_cube
