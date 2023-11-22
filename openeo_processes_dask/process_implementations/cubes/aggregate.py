@@ -7,6 +7,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rasterio
+import shapely
 import xarray as xr
 import xvec
 from joblib import Parallel, delayed
@@ -227,11 +228,16 @@ def aggregate_spatial(
 
     for idx, b in enumerate(data[b_dim].values):
         columns = []
-        for t in range(len(data[t_dim])):
-            columns.append(f"{b}_time{t+1}")
+        if t_dim:
+            for t in range(len(data[t_dim])):
+                columns.append(f"{b}_time{t+1}")
+            aggregated_data = final_results[:, idx, :]
+        else:
+            columns.append(f"{b}")
+            aggregated_data = final_results[:, idx]
 
         keys_items[b] = columns
-        aggregated_data = final_results[:, idx, :]
+        
         # Create a new DataFrame with the current data and columns
         band_df = pd.DataFrame(aggregated_data, columns=columns)
         # Concatenate the new DataFrame with the existing DataFrame
@@ -239,15 +245,19 @@ def aggregate_spatial(
 
     df = gpd.GeoDataFrame(df, geometry=gdf.geometry)
 
-    times = list(data[t_dim].values)
-
     data_vars = {}
     for key in keys_items.keys():
         data_vars[key] = (["geometry", t_dim], df[keys_items[key]])
 
     ## Create VectorCube
-    vec_cube = xr.Dataset(
-        data_vars=data_vars, coords={"geometry": df.geometry, t_dim: times}
-    ).xvec.set_geom_indexes("geometry", crs=df.crs)
+    if t_dim:
+        times = list(data[t_dim].values)
+        vec_cube = xr.Dataset(
+            data_vars=data_vars, coords={"geometry": df.geometry, t_dim: times}
+        ).xvec.set_geom_indexes("geometry", crs=df.crs)
+    else:
+        vec_cube = xr.Dataset(
+            data_vars=data_vars, coords=dict(geometry=df.geometry)
+        ).xvec.set_geom_indexes("geometry", crs=df.crs)
 
     return vec_cube

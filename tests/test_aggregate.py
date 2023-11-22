@@ -8,6 +8,9 @@ from openeo_processes_dask.process_implementations.cubes.aggregate import (
     aggregate_spatial,
     aggregate_temporal_period,
 )
+from openeo_processes_dask.process_implementations.cubes.reduce import (
+    reduce_dimension,
+)
 from openeo_processes_dask.process_implementations.math import mean
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
@@ -120,3 +123,17 @@ def test_aggregate_spatial(
     )
 
     assert len(output_cube.dims) < len(input_cube.dims)
+
+    _process = partial(
+        process_registry["median"].implementation,
+        ignore_nodata=True,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    reduced_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
+
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=polygon_geometry_small, reducer=reducer
+    )
+
+    assert len(output_cube.dims) < len(reduced_cube.dims)
