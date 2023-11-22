@@ -3,13 +3,13 @@ from functools import partial
 import numpy as np
 import pytest
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
+
 from openeo_processes_dask.process_implementations.cubes.aggregate import (
     aggregate_spatial,
     aggregate_temporal_period,
 )
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from openeo_processes_dask.process_implementations.math import mean
-
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
 
@@ -89,7 +89,9 @@ def test_aggregate_temporal_period_numpy_equals_dask(
     )
 
     func = partial(aggregate_temporal_period, reducer=reducer, period="hour")
-    assert_numpy_equals_dask_numpy(numpy_cube=numpy_cube, dask_cube=dask_cube, func=func)
+    assert_numpy_equals_dask_numpy(
+        numpy_cube=numpy_cube, dask_cube=dask_cube, func=func
+    )
 
 
 @pytest.mark.parametrize("size", [(30, 30, 30, 3)])
