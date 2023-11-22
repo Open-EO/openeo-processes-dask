@@ -7,4 +7,4 @@ import geopandas as gpd
 import xarray as xr
 
 RasterCube = xr.DataArray
-VectorCube = Union[gpd.GeoDataFrame, dask_geopandas.GeoDataFrame]
+VectorCube = Union[gpd.GeoDataFrame, dask_geopandas.GeoDataFrame, xr.Dataset]
