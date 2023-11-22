@@ -12,7 +12,6 @@ import xarray as xr
 import xvec
 from joblib import Parallel, delayed
 from openeo_pg_parser_networkx.pg_schema import TemporalInterval, TemporalIntervals
-
 from openeo_processes_dask.process_implementations.data_model import (
     RasterCube,
     VectorCube,
@@ -237,7 +236,7 @@ def aggregate_spatial(
             aggregated_data = final_results[:, idx]
 
         keys_items[b] = columns
-        
+
         # Create a new DataFrame with the current data and columns
         band_df = pd.DataFrame(aggregated_data, columns=columns)
         # Concatenate the new DataFrame with the existing DataFrame
