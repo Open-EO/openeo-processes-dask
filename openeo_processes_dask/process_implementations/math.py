@@ -256,8 +256,8 @@ def power(base, p):
 
 def extrema(data, ignore_nodata=True, axis=None, keepdims=False):
     # TODO: Could be sped up by only iterating over array once
-    minimum = _min(data, skipna=ignore_nodata, axis=axis, keepdims=keepdims)
-    maximum = _max(data, skipna=ignore_nodata, axis=axis, keepdims=keepdims)
+    minimum = _min(data, ignore_nodata=ignore_nodata, axis=axis, keepdims=keepdims)
+    maximum = _max(data, ignore_nodata=ignore_nodata, axis=axis, keepdims=keepdims)
     array = dask.delayed(np.array)([minimum, maximum])
     return da.from_delayed(array, (2,), dtype=data.dtype)
 
