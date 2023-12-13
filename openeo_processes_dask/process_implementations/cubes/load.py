@@ -8,6 +8,7 @@ from urllib.parse import unquote, urljoin, urlparse
 
 import planetary_computer as pc
 import pyproj
+import pystac
 import pystac_client
 import stackstac
 import xarray as xr
@@ -79,6 +80,22 @@ def _search_for_parent_catalog(url):
         )
     return catalog_url, collection_id
 
+def _get_items_from_static_collection(url):
+    stac_api = pystac_client.stac_api_io.StacApiIO()
+    stac_dict = json.loads(stac_api.read_text(url))
+    collection = stac_api.stac_object_from_dict(stac_dict)
+    
+    items_list = None
+    items = []
+    if "items" in stac_dict:
+        items_list = stac_dict.pop("items")
+    elif "features" in stac_dict:
+        items_list = stac_dict.pop("features")
+    if items_list is None:
+        raise Exception("No Items/Features found in the provided STAC Collection!")
+    items = [pystac.Item.from_dict(it) for it in items_list]
+    return items
+
 
 def load_stac(
     url: str,
@@ -90,10 +107,20 @@ def load_stac(
     asset_type = _validate_stac(url)
 
     if asset_type == "COLLECTION":
-        # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
-        if spatial_extent or temporal_extent or bands or properties:
-            # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
+        # We need to distinguish if we are trying to load from a STAC API or from a static Collection
+        is_static_collection = False
+        try:
             catalog_url, collection_id = _search_for_parent_catalog(url)
+        except Exception as e:
+            is_static_collection = True
+            pass
+
+        # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
+        if is_static_collection:
+            items = _get_items_from_static_collection(url)
+
+        elif spatial_extent or temporal_extent or bands or properties:
+            # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
 
             # Check if we are connecting to Microsoft Planetary Computer, where we need to sign the connection
             modifier = pc.sign_inplace if "planetarycomputer" in catalog_url else None
