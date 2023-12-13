@@ -80,11 +80,12 @@ def _search_for_parent_catalog(url):
         )
     return catalog_url, collection_id
 
+
 def _get_items_from_static_collection(url):
     stac_api = pystac_client.stac_api_io.StacApiIO()
     stac_dict = json.loads(stac_api.read_text(url))
     collection = stac_api.stac_object_from_dict(stac_dict)
-    
+
     items_list = None
     items = []
     if "items" in stac_dict:
