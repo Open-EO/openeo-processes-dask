@@ -280,8 +280,16 @@ def quantiles(
             "The process `quantiles` only allows that either the `probabilities` or the `q` parameter is set."
         )
 
+    # Since processes 2.0.0 q was deprecated in favor of a combined probabilities parameter, cater for this
+    if isinstance(probabilities, int):
+        q = probabilities
+        probabilities = None
+
     if isinstance(probabilities, list):
         probabilities = np.array(probabilities)
+
+    if isinstance(data, list):
+        data = np.array(data)
 
     if q is not None:
         probabilities = np.arange(1.0 / q, 1, 1.0 / q)
