@@ -80,3 +80,7 @@ class RedBandAmbiguous(OpenEOException):
 
 class BandExists(OpenEOException):
     pass
+
+
+class MinMaxSwapped(OpenEOException):
+    pass

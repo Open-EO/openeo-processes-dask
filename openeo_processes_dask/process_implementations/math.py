@@ -7,6 +7,7 @@ from openeo_processes_dask.process_implementations.cubes.utils import (
     _is_dask_array,
 )
 from openeo_processes_dask.process_implementations.exceptions import (
+    MinMaxSwapped,
     OpenEOException,
     QuantilesParameterConflict,
     QuantilesParameterMissing,
@@ -263,6 +264,10 @@ def extrema(data, ignore_nodata=True, axis=None, keepdims=False):
 
 
 def clip(x, min, max):
+    if min > max:
+        raise MinMaxSwapped(
+            "The minimum value should be lower than or equal to the maximum value."
+        )
     # Cannot use positional arguments to pass min and max into np.clip, this will not work with dask.
     return np.clip(x, min, max)
 
