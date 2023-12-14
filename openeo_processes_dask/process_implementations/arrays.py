@@ -191,6 +191,8 @@ def first(
     ignore_nodata: Optional[bool] = True,
     axis: Optional[str] = None,
 ):
+    if isinstance(data, list):
+        data = np.asarray(data)
     if len(data) == 0:
         return np.nan
     if axis is None:
