@@ -25,6 +25,7 @@ __all__ = [
     "array_create",
     "array_modify",
     "array_concat",
+    "array_append",
     "array_contains",
     "array_find",
     "array_labels",
@@ -124,6 +125,16 @@ def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
         )
 
     return concat
+
+
+def array_append(data: ArrayLike, value: Any, label: Optional[Any] = None) -> ArrayLike:
+    if label is not None:
+        raise NotImplementedError("labelled arrays are currently not implemented.")
+
+    if not isinstance(value, np.ndarray):
+        value = [value]
+
+    return array_concat(data, value)
 
 
 def array_contains(data: ArrayLike, value: Any, axis=None) -> bool:
