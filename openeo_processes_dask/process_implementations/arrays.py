@@ -172,6 +172,9 @@ def array_find(
     else:
         masked_idxs = np.atleast_1d(np.ma.masked_array(idxs, mask=mask))
 
+    if reverse:
+        masked_idxs = data.size - 1 - idxs
+
     return masked_idxs
 
 
