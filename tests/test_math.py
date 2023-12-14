@@ -38,6 +38,14 @@ def test_sum():
     assert np.isnan(_sum([1, np.nan], ignore_nodata=False))
 
 
+def test_e():
+    assert e() == pytest.approx(2.71828182846)
+
+
+def test_pi():
+    assert pi() == pytest.approx(3.14159265359)
+
+
 @pytest.mark.parametrize(
     "array,expected,ignore_nodata,axis",
     [
