@@ -255,6 +255,8 @@ def power(base, p):
 
 
 def extrema(data, ignore_nodata=True, axis=None, keepdims=False):
+    if isinstance(data, list):
+        data = np.array(data)
     # TODO: Could be sped up by only iterating over array once
     minimum = _min(data, ignore_nodata=ignore_nodata, axis=axis, keepdims=keepdims)
     maximum = _max(data, ignore_nodata=ignore_nodata, axis=axis, keepdims=keepdims)
