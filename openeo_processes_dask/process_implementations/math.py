@@ -228,7 +228,10 @@ def arctan2(y, x):
 
 
 def linear_scale_range(x, inputMin, inputMax, outputMin=0.0, outputMax=1.0):
-    x = clip(x, inputMin, inputMax)
+    if inputMax < inputMin:
+        x = clip(x, inputMax, inputMin)
+    else:
+        x = clip(x, inputMin, inputMax)
     lsr = ((x - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin
     return lsr
 
