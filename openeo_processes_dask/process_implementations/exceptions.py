@@ -80,3 +80,11 @@ class RedBandAmbiguous(OpenEOException):
 
 class BandExists(OpenEOException):
     pass
+
+
+class DimensionMismatch(OpenEOException):
+    pass
+
+
+class LabelMismatch(OpenEOException):
+    pass
