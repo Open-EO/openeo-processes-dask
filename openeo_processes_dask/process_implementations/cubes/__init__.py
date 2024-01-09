@@ -9,3 +9,4 @@ from .mask_polygon import *
 from .merge import *
 from .reduce import *
 from .resample import *
+from .apply_neighborhood import *
