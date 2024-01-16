@@ -7,7 +7,7 @@ import xarray as xr
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
-    KernelDimensionsUneven 
+    KernelDimensionsUneven,
 )
 
 __all__ = ["apply", "apply_dimension", "apply_kernel"]
@@ -99,7 +99,7 @@ def apply_kernel(
         raise KernelDimensionsUneven(
             "Each dimension of the kernel must have an uneven number of elements."
         )
-        
+
     def convolve(data, kernel, mode="constant", cval=0, fill_value=0):
         dims = ("y", "x")
         convolved = lambda data: scipy.ndimage.convolve(
