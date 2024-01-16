@@ -88,3 +88,6 @@ class DimensionMismatch(OpenEOException):
 
 class LabelMismatch(OpenEOException):
     pass
+
+class KernelDimensionsUneven(OpenEOException):
+    pass
