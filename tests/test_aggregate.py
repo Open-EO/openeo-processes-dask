@@ -111,7 +111,10 @@ def test_aggregate_spatial(
         backend="dask",
     )
 
-    reducer = "mean"
+    reducer = partial(
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
 
     output_cube = aggregate_spatial(
         data=input_cube, geometries=polygon_geometry_small, reducer=reducer
