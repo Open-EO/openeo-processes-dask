@@ -127,7 +127,7 @@ def aggregate_temporal_period(
 def aggregate_spatial(
     data: RasterCube,
     geometries,
-    reducer: str,
+    reducer: Callable,
     chunk_size: int = 2,
 ) -> VectorCube:
     x_dim = data.openeo.x_dim
@@ -142,7 +142,13 @@ def aggregate_spatial(
 
     geometries = gdf.geometry.values
 
+    positional_parameters = {"data": 0}
     vec_cube = data.xvec.zonal_stats(
-        geometries, x_coords=x_dim, y_coords=y_dim, method="iterate", stats=reducer
+        geometries,
+        x_coords=x_dim,
+        y_coords=y_dim,
+        method="iterate",
+        stats=reducer,
+        positional_parameters=positional_parameters,
     )
     return vec_cube
