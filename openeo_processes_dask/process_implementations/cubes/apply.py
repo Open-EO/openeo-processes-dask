@@ -78,8 +78,10 @@ def apply_dimension(
         {dimension: target_dimension}
     )
 
-    if len(data[dimension]) == len(reordered_result[target_dimension]):
-        reordered_result.rio.write_crs(data.rio.crs, inplace=True)
+    if len(reordered_result[dimension]) == 1:
+        reordered_result[dimension] = ["0"]
+
+    reordered_result.rio.write_crs(data.rio.crs, inplace=True)
 
     if is_new_dim_added:
         reordered_result.openeo.add_dim_type(name=target_dimension, type="other")
