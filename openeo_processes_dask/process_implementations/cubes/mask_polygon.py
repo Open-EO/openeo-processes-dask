@@ -88,7 +88,7 @@ def mask_polygon(
     for i, d in enumerate(data_dims):
         data_chunks[d] = chunks_shapes[i][0]
 
-    if data_dims.index(x_dim[0]) < data_dims.index(y_dim[0]):
+    if data_dims.index(x_dim) < data_dims.index(y_dim):
         final_mask = da.zeros(
             (x_dim_size, y_dim_size),
             chunks={x_dim: data_chunks[x_dim], y_dim: data_chunks[y_dim]},
