@@ -1,7 +1,7 @@
 from functools import partial
 
-import numpy as np
 import geopandas as gpd
+import numpy as np
 import pytest
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 
@@ -140,6 +140,10 @@ def test_aggregate_spatial(
     gdf = gpd.GeoDataFrame.from_features(polygon_geometry_small, crs="EPSG:4326")
     xmin, ymin, xmax, ymax = gdf.total_bounds
 
-    expected_values = reduced_cube.sel(x=slice(xmin, xmax), y=slice(ymin, ymax)).mean(["x", "y"]).values
+    expected_values = (
+        reduced_cube.sel(x=slice(xmin, xmax), y=slice(ymin, ymax))
+        .mean(["x", "y"])
+        .values
+    )
 
     assert (output_cube.values == expected_values).all()

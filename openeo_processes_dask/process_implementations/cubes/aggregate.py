@@ -22,7 +22,6 @@ from openeo_processes_dask.process_implementations.exceptions import (
     TooManyDimensions,
 )
 
-
 __all__ = ["aggregate_temporal", "aggregate_temporal_period", "aggregate_spatial"]
 
 logger = logging.getLogger(__name__)
@@ -132,13 +131,13 @@ def aggregate_spatial(
     if isinstance(geometries, dict):
         # Get crs from geometries
         if "features" in geometries:
-            for feature in geometries['features']:
-                if 'properties' not in feature:
-                    feature['properties'] = {}
-                elif feature['properties'] is None:
-                    feature['properties'] = {}
+            for feature in geometries["features"]:
+                if "properties" not in feature:
+                    feature["properties"] = {}
+                elif feature["properties"] is None:
+                    feature["properties"] = {}
             DEFAULT_CRS = (
-                geometries.get('crs', {}).get("properties", {}).get("name", DEFAULT_CRS)
+                geometries.get("crs", {}).get("properties", {}).get("name", DEFAULT_CRS)
             )
         if "type" in geometries and geometries["type"] == "FeatureCollection":
             gdf = gpd.GeoDataFrame.from_features(geometries, crs=DEFAULT_CRS)
