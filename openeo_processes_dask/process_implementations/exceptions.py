@@ -92,3 +92,7 @@ class LabelMismatch(OpenEOException):
 
 class KernelDimensionsUneven(OpenEOException):
     pass
+
+
+class MinMaxSwapped(OpenEOException):
+    pass
