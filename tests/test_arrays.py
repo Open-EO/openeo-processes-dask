@@ -147,7 +147,7 @@ def test_array_concat(array1, array2, expected):
 def test_array_append(data, value, expected):
     np.testing.assert_array_equal(array_append(data, value), expected, strict=True)
     np.testing.assert_array_equal(
-        array_append(np.array(data), np.array(value)), expected, strict=True
+        array_append(np.array(data), np.array([value])), expected, strict=True
     )
     dask_result = array_append(
         da.from_array(np.array(data)), da.from_array(np.array([value]))
