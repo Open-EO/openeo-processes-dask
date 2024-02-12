@@ -86,3 +86,14 @@ def test_clip():
     result_dask = clip(dask_array, min=0, max=2)
     assert np.array_equal(result_np, result_dask.compute(), equal_nan=True)
     assert np.array_equal(result_np, np.array([2, 0]))
+
+
+def test_extrema():
+    array_list = [0,5,10]
+    result_np = np.array([0,10])
+
+    result = extrema(array_list)
+    assert np.array_equal(result_np, result.compute())
+    dask_array = da.from_array(np.array(array_list))
+    result = extrema(dask_array, ignore_nodata=True, axis=0, keepdims=False)
+    assert np.array_equal(result_np, result.compute())
