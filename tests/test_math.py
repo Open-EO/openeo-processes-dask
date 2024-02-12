@@ -78,6 +78,16 @@ def test_normalized_difference(x, y, expected):
     assert np.array_equal(result_np, result_dask.compute(), equal_nan=True)
 
 
+def test_linear_scale_range():
+    array = np.array([5, 0])
+
+    dask_array = da.from_array(array)
+    result_dask = linear_scale_range(dask_array, inputMin=0, inputMax=5)
+    assert np.array_equal(np.array([1, 0]), result_dask.compute(), equal_nan=True)
+    result_dask = linear_scale_range(dask_array, inputMin=5, inputMax=0)
+    assert np.array_equal(np.array([0, 1]), result_dask.compute(), equal_nan=True)
+
+
 def test_clip():
     array = np.array([5, 0])
     result_np = clip(array, min=0, max=2)
