@@ -131,7 +131,11 @@ def array_append(data: ArrayLike, value: Any, label: Optional[Any] = None) -> Ar
     if label is not None:
         raise NotImplementedError("labelled arrays are currently not implemented.")
 
-    if not isinstance(value, list) and not isinstance(value, np.ndarray):
+    if (
+        not isinstance(value, list) 
+        and not isinstance(value, np.ndarray) 
+        and not isinstance(value, da.core.Array)
+    ):
         value = [value]
 
     return array_concat(data, value)
