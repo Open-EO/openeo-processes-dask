@@ -154,3 +154,13 @@ def test_aggregate_spatial(
     )
 
     assert len(output_cube.geometry) == 38
+
+    geometry = {
+        "type": "Polygon",
+        "coordinates": [[[0,0], [0,1], [1,1], [1,0]]]
+        }
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=geometry, reducer=reducer
+    )
+
+    assert np.isnan(output_cube.values).all()
