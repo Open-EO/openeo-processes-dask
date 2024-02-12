@@ -82,5 +82,17 @@ class BandExists(OpenEOException):
     pass
 
 
+class DimensionMismatch(OpenEOException):
+    pass
+
+
+class LabelMismatch(OpenEOException):
+    pass
+
+
+class KernelDimensionsUneven(OpenEOException):
+    pass
+
+
 class MinMaxSwapped(OpenEOException):
     pass
