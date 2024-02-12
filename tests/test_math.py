@@ -89,8 +89,8 @@ def test_clip():
 
 
 def test_extrema():
-    array_list = [0,5,10]
-    result_np = np.array([0,10])
+    array_list = [0, 5, 10]
+    result_np = np.array([0, 10])
 
     result = extrema(array_list)
     assert np.array_equal(result_np, result.compute())
