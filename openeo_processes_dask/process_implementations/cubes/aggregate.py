@@ -22,22 +22,10 @@ from openeo_processes_dask.process_implementations.exceptions import (
     TooManyDimensions,
 )
 
-DEFAULT_CRS = "EPSG:4326"
-
 
 __all__ = ["aggregate_temporal", "aggregate_temporal_period", "aggregate_spatial"]
 
 logger = logging.getLogger(__name__)
-
-
-def geometry_mask(geoms, geobox, all_touched=False, invert=False):
-    return rasterio.features.geometry_mask(
-        [geom.to_crs(geobox.crs) for geom in geoms],
-        out_shape=geobox.shape,
-        transform=geobox.affine,
-        all_touched=all_touched,
-        invert=invert,
-    )
 
 
 def aggregate_temporal(
@@ -132,13 +120,32 @@ def aggregate_spatial(
 ) -> VectorCube:
     x_dim = data.openeo.x_dim
     y_dim = data.openeo.y_dim
+    DEFAULT_CRS = "EPSG:4326"
 
-    if "type" in geometries and geometries["type"] == "FeatureCollection":
-        gdf = gpd.GeoDataFrame.from_features(geometries, DEFAULT_CRS)
-    elif "type" in geometries and geometries["type"] in ["Polygon"]:
-        polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
-        gdf = gpd.GeoDataFrame(geometry=[polygon])
-        gdf.crs = DEFAULT_CRS
+    if isinstance(geometries, str):
+        # Allow importing geometries from url (e.g. github raw)
+        import json
+        from urllib.request import urlopen
+
+        response = urlopen(geometries)
+        geometries = json.loads(response.read())
+    if isinstance(geometries, dict):
+        # Get crs from geometries
+        if "features" in geometries:
+            for feature in geometries['features']:
+                if 'properties' not in feature:
+                    feature['properties'] = {}
+                elif feature['properties'] is None:
+                    feature['properties'] = {}
+            DEFAULT_CRS = (
+                geometries.get('crs', {}).get("properties", {}).get("name", DEFAULT_CRS)
+            )
+        if "type" in geometries and geometries["type"] == "FeatureCollection":
+            gdf = gpd.GeoDataFrame.from_features(geometries, crs=DEFAULT_CRS)
+        elif "type" in geometries and geometries["type"] in ["Polygon"]:
+            polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
+            gdf = gpd.GeoDataFrame(geometry=[polygon])
+            gdf.crs = DEFAULT_CRS
 
     geometries = gdf.geometry.values
 
