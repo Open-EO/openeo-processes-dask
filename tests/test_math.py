@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from openeo_processes_dask.process_implementations.math import *
+from openeo_processes_dask.process_implementations.exceptions import MinMaxSwapped
 
 
 def test_quantiles():
@@ -86,3 +87,5 @@ def test_clip():
     result_dask = clip(dask_array, min=0, max=2)
     assert np.array_equal(result_np, result_dask.compute(), equal_nan=True)
     assert np.array_equal(result_np, np.array([2, 0]))
+    with pytest.raises(MinMaxSwapped):
+        clip(dask_array, 10, 0)
