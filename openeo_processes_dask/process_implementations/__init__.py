@@ -7,6 +7,7 @@ from .comparison import *
 from .cubes import *
 from .logic import *
 from .math import *
+from .udf import *
 
 try:
     from .ml import *
