@@ -7,6 +7,7 @@ from openeo_processes_dask.process_implementations.cubes.utils import (
     _is_dask_array,
 )
 from openeo_processes_dask.process_implementations.exceptions import (
+    MinMaxSwapped,
     OpenEOException,
     QuantilesParameterConflict,
     QuantilesParameterMissing,
@@ -228,7 +229,10 @@ def arctan2(y, x):
 
 
 def linear_scale_range(x, inputMin, inputMax, outputMin=0.0, outputMax=1.0):
-    x = clip(x, inputMin, inputMax)
+    if inputMax < inputMin:
+        x = clip(x, inputMax, inputMin)
+    else:
+        x = clip(x, inputMin, inputMax)
     lsr = ((x - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin
     return lsr
 
@@ -255,14 +259,20 @@ def power(base, p):
 
 
 def extrema(data, ignore_nodata=True, axis=None, keepdims=False):
+    if isinstance(data, list):
+        data = np.array(data)
     # TODO: Could be sped up by only iterating over array once
-    minimum = _min(data, skipna=ignore_nodata, axis=axis, keepdims=keepdims)
-    maximum = _max(data, skipna=ignore_nodata, axis=axis, keepdims=keepdims)
+    minimum = _min(data, ignore_nodata=ignore_nodata, axis=axis, keepdims=keepdims)
+    maximum = _max(data, ignore_nodata=ignore_nodata, axis=axis, keepdims=keepdims)
     array = dask.delayed(np.array)([minimum, maximum])
     return da.from_delayed(array, (2,), dtype=data.dtype)
 
 
 def clip(x, min, max):
+    if min > max:
+        raise MinMaxSwapped(
+            "The minimum value should be lower than or equal to the maximum value."
+        )
     # Cannot use positional arguments to pass min and max into np.clip, this will not work with dask.
     return np.clip(x, min, max)
 
