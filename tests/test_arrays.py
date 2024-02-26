@@ -158,6 +158,24 @@ def test_array_concat(array1, array2, expected):
 @pytest.mark.parametrize(
     "data, value, expected",
     [
+        ([2, 3], 4, [2, 3, 4]),
+        (["a", "b"], 1, ["a", "b", 1]),
+    ],
+)
+def test_array_append(data, value, expected):
+    np.testing.assert_array_equal(array_append(data, value), expected, strict=True)
+    np.testing.assert_array_equal(
+        array_append(np.array(data), np.array([value])), expected, strict=True
+    )
+    dask_result = array_append(
+        da.from_array(np.array(data)), da.from_array(np.array([value]))
+    )
+    np.testing.assert_array_equal(dask_result, np.array(expected), strict=True)
+
+
+@pytest.mark.parametrize(
+    "data, value, expected",
+    [
         ([1, 2, 3], 2, True),
         (["A", "B", "C"], "b", False),
         ([1, 2, 3], "2", False),

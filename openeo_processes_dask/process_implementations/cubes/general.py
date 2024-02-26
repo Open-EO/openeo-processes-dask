@@ -1,6 +1,8 @@
 from typing import Optional
 
+import numpy as np
 import xarray as xr
+from numpy.typing import ArrayLike
 from openeo_pg_parser_networkx.pg_schema import *
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
@@ -21,19 +23,24 @@ def drop_dimension(data: RasterCube, name: str) -> RasterCube:
         raise DimensionLabelCountMismatch(
             f"The number of dimension labels exceeds one, which requires a reducer. Dimension ({name}) has {len(data[name])} labels."
         )
-    return data.drop_vars(name).squeeze()
+    return data.drop_vars(name).squeeze(name)
 
 
 def create_raster_cube() -> RasterCube:
     return xr.DataArray()
 
 
-def dimension_labels(data: RasterCube, dimension: str) -> RasterCube:
+def dimension_labels(data: RasterCube, dimension: str) -> ArrayLike:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
-    return data.coords[dimension]
+
+    coords = data.coords[dimension]
+    if np.issubdtype(coords.dtype, np.datetime64):
+        return np.datetime_as_string(coords, timezone="UTC")
+    else:
+        return np.array(data.coords[dimension])
 
 
 def add_dimension(

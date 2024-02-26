@@ -81,10 +81,11 @@ def process(f):
                 resolved_kwargs.pop(arg, None)
 
         pretty_args = {k: repr(v)[:80] for k, v in resolved_kwargs.items()}
-        logger.info(f"Running process {f.__name__}")
-        logger.debug(
-            f"Running process {f.__name__} with resolved parameters: {pretty_args}"
-        )
+        if hasattr(f, "__name__"):
+            logger.info(f"Running process {f.__name__}")
+            logger.debug(
+                f"Running process {f.__name__} with resolved parameters: {pretty_args}"
+            )
 
         return f(*resolved_args, **resolved_kwargs)
 
