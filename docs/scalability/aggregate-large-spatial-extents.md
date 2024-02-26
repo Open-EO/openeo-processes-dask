@@ -48,13 +48,16 @@ def aggregate_spatial(
     geometries,
     reducer):
 
-    geometries = group_geometries(geometries)
+    vector_cube = []
+    groups = group_geometries(geometries)
 
-    for geometry in geometries: 
-        small_data = load_collection(geometry)
+    for group in groups:
+        small_data = load_collection(group.bounds)
         small_data = apply_processes(small_data)
-        polygon_data = aggregate(small_data, reducer)
-        vector_cube.append(polygon_data)
+
+        for geometry in group: 
+            polygon_data = aggregate(small_data, geometry, reducer)
+            vector_cube.append(polygon_data)
     
     return vector_cube
 ``` 
