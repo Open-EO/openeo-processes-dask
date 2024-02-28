@@ -48,6 +48,24 @@ def test_array_element(
 
     xr.testing.assert_equal(output_cube, input_cube.isel({"bands": 1}, drop=True))
 
+    # Use a label
+    _process = partial(
+        process_registry["array_element"].implementation,
+        label="B02",
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+
+    xr.testing.assert_equal(output_cube, input_cube.loc[{"bands": "B02"}].drop("bands"))
+
     # When the index is out of range, we expect an ArrayElementNotAvailable exception to be thrown
     _process_not_available = partial(
         process_registry["array_element"].implementation,

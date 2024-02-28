@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike
+from openeo_pg_parser_networkx.pg_schema import DateTime
 from xarray.core.duck_array_ops import isnull, notnull
 
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
@@ -43,6 +44,8 @@ def array_element(
     label: Optional[str] = None,
     return_nodata: Optional[bool] = False,
     axis=None,
+    context=None,
+    dim_labels=None,
 ):
     if index is None and label is None:
         raise ArrayElementParameterMissing(
@@ -55,14 +58,20 @@ def array_element(
         )
 
     if label is not None:
-        raise NotImplementedError(
-            "labelled arrays are currently not implemented. Please use index instead."
-        )
+        if isinstance(label, DateTime):
+            label = label.to_numpy()
+        (index,) = np.where(dim_labels == label)
+        if len(index) == 0:
+            index = None
+        else:
+            index = index[0]
 
     try:
         if index is not None:
             element = np.take(data, index, axis=axis)
             return element
+        else:
+            raise IndexError
     except IndexError:
         if return_nodata:
             logger.warning(
