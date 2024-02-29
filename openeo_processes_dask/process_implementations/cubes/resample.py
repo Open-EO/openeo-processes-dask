@@ -75,11 +75,11 @@ def resample_spatial(
         how=projection, resolution=resolution, resampling=method
     )
 
-    if "longitude" in reprojected.dims and "x" in data.dims:
-        reprojected = reprojected.rename({"longitude": "x"})
+    if reprojected.openeo.x_dim != data.openeo.x_dim:
+        reprojected = reprojected.rename({reprojected.openeo.x_dim: data.openeo.x_dim})
 
-    if "latitude" in reprojected.dims and "y" in data.dims:
-        reprojected = reprojected.rename({"latitude": "y"})
+    if reprojected.openeo.y_dim != data.openeo.y_dim:
+        reprojected = reprojected.rename({reprojected.openeo.y_dim: data.openeo.y_dim})
 
     reprojected.attrs["crs"] = data_cp.rio.crs
 
