@@ -107,7 +107,7 @@ def apply_kernel(
         )
 
     def convolve(data, kernel, mode="constant", cval=0, fill_value=0):
-        dims = ("y", "x")
+        dims = data.openeo.spatial_dims
         convolved = lambda data: scipy.ndimage.convolve(
             data, kernel, mode=mode, cval=cval
         )
