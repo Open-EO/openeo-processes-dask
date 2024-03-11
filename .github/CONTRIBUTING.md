@@ -11,9 +11,9 @@ On this page, we will guide you through the contribution workflow from opening a
 
 ### Getting started
 
-To get an overview of the project, read the [README](../README.md) file. The process implementations are based on the openEO [specification](https://processes.openeo.org/). The aim of this project is, to offer implementations for all listed processes based on the [xarray](https://github.com/pydata/xarray)/[dask](https://github.com/dask/dask) ecosystem. 
+To get an overview of the project, read the [README](../README.md) file. The process implementations are based on the openEO [specification](https://processes.openeo.org/). The aim of this project is, to offer implementations for all listed processes based on the [xarray](https://github.com/pydata/xarray)/[dask](https://github.com/dask/dask) ecosystem.
 
-To get a general introduction to openEO, see:  
+To get a general introduction to openEO, see:
 - [openEO docs](https://docs.openeo.cloud/)
 - [openEO API](https://api.openeo.org/)
 - [openEO registration](https://docs.openeo.cloud/join/free_trial.html#connect-with-egi-check-in)
@@ -28,7 +28,7 @@ Reporting bugs is an important part of improving the project. If you find any un
 
 #### Create a bug report
 
-A bug report should always contain python code, to recreate the behaviour. This can be formatted nicely using ` ```python ... ``` `. Add an explaination on which parts are unexpected. If the issue is related to a certain process, also have a look at the process specification, to check, what kind of results should be produced, which parameters are required, which error messages should be raised, etc. 
+A bug report should always contain python code, to recreate the behaviour. This can be formatted nicely using ` ```python ... ``` `. Add an explaination on which parts are unexpected. If the issue is related to a certain process, also have a look at the process specification, to check, what kind of results should be produced, which parameters are required, which error messages should be raised, etc.
 
 #### Solve an issue
 
@@ -43,8 +43,8 @@ To make changes to the code, you will need a free [github](https://github.com/) 
 #### Make changes locally
 
 1. Create an account and log in to [github](https://github.com/).
-2. Fork the repository. Go to the [project](https://github.com/Open-EO/openeo-processes-dask) and click the `Fork` button on the top of the page. 
-3. Clone the fork of the repository to your local machine. 
+2. Fork the repository. Go to the [project](https://github.com/Open-EO/openeo-processes-dask) and click the `Fork` button on the top of the page.
+3. Clone the fork of the repository to your local machine.
 ```
 git clone https://github.com/<YOUR USER NAME>/openeo-processes-dask.git
 cd openeo-processes-dask
@@ -52,27 +52,27 @@ cd openeo-processes-dask
 4. Set up the development environment using the instructions in the [README](../README.md).
 ```
 poetry install --all-extras
-``` 
+```
 5. Create a new branch
 ```
-git checkout -b new-branch-name 
+git checkout -b new-branch-name
 ```
 
-Once this is set up, you can start making code changes. 
+Once this is set up, you can start making code changes.
 
 ### Commit your update
 
-You can check, which files contain changes using `git status`. 
+You can check, which files contain changes using `git status`.
 
-Before you commit your changes, make sure your tests run through and update the tests if required. It is recommended to cover all your changes in the tests. Once you submit your changes, github will automatically check, if the new lines of code are covered in the tests. 
+Before you commit your changes, make sure your tests run through and update the tests if required. It is recommended to cover all your changes in the tests. Once you submit your changes, github will automatically check, if the new lines of code are covered in the tests.
 
-If you made complex changes, it is helpful to also include comments next to your code, in order to document the changes for reviewers and other contributors. 
+If you made complex changes, it is helpful to also include comments next to your code, in order to document the changes for reviewers and other contributors.
 
 We are using pre-commit hooks, to stick to a nice structure and formatting. See [pre-commit](https://pre-commit.com/) and [git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
 
 Once your changes are ready, you can commit and push them to github.
 1. To commit all modified files into the local copy of your repo, do `git commit -am 'A commit message'`.
-2. To push the changes up to your forked repo on GitHub, do a `git push`. 
+2. To push the changes up to your forked repo on GitHub, do a `git push`.
 
 ### Pull Request
 
@@ -87,15 +87,15 @@ You can directly comment in the PR if you want the reviewer to pay particular at
 
 ## New releases
 
-Once the reviewer(s) approve the PR and there are no more changes requested, the PR will be merged into the main branch. A new release will then be created based on the main branch. 
+Once the reviewer(s) approve the PR and there are no more changes requested, the PR will be merged into the main branch. A new release will then be created based on the main branch.
 
 There will be a new release at least every two weeks. (In case, there were no new changes at all, the release might be skipped.)
 
 If important changes are added - such as bug fixes and additional processes - new releases might be made in between.
 
-Small changes - such as new comments, updated documentation - will be included in the bi-weekly releases. 
+Small changes - such as new comments, updated documentation - will be included in the bi-weekly releases.
 
-## Adding new processes 
+## Adding new processes
 
 If you only want to update implementation details in a process, the specification should remain as it is and you do not need to update the submodule.
 
@@ -104,13 +104,13 @@ If you want to add a new process or update the parameters of the process, you wi
 The specifications come from a fork of the official openeo-processes: https://github.com/eodcgmbh/openeo-processes
 
 To add a new process:
-- add the specification to https://github.com/eodcgmbh/openeo-processes 
+- add the specification to https://github.com/eodcgmbh/openeo-processes
 - update the submodule in openeo-processes-dask
 - add the implementation in openeo-processes-dask
 - cover the new implementation in the tests
 - update the dependencies, if you need to introduce a new package. `poetry add ...`.
 
-The specifications can then be used to create a process registry, e.g. https://github.com/Open-EO/openeo-pg-parser-networkx/blob/main/examples/01_minibackend_demo.ipynb 
+The specifications can then be used to create a process registry, e.g. https://github.com/Open-EO/openeo-pg-parser-networkx/blob/main/examples/01_minibackend_demo.ipynb
 ```
 from openeo_processes_dask.specs import load_collection as load_collection_spec
 process_registry["load_collection"] = Process(spec=load_collection_spec, implementation=load_collection)
@@ -119,7 +119,7 @@ process_registry["load_collection"] = Process(spec=load_collection_spec, impleme
 ## Prior to submitting a PR - a checklist
 
 - Add comments and documentation for your code
-- Make sure your tests still run through and add additional tests. 
+- Make sure your tests still run through and add additional tests.
 - Format your code nicely - run `poetry run pre-commit install` and `pre-commit run --all-files`.
-- Add a descriptive comment to your commit and push your code to [github](https://github.com/Open-EO/openeo-processes-dask). 
-- Create a PR with a descriptive title for your changes. 
+- Add a descriptive comment to your commit and push your code to [github](https://github.com/Open-EO/openeo-processes-dask).
+- Create a PR with a descriptive title for your changes.
