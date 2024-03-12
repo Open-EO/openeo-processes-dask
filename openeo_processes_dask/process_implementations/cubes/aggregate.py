@@ -146,8 +146,9 @@ def aggregate_spatial(
             gdf = gpd.GeoDataFrame(geometry=[polygon])
             gdf.crs = DEFAULT_CRS
 
+    gdf = gdf.to_crs(data.rio.crs)
     geometries = gdf.geometry.values
-
+     
     positional_parameters = {"data": 0}
     vec_cube = data.xvec.zonal_stats(
         geometries,
