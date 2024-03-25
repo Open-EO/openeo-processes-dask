@@ -120,7 +120,7 @@ To add a new process:
 - update the dependencies, if you need to introduce a new package. `poetry add ...`.
 - create a PR to merge your fork into the openeo-processes-dask
 
-New implementations can be tested using the local [client-side-processing](https://open-eo.github.io/openeo-python-client/cookbook/localprocessing.html). This allows testing process without a connection to an openEO back-end on a user's local netCDFs, geoTIFFs, ZARR files, or remote STAC Collections/ Items. 
+New implementations can be tested using the local [client-side-processing](https://open-eo.github.io/openeo-python-client/cookbook/localprocessing.html). This allows testing process without a connection to an openEO back-end on a user's local netCDFs, geoTIFFs, ZARR files, or remote STAC Collections/ Items.
 
 For backend development, the specifications and implementations can be used to create a process registry, e.g. https://github.com/Open-EO/openeo-pg-parser-networkx/blob/main/examples/01_minibackend_demo.ipynb
 ```
