@@ -105,12 +105,24 @@ The specifications come from a fork of the official openeo-processes: https://gi
 
 To add a new process:
 - add the specification to https://github.com/eodcgmbh/openeo-processes
+    - create a github fork
+    - check if the process you want to add is in the missing-processes folder and if so, move it to the root folder
+    - if not, create a new process definition
+    - create a PR and merge it
 - update the submodule in openeo-processes-dask
+    - create a github fork of this repository
+    - Use `git submodule init` and `git submodule update` in your forked repository to update the specifications
+    - To specify the submodule explicitely, you can use
+     `git submodule update --remote openeo_processes_dask/specs/openeo-processes/`
+    - find more details on submodules [here](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
 - add the implementation in openeo-processes-dask
 - cover the new implementation in the tests
 - update the dependencies, if you need to introduce a new package. `poetry add ...`.
+- create a PR to merge your fork into the openeo-processes-dask
 
-The specifications can then be used to create a process registry, e.g. https://github.com/Open-EO/openeo-pg-parser-networkx/blob/main/examples/01_minibackend_demo.ipynb
+New implementations can be tested using the local [client-side-processing](https://open-eo.github.io/openeo-python-client/cookbook/localprocessing.html). This allows testing process without a connection to an openEO back-end on a user's local netCDFs, geoTIFFs, ZARR files, or remote STAC Collections/ Items. 
+
+For backend development, the specifications and implementations can be used to create a process registry, e.g. https://github.com/Open-EO/openeo-pg-parser-networkx/blob/main/examples/01_minibackend_demo.ipynb
 ```
 from openeo_processes_dask.specs import load_collection as load_collection_spec
 process_registry["load_collection"] = Process(spec=load_collection_spec, implementation=load_collection)
