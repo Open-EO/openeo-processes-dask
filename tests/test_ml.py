@@ -4,8 +4,9 @@ import dask
 import geopandas as gpd
 import numpy as np
 import pytest
+import xarray as xr
 import xgboost as xgb
-from openeo_pg_parser_networkx.pg_schema import ParameterReference
+from openeo_pg_parser_networkx.pg_schema import ParameterReference, DEFAULT_CRS
 
 from openeo_processes_dask.process_implementations.core import process
 from openeo_processes_dask.process_implementations.cubes.apply import apply_dimension
@@ -41,6 +42,24 @@ def test_fit_regr_random_forest_inline_geojson(
     model = fit_regr_random_forest(
         predictors=vector_data_cube,
         target=vector_data_cube.compute().to_json(),
+        target_var=target_var,
+        predictors_vars=predictors_vars,
+    )
+
+    assert isinstance(model, xgb.core.Booster)
+
+
+def test_fit_regr_random_forest_xvec(vector_data_cube, dask_client):
+    predictors_vars = ["value2"]
+    target_var = "value1"
+
+    predictors = xr.Dataset.from_dataframe(vector_data_cube.set_index("geometry", append=True)).xvec.set_geom_indexes(
+        "geometry", crs=DEFAULT_CRS
+    ).to_array(dim="bands")
+
+    model = fit_regr_random_forest(
+        predictors=predictors,
+        target=vector_data_cube,
         target_var=target_var,
         predictors_vars=predictors_vars,
     )
