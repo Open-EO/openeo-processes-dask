@@ -148,6 +148,14 @@ def test_aggregate_spatial(
 
     assert (output_cube.values == expected_values).all()
 
+    polygon_geometry_small["crs"] = 4326
+
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=polygon_geometry_small, reducer=reducer
+    )
+
+    assert len(output_cube.dims) < len(reduced_cube.dims)
+
     geometry_url = "https://raw.githubusercontent.com/ValentinaHutter/polygons/master/polygons_small.json"
     output_cube = aggregate_spatial(
         data=reduced_cube, geometries=geometry_url, reducer=reducer
