@@ -1,9 +1,9 @@
 import logging
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 import odc.geo.xr
 import rioxarray  # needs to be imported to set .rio accessor on xarray objects.
-from odc.geo.geobox import resolution_from_affine
+from odc.geo.geobox import resolution_from_affine, AnchorEnum, XY
 from pyproj.crs import CRS, CRSError
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
@@ -37,8 +37,11 @@ def resample_spatial(
     projection: Optional[Union[str, int]] = None,
     resolution: int = 0,
     method: str = "near",
+    align: str = "upper-left",
 ):
     """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
+
+    #TODO: Actually implement align parameter in some way
 
     # Assert resampling method is correct.
     if method == "near":
@@ -49,14 +52,40 @@ def resample_spatial(
             f'Selected resampling method "{method}" is not available! Please select one of '
             f"[{', '.join(resample_methods_list)}]"
         )
+    
+    dims = data.dims
+    if dims is None:
+        raise OpenEOException(
+            f"Data cube has no dimensions"
+        )
 
-    # Re-order, this is specifically done for odc reproject
-    data_cp = data.transpose(
-        data.openeo.band_dims[0],
-        data.openeo.temporal_dims[0],
-        data.openeo.y_dim,
-        data.openeo.x_dim,
+    try:
+        if 'band' in dims and 'time' in dims and 'y' in dims and 'x' in dims:
+            # all dimensions present
+            data_cp = data.transpose('band', 'time', 'y', 'x')
+        elif 'time' in dims and 'y' in dims and 'x' in dims:
+            # no band dimension
+            data_cp = data.transpose('time', 'y', 'x')
+        elif 'band' in dims and 'y' in dims and 'x' in dims:
+            # no time dimension
+            data_cp = data.transpose('band', 'y', 'x')
+        else:
+            # no band and time dimension
+            data_cp = data.transpose('y', 'x')
+    except Exception: 
+        raise OpenEOException(
+        f"Data cube has unexpected dimensions: {dims}"
     )
+    
+    #TODO: remove the code below and replace with the code above
+    
+    # Re-order, this is specifically done for odc reproject
+    #data_cp = data.transpose(
+    #    data.openeo.band_dims[0],
+    #    data.openeo.temporal_dims[0],
+    #    data.openeo.y_dim,
+    #    data.openeo.x_dim,
+    #)
 
     if projection is None:
         projection = data_cp.rio.crs
