@@ -192,9 +192,9 @@ def load_url(url: str, format: str, options={}):
             crs = int(url_json.get("crs", {}))
         logger.info(f"CRS in geometries: {crs}.")
 
-        return gpd.GeoDataFrame.from_features(url_json, crs=crs)
+        gdf = gpd.GeoDataFrame.from_features(url_json, crs=crs)
 
-    if "Parquet" in format:
+    elif "Parquet" in format:
         import os
 
         import geoparquet as gpq
@@ -211,6 +211,29 @@ def load_url(url: str, format: str, options={}):
         gdf = gpq.read_geoparquet(file_name)
         os.system(f"rm -rf {file_name}")
 
-        return gdf
+    elif format == "JSON":
+        return url_json
 
-    return response.json()
+    import xvec
+
+    if not hasattr(gdf, "crs"):
+        gdf = gdf.set_crs("epsg:4326")
+
+    columns = gdf.columns.values
+    variables = []
+    for geom in columns:
+        if geom in [
+            "geometry",
+            "geometries",
+        ]:
+            geo_column = geom
+        else:
+            variables.append(geom)
+    cube = xr.Dataset(
+        data_vars={
+            variable: ([geo_column], gdf[variable].values) for variable in variables
+        },
+        coords={geo_column: gdf[geo_column].values},
+    ).xvec.set_geom_indexes(geo_column, crs=gdf.crs)
+
+    return cube
