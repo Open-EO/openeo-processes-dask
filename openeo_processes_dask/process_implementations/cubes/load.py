@@ -163,16 +163,15 @@ def load_stac(
 
     return stack
 
-def load_url(
-        url: str, 
-        format: str, 
-        options = {}
-        ):
-    import requests
+
+def load_url(url: str, format: str, options={}):
     import geopandas as gpd
+    import requests
 
     if format not in ["GeoJSON", "JSON", "Parquet"]:
-        raise Exception(f"FormatUnsuitable: Data can't be loaded with the requested input format {format}.")
+        raise Exception(
+            f"FormatUnsuitable: Data can't be loaded with the requested input format {format}."
+        )
 
     response = requests.get(url)
     if not response.status_code < 400:
@@ -181,40 +180,37 @@ def load_url(
     if "JSON" in format:
         url_json = response.json()
 
-    if format == "GeoJSON": 
+    if format == "GeoJSON":
         for feature in url_json.get("features", {}):
             if "properties" not in feature:
                 feature["properties"] = {}
             elif feature["properties"] is None:
                 feature["properties"] = {}
         if isinstance(url_json.get("crs", {}), dict):
-            crs = (
-                url_json.get("crs", {})
-                .get("properties", {})
-                .get("name", 4326)
-            )
+            crs = url_json.get("crs", {}).get("properties", {}).get("name", 4326)
         else:
             crs = int(url_json.get("crs", {}))
         logger.info(f"CRS in geometries: {crs}.")
 
         return gpd.GeoDataFrame.from_features(url_json, crs=crs)
-    
-    if "Parquet" in format: 
+
+    if "Parquet" in format:
         import os
+
         import geoparquet as gpq
-        
+
         file_name = url.split("/")[-1]
-        
-        with open(file_name, 'wb') as file:
+
+        with open(file_name, "wb") as file:
             file.write(response.content)
-    
+
         file_size = os.path.getsize(file_name)
         if file_size > 0:
             logger.info(f"File downloaded successfully. File size: {file_size} bytes")
 
         gdf = gpq.read_geoparquet(file_name)
         os.system(f"rm -rf {file_name}")
-        
+
         return gdf
-            
+
     return response.json()
