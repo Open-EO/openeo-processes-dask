@@ -160,12 +160,17 @@ def test_aggregate_spatial(
     assert len(output_cube_transform.dims) == len(output_cube.dims)
     assert output_cube_transform.shape == output_cube.shape
 
-    cube = xr.Dataset(
+    geometry_cube = xr.Dataset(
         data_vars={
             "variable": (["geometry"], np.arange(len(gdf)))
         },
         coords={"geometry": gdf["geometry"].values},
     ).xvec.set_geom_indexes("geometry", crs=gdf.crs)
+    output_cube_transform = aggregate_spatial(
+        data=reduced_cube, geometries=geometry_cube, reducer=reducer
+    )
+    assert len(output_cube_transform.dims) == len(output_cube.dims)
+    assert output_cube_transform.shape == output_cube.shape
 
 
     polygon_geometry_small["crs"] = 4326
