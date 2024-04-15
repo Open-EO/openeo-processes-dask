@@ -136,9 +136,16 @@ def aggregate_spatial(
                     feature["properties"] = {}
                 elif feature["properties"] is None:
                     feature["properties"] = {}
-            DEFAULT_CRS = (
-                geometries.get("crs", {}).get("properties", {}).get("name", DEFAULT_CRS)
-            )
+            if isinstance(geometries.get("crs", {}), dict):
+                DEFAULT_CRS = (
+                    geometries.get("crs", {})
+                    .get("properties", {})
+                    .get("name", DEFAULT_CRS)
+                )
+            else:
+                DEFAULT_CRS = int(geometries.get("crs", {}))
+            logger.info(f"CRS in geometries: {DEFAULT_CRS}.")
+
         if "type" in geometries and geometries["type"] == "FeatureCollection":
             gdf = gpd.GeoDataFrame.from_features(geometries, crs=DEFAULT_CRS)
         elif "type" in geometries and geometries["type"] in ["Polygon"]:
@@ -146,6 +153,14 @@ def aggregate_spatial(
             gdf = gpd.GeoDataFrame(geometry=[polygon])
             gdf.crs = DEFAULT_CRS
 
+    if isinstance(geometries, xr.Dataset):
+        if hasattr(geometries, "xvec"):
+            gdf = geometries.xvec.to_geodataframe()
+
+    if isinstance(geometries, gpd.GeoDataFrame):
+        gdf = geometries
+
+    gdf = gdf.to_crs(data.rio.crs)
     geometries = gdf.geometry.values
 
     positional_parameters = {"data": 0}
