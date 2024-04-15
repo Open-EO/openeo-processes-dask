@@ -3,6 +3,8 @@ from functools import partial
 import geopandas as gpd
 import numpy as np
 import pytest
+import xarray as xr
+import xvec
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 
 from openeo_processes_dask.process_implementations.cubes.aggregate import (
@@ -147,6 +149,24 @@ def test_aggregate_spatial(
     )
 
     assert (output_cube.values == expected_values).all()
+
+    gdf = gpd.GeoDataFrame.from_features(polygon_geometry_small, crs="EPSG:4326")
+    gdf_equi7 = gdf.to_crs(
+        "+proj=aeqd +lat_0=53 +lon_0=24 +x_0=5837287.81977 +y_0=2121415.69617 +datum=WGS84 +units=m +no_defs"
+    )
+    output_cube_transform = aggregate_spatial(
+        data=reduced_cube, geometries=gdf_equi7, reducer=reducer
+    )
+    assert len(output_cube_transform.dims) == len(output_cube.dims)
+    assert output_cube_transform.shape == output_cube.shape
+
+    cube = xr.Dataset(
+        data_vars={
+            "variable": (["geometry"], np.arange(len(gdf)))
+        },
+        coords={"geometry": gdf["geometry"].values},
+    ).xvec.set_geom_indexes("geometry", crs=gdf.crs)
+
 
     polygon_geometry_small["crs"] = 4326
 

@@ -153,6 +153,14 @@ def aggregate_spatial(
             gdf = gpd.GeoDataFrame(geometry=[polygon])
             gdf.crs = DEFAULT_CRS
 
+    if isinstance(geometries, xr.Dataset):
+        if hasattr(geometries, "xvec"):
+            gdf = geometries.xvec.to_geodataframe()
+
+    if isinstance(geometries, gpd.GeoDataFrame):
+        gdf = geometries
+
+    gdf = gdf.to_crs(data.rio.crs)
     geometries = gdf.geometry.values
 
     positional_parameters = {"data": 0}
