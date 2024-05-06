@@ -28,6 +28,11 @@ A subset of process implementations with heavy or unstable dependencies are hidd
 ## Development environment
 openeo-processes-dask requires poetry >1.2, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
 
+Clone the repository with `--recurse-submodules` to also fetch the process specs:
+```
+git clone --recurse-submodules git@github.com:Open-EO/openeo-processes-dask.git
+```
+
 To setup the python venv and install this project into it run:
 ```
 poetry install --all-extras
