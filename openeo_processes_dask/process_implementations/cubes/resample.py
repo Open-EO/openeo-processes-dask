@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, Union
 
-import odc.geo.xr 
+import odc.geo.xr
 import rioxarray  # needs to be imported to set .rio accessor on xarray objects.
 from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
@@ -50,7 +50,7 @@ def resample_spatial(
             f'Selected resampling method "{method}" is not available! Please select one of '
             f"[{', '.join(resample_methods_list)}]"
         )
-        
+
     dims = list(data.dims)
 
     known_dims = [
