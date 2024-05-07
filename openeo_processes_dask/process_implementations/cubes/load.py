@@ -6,10 +6,10 @@ from pathlib import PurePosixPath
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import unquote, urljoin, urlparse
 
+import odc.stac
 import planetary_computer as pc
 import pyproj
 import pystac_client
-import stackstac
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
 from stac_validator import stac_validator
@@ -151,9 +151,9 @@ def load_stac(
         )
 
     if bands is not None:
-        stack = stackstac.stack(items, assets=bands)
+        stack = odc.stac.load(items, bands=bands, chunks={}).to_dataarray(dim="band")
     else:
-        stack = stackstac.stack(items)
+        stack = odc.stac.load(items, chunks={}).to_dataarray(dim="band")
 
     if spatial_extent is not None:
         stack = filter_bbox(stack, spatial_extent)
