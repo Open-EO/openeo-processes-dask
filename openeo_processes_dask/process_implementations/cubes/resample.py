@@ -37,6 +37,7 @@ def resample_spatial(
     projection: Optional[Union[str, int]] = None,
     resolution: int = 0,
     method: str = "near",
+    align: str = "upper-left",
 ):
     """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
 
@@ -50,13 +51,18 @@ def resample_spatial(
             f"[{', '.join(resample_methods_list)}]"
         )
 
-    # Re-order, this is specifically done for odc reproject
-    data_cp = data.transpose(
+    dims = list(data.dims)
+
+    known_dims = [
         data.openeo.band_dims[0],
         data.openeo.temporal_dims[0],
         data.openeo.y_dim,
         data.openeo.x_dim,
-    )
+    ]
+
+    other_dims = [dim for dim in dims if dim not in known_dims]
+
+    data_cp = data.transpose(*other_dims, *known_dims)
 
     if projection is None:
         projection = data_cp.rio.crs

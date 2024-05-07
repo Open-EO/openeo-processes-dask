@@ -30,6 +30,31 @@ def fit_regr_random_forest(
 ) -> Booster:
     import xgboost as xgb
 
+    def load_geometries(geometries):
+        if isinstance(geometries, str):
+            # we allow loading as filename, URL or geometries dictionary
+            try:
+                geometries = load_vector_cube(filename=geometries)
+            except Exception:
+                pass
+        if isinstance(geometries, str):
+            geometries = load_vector_cube(URL=geometries)
+        if isinstance(geometries, dict):
+            geometries = load_vector_cube(geometries=geometries)
+        return geometries
+
+    def drop_col(df, keep_var):
+        if keep_var is None:
+            keep_var = []
+            for column in df.columns:
+                if column not in ["geometry", "id"]:
+                    keep_var.append(column)
+        if isinstance(keep_var, str):
+            keep_var = [keep_var]
+        if isinstance(keep_var, list):
+            df = df[keep_var]
+        return df
+
     params = {
         "learning_rate": 1,
         "max_depth": 5,
@@ -39,6 +64,33 @@ def fit_regr_random_forest(
         "tree_method": "hist",
         "colsample_bynode": 1,
     }
+
+    if isinstance(predictors, xr.DataArray):
+        dimensions = predictors.dims
+        array_dim = []
+        geom_dim = []
+        extra_dim = []
+        for d in dimensions:
+            if d in ["bands", "t", "time"]:
+                array_dim.append(d)
+            elif d in ["geometry", "geometries"]:
+                geom_dim.append(d)
+            else:
+                extra_dim.append(d)
+        if len(geom_dim) != 1:
+            raise Exception(f"{predictors} is not a valid vector data cube.")
+        if len(extra_dim) > 0:
+            for d in extra_dim:
+                predictors = predictors.isel({d: 0}).drop_vars(d)
+        if len(array_dim) == 1:
+            d = array_dim[0]
+            predictors = predictors.to_dataset(dim=d)
+        elif len(array_dim) == 0:
+            predictors = predictors.to_dataset(name="bands")
+        else:
+            raise Exception(f"{predictors} is not a valid vector data cube.")
+
+        predictors = predictors.xvec.to_geodataframe()
 
     if isinstance(predictors, gpd.GeoDataFrame):
         predictors = dask_geopandas.from_geopandas(predictors, npartitions=1)
@@ -54,16 +106,12 @@ def fit_regr_random_forest(
     if not isinstance(predictors, dask.dataframe.DataFrame):
         raise Exception("[!] No compatible vector input data has been provided.")
 
-    if predictors_vars is not None:
-        X = data_ddf.drop(data_ddf.columns.difference(predictors_vars), axis=1)
-    else:
-        X = data_ddf
+    X = drop_col(data_ddf, predictors_vars)
 
     # This is a workaround for the openeo-python-client current returning inline geojson for this process
-    if isinstance(target, str):
-        target = load_vector_cube(filename=target)
+    target = load_geometries(target)
 
-    y = target.drop(target.columns.difference([target_var]), axis=1)
+    y = drop_col(target, target_var)
 
     client = dask.distributed.default_client()
     dtrain = xgb.dask.DaskDMatrix(client, X, y)
@@ -76,8 +124,13 @@ def predict_random_forest(
     data: RasterCube,
     model: Booster,
     axis: int = -1,
+    context: dict = None,
 ) -> RasterCube:
     import xgboost as xgb
+
+    if not model:
+        if isinstance(context, dict) and "model" in context:
+            model = context["model"]
 
     n_features = len(model.feature_names)
     if n_features != data.shape[axis]:
@@ -91,6 +144,8 @@ def predict_random_forest(
     client = dask.distributed.default_client()
     preds_flat = xgb.dask.inplace_predict(client, model, X)
 
-    output_shape = data.shape[0:axis] + data.shape[axis + 1 :]
-    preds = preds_flat.reshape(output_shape)
+    output_shape = list(data.shape)
+    output_shape[axis] = 1
+
+    preds = preds_flat.reshape(tuple(output_shape))
     return preds
