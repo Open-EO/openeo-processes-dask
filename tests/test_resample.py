@@ -23,8 +23,9 @@ from tests.mockdata import create_fake_rastercube
 @pytest.mark.parametrize("output_res", [5, 30, 60])
 @pytest.mark.parametrize("size", [(30, 30, 20, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
+@pytest.mark.parametrize("dims", [("x", "y", "bands"), ("x", "y", "t"), ("x", "y")])
 def test_resample_spatial(
-    output_crs, output_res, temporal_interval, bounding_box, random_raster_data
+    output_crs, output_res, temporal_interval, bounding_box, random_raster_data, dims
 ):
     """Test to ensure resolution gets changed correctly."""
     input_cube = create_fake_rastercube(
@@ -34,6 +35,16 @@ def test_resample_spatial(
         bands=["B02", "B03", "B04", "B08"],
         backend="dask",
     )
+
+    if "bands" not in dims:
+        input_cube = input_cube.reduce_dimension(
+            dimension="bands", reducer="mean"
+        )  # or any other reducer
+
+    if "t" not in dims:
+        input_cube = input_cube.reduce_dimension(
+            dimension="t", reducer="mean"
+        )  # or any other reducer
 
     with pytest.raises(Exception):
         output_cube = resample_spatial(
