@@ -52,6 +52,7 @@ def resample_spatial(
         )
 
     dims = list(data.dims)
+
     known_dims = []
     if len(data.openeo.band_dims) > 0:
         known_dims.append(data.openeo.band_dims[0])
