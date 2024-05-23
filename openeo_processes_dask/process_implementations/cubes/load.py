@@ -24,6 +24,7 @@ from openeo_processes_dask.process_implementations.cubes._filter import (
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
     NoDataAvailable,
+    OpenEOException,
     TemporalExtentEmpty,
 )
 
@@ -94,6 +95,10 @@ def load_stac(
     # apply_offset = False
     # apply_scale = False
 
+    # If the user provide the bands list as a single string, wrap it in a list:
+    if isinstance(bands, str):
+        bands = [bands]
+
     if asset_type == "COLLECTION":
         # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
         if spatial_extent or temporal_extent or bands or properties:
@@ -144,35 +149,39 @@ def load_stac(
             raise Exception(
                 f"No parameters for filtering provided. Loading the whole STAC Collection is not supported yet."
             )
-
     elif asset_type == "ITEM":
         stac_api = pystac_client.stac_api_io.StacApiIO()
         stac_dict = json.loads(stac_api.read_text(url))
         items = [stac_api.stac_object_from_dict(stac_dict)]
-
     else:
         raise Exception(
             f"The provided URL is a STAC {asset_type}, which is not yet supported. Please provide a valid URL to a STAC Collection or Item."
         )
+    available_assets = list(items[0].assets.keys())
+    if len(set(available_assets) & set(bands)) == 0:
+        raise OpenEOException(
+            f"The provided bands: {bands} can't be found in the STAC assets: {available_assets}"
+        )
 
     asset_scale_offset = {}
     for asset in items[0].assets:
-        asset_scale = 1
-        asset_offset = 0
-        asset_nodata = None
-        asset_dtype = None
-        asset_dict = items[0].assets[asset].to_dict()
-        if "raster:bands" in asset_dict:
-            asset_scale = asset_dict["raster:bands"][0].get("scale", 1)
-            asset_offset = asset_dict["raster:bands"][0].get("offset", 0)
-            asset_nodata = asset_dict["raster:bands"][0].get("nodata", None)
-            asset_dtype = asset_dict["raster:bands"][0].get("data_type", None)
-        asset_scale_offset[asset] = {
-            "scale": asset_scale,
-            "offset": asset_offset,
-            "nodata": asset_nodata,
-            "data_type": asset_dtype,
-        }
+        if asset in bands:
+            asset_scale = 1
+            asset_offset = 0
+            asset_nodata = None
+            asset_dtype = None
+            asset_dict = items[0].assets[asset].to_dict()
+            if "raster:bands" in asset_dict:
+                asset_scale = asset_dict["raster:bands"][0].get("scale", 1)
+                asset_offset = asset_dict["raster:bands"][0].get("offset", 0)
+                asset_nodata = asset_dict["raster:bands"][0].get("nodata", None)
+                asset_dtype = asset_dict["raster:bands"][0].get("data_type", None)
+            asset_scale_offset[asset] = {
+                "scale": asset_scale,
+                "offset": asset_offset,
+                "nodata": asset_nodata,
+                "data_type": asset_dtype,
+            }
 
     # If at least one band has the nodata field set, we have to apply it at loading time
     apply_nodata = True
@@ -189,8 +198,6 @@ def load_stac(
         if dtype is not None:
             kwargs["nodata"] = np.dtype(dtype).type(kwargs["nodata"])
 
-    print(apply_nodata)
-    print("NO DATA KWARGS:", kwargs)
     if bands is not None:
         stack = odc.stac.load(items, bands=bands, chunks={}, **kwargs).to_dataarray(
             dim="band"
