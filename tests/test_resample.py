@@ -1,8 +1,12 @@
+from functools import partial
+
 import numpy as np
 import pytest
 from odc.geo.geobox import resolution_from_affine
+from openeo_pg_parser_networkx.pg_schema import ParameterReference
 from pyproj.crs import CRS
 
+from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from openeo_processes_dask.process_implementations.cubes.resample import (
     resample_cube_spatial,
     resample_spatial,
@@ -25,7 +29,13 @@ from tests.mockdata import create_fake_rastercube
 @pytest.mark.parametrize("dtype", [np.float32])
 @pytest.mark.parametrize("dims", [("x", "y", "bands"), ("x", "y", "t"), ("x", "y")])
 def test_resample_spatial(
-    output_crs, output_res, temporal_interval, bounding_box, random_raster_data, dims
+    output_crs,
+    output_res,
+    temporal_interval,
+    bounding_box,
+    random_raster_data,
+    dims,
+    process_registry,
 ):
     """Test to ensure resolution gets changed correctly."""
     input_cube = create_fake_rastercube(
@@ -36,15 +46,19 @@ def test_resample_spatial(
         backend="dask",
     )
 
+    _process = partial(
+        process_registry["mean"].implementation,
+        ignore_nodata=True,
+        data=ParameterReference(from_parameter="data"),
+    )
+
     if "bands" not in dims:
-        input_cube = input_cube.reduce_dimension(
-            dimension="bands", reducer="mean"
-        )  # or any other reducer
+        output_cube = reduce_dimension(
+            data=input_cube, reducer=_process, dimension="bands"
+        )
 
     if "t" not in dims:
-        input_cube = input_cube.reduce_dimension(
-            dimension="t", reducer="mean"
-        )  # or any other reducer
+        output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
 
     with pytest.raises(Exception):
         output_cube = resample_spatial(
