@@ -95,3 +95,99 @@ def test_aggregate_temporal_period_numpy_equals_dask(
     assert_numpy_equals_dask_numpy(
         numpy_cube=numpy_cube, dask_cube=dask_cube, func=func
     )
+
+
+@pytest.mark.parametrize("size", [(30, 30, 30, 3)])
+@pytest.mark.parametrize("dtype", [np.int8])
+def test_aggregate_spatial(
+    random_raster_data,
+    bounding_box,
+    temporal_interval,
+    polygon_geometry_small,
+    process_registry,
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04"],
+        backend="dask",
+    )
+
+    reducer = partial(
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube = aggregate_spatial(
+        data=input_cube, geometries=polygon_geometry_small, reducer=reducer
+    )
+
+    assert len(output_cube.dims) < len(input_cube.dims)
+
+    _process = partial(
+        process_registry["median"].implementation,
+        ignore_nodata=True,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    reduced_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
+
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=polygon_geometry_small, reducer=reducer
+    )
+
+    assert len(output_cube.dims) < len(reduced_cube.dims)
+
+    gdf = gpd.GeoDataFrame.from_features(polygon_geometry_small, crs="EPSG:4326")
+    xmin, ymin, xmax, ymax = gdf.total_bounds
+
+    expected_values = (
+        reduced_cube.sel(x=slice(xmin, xmax), y=slice(ymin, ymax))
+        .mean(["x", "y"])
+        .values
+    )
+
+    assert (output_cube.values == expected_values).all()
+
+    gdf = gpd.GeoDataFrame.from_features(polygon_geometry_small, crs="EPSG:4326")
+    gdf_equi7 = gdf.to_crs(
+        "+proj=aeqd +lat_0=53 +lon_0=24 +x_0=5837287.81977 +y_0=2121415.69617 +datum=WGS84 +units=m +no_defs"
+    )
+    output_cube_transform = aggregate_spatial(
+        data=reduced_cube, geometries=gdf_equi7, reducer=reducer
+    )
+    assert len(output_cube_transform.dims) == len(output_cube.dims)
+    assert output_cube_transform.shape == output_cube.shape
+
+    geometry_cube = xr.Dataset(
+        data_vars={"variable": (["geometry"], np.arange(len(gdf)))},
+        coords={"geometry": gdf["geometry"].values},
+    ).xvec.set_geom_indexes("geometry", crs=gdf.crs)
+    output_cube_transform = aggregate_spatial(
+        data=reduced_cube, geometries=geometry_cube, reducer=reducer
+    )
+    assert len(output_cube_transform.dims) == len(output_cube.dims)
+    assert output_cube_transform.shape == output_cube.shape
+
+    polygon_geometry_small["crs"] = 4326
+
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=polygon_geometry_small, reducer=reducer
+    )
+
+    assert len(output_cube.dims) < len(reduced_cube.dims)
+
+    geometry_url = "https://raw.githubusercontent.com/ValentinaHutter/polygons/master/polygons_small.json"
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=geometry_url, reducer=reducer
+    )
+
+    assert len(output_cube.geometry) == 38
+
+    geometry = {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [1, 0]]]}
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=geometry, reducer=reducer
+    )
+
+    assert np.isnan(output_cube.values).all()
