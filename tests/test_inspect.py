@@ -16,5 +16,5 @@ def test_inspect(temporal_interval, bounding_box, random_raster_data):
         bands=["B02", "B03", "B04", "B08"],
     )
 
-    assert inspect(np.zeros((1))) == np.zeros((1))
+    assert inspect(np.zeros(1)) == np.zeros(1)
     xr.testing.assert_equal(raster_cube, inspect(raster_cube))

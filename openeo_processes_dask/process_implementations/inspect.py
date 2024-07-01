@@ -12,7 +12,6 @@ def inspect(
     code: Optional[str] = "User",
     level: Optional[str] = "info",
 ) -> Any:
-
     if level == "info":
         logger.info(f"{code}: {message} {data}.")
 
@@ -24,5 +23,5 @@ def inspect(
 
     elif level == "debug":
         logger.debug(f"{code}: {message} {data}.")
-    
+
     return data
