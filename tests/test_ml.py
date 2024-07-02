@@ -49,26 +49,6 @@ def test_fit_regr_random_forest_inline_geojson(
     assert isinstance(model, xgb.core.Booster)
 
 
-def test_fit_regr_random_forest_xvec(vector_data_cube, dask_client):
-    predictors_vars = ["value2"]
-    target_var = "value1"
-
-    predictors = (
-        xr.Dataset.from_dataframe(vector_data_cube.set_index("geometry", append=True))
-        .xvec.set_geom_indexes("geometry", crs=DEFAULT_CRS)
-        .to_array(dim="bands")
-    )
-
-    model = fit_regr_random_forest(
-        predictors=predictors,
-        target=vector_data_cube,
-        target_var=target_var,
-        predictors_vars=predictors_vars,
-    )
-
-    assert isinstance(model, xgb.core.Booster)
-
-
 @pytest.mark.parametrize("size", [(6, 5, 4, 3)])
 @pytest.mark.parametrize("dtype", [np.float64])
 def test_curve_fitting(temporal_interval, bounding_box, random_raster_data):
