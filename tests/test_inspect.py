@@ -42,3 +42,4 @@ def test_inspect_logs(caplog):
         result = inspect(data=1, level="debug")
         assert result == 1
         assert "User:  1." in caplog.text
+        assert "User:  2." not in caplog.text
