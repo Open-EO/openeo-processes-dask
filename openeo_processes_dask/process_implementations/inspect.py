@@ -12,16 +12,16 @@ def inspect(
     code: Optional[str] = "User",
     level: Optional[str] = "info",
 ) -> Any:
-    if level == "info":
+    if level.lower() == "info":
         logger.info(f"{code}: {message} {data}.")
 
-    elif level == "warning":
+    elif level.lower() == "warning":
         logger.warning(f"{code}: {message} {data}.")
 
-    elif level == "error":
+    elif level.lower() == "error":
         logger.error(f"{code}: {message} {data}.")
 
-    elif level == "debug":
+    elif level.lower() == "debug":
         logger.debug(f"{code}: {message} {data}.")
 
     return data
