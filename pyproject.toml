@@ -53,6 +53,13 @@ mapclassify = "^2.4.3"
 pre-commit = "^2.20.0"
 pytest-cov = "^4.0.0"
 
+[tool.poetry.group.benchmark.dependencies]
+psutil = "^6.0.0"
+codecarbon = "^2.5.0"
+openeo = { version = "^0.30.0", extras = ["localprocessing"] }
+exactextract = "^0.2.0.dev0"
+gdal = "3.8.4"
+
 [tool.poetry.extras]
 implementations = ["geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "stackstac", "planetary_computer", "pystac_client", "stac_validator", "xvec", "joblib"]
 ml = ["xgboost"]

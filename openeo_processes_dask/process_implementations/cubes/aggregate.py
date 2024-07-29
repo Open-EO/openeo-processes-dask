@@ -173,3 +173,69 @@ def aggregate_spatial(
         positional_parameters=positional_parameters,
     )
     return vec_cube
+
+
+# An example of how the exact extract version could
+# look like. It is not fully functional and does not
+# cover all cases.
+
+# def aggregate_spatial(
+#     data: RasterCube,
+#     geometries,
+#     reducer: Callable,
+#     chunk_size: int = 2,
+# ) -> VectorCube:
+    
+#     from exactextract import exact_extract
+
+#     x_dim = data.openeo.x_dim
+#     y_dim = data.openeo.y_dim
+#     DEFAULT_CRS = "EPSG:4326"
+
+#     if isinstance(geometries, str):
+#         # Allow importing geometries from url (e.g. github raw)
+#         import json
+#         from urllib.request import urlopen
+
+#         response = urlopen(geometries)
+#         geometries = json.loads(response.read())
+#     if isinstance(geometries, dict):
+#         # Get crs from geometries
+#         if "features" in geometries:
+#             for feature in geometries["features"]:
+#                 if "properties" not in feature:
+#                     feature["properties"] = {}
+#                 elif feature["properties"] is None:
+#                     feature["properties"] = {}
+#             if isinstance(geometries.get("crs", {}), dict):
+#                 DEFAULT_CRS = (
+#                     geometries.get("crs", {})
+#                     .get("properties", {})
+#                     .get("name", DEFAULT_CRS)
+#                 )
+#             else:
+#                 DEFAULT_CRS = int(geometries.get("crs", {}))
+#             logger.info(f"CRS in geometries: {DEFAULT_CRS}.")
+
+#         if "type" in geometries and geometries["type"] == "FeatureCollection":
+#             gdf = gpd.GeoDataFrame.from_features(geometries, crs=DEFAULT_CRS)
+#         elif "type" in geometries and geometries["type"] in ["Polygon"]:
+#             polygon = shapely.geometry.Polygon(geometries["coordinates"][0])
+#             gdf = gpd.GeoDataFrame(geometry=[polygon])
+#             gdf.crs = DEFAULT_CRS
+
+#     #TODO: Reoplace this with a non xvec solution
+#     # if isinstance(geometries, xr.Dataset):
+#     #     if hasattr(geometries, "xvec"):
+#     #         gdf = geometries.xvec.to_geodataframe()
+
+#     if isinstance(geometries, gpd.GeoDataFrame):
+#         gdf = geometries
+
+#     gdf = gdf.to_crs(data.rio.crs)
+#     geometries = gdf.geometry.values
+#     gdf = gpd.GeoDataFrame(geometry=geometries, crs=data.rio.crs)
+
+#     vec_cube = exact_extract(data, gdf, "mean")
+
+#     return vec_cube
