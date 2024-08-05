@@ -1,13 +1,42 @@
 # Aggregate Spatial Analysis
 
-Author: Juraj Zvolensky @jzvolensky
+## Disclaimer
+
+**A lot has changed in the testing setup so the documentation needs to be updated.**
+
+The latest scripts for `xvec` and `exactextract` can be found in:
+
+- `benchmarks/xvec/`
+- `benchmarks/exactextract/`
+
+Data still remains in:
+
+- `benchmarks/data/`
+
+Although not maintained anymore `memory_profiler` is still working and was used.
+
+Profiling decorator has been added to the `aggregate_spatial` function to enable line by line profiling.
+
+`openeo-processes-dask/openeo_processes_dask/process_implementations/cubes/aggregate.py`
+
+Example to run the scripts with `memory_profiler`:
+
+```bash
+mprof run xvec_small_sample.py
+```
+
+Dont forget to install all extras when installing with poetry to get the `benchmark` extras and all other requirements.
+
+```bash
+poetry install --all-extras
+```
 
 ## Table of Contents
 
 1. [Introduction](#10-introduction)
 2. [Methodology](#20-methodology)
 3. [Datasets](#30-datasets)
-4. [Initial Results](#40-initial-results)
+4. [Initial Results (OUTDATED)](#40-initial-results-outdated)
     1. [Small Dataset (2 polygons)](#41-small-dataset-2-polygons)
         1. [OpenEO xvec](#411-openeo-xvec)
         2. [OpenEO exactextract](#412-openeo-exactextract)
@@ -22,29 +51,8 @@ The purpose of this benchmark is to quantify the performance of the OpenEO aggre
 
 ## 2.0 Methodology
 
-We have 2 reference datasets. A small sample geojson containing three polygons and a datacube with a small spatial extent. The second dataset contains polygons for the Alto Adige region, as well as a larger datacube spatial extent to cover the area.
+TODO
 
-To measure the performance of the process, a small `Profiler` class has been developed. This class measures some key metrics of the process, to determine where the potential bottlenecks occur. Table below highlights all of the key metrics collected.
-
-| Metric | Description |
-|  ---  |  ---  |
-|Run_ID| A unique identifier for each profiling run. |
-|Timestamp| The timestamp when the profiling run started. |
-|Sample_Timestamp| The timestamp for each memory and CPU sample taken during the profiling run. |
-|Memory_sample_MB| The memory usage sample in megabytes taken at each sample interval. |
-|CPU_Usage_%| The CPU usage percentage sample taken at each sample interval. |
-|Time_Taken| The total time taken for the profiling run in seconds. |
-|Median_Memory_Usage_MB| The median memory usage in megabytes over the entire profiling run. |
-|Median_CPU_Usage_%| The median CPU usage percentage over the entire profiling run. |
-|Disk_IO_Read_MB|The total disk I/O read in megabytes during the profiling run. |
-|Disk_IO_Write_MB |The total disk I/O write in megabytes during the profiling run. |
-|Network_IO_Sent_MB |The total network I/O sent in megabytes during the profiling run. |
-|Network_IO_Received_MB |The total network I/O received in megabytes during the profiling run. |
-
-We use the `Profiler` set for 10 runs in a row for a more accurate average result.
-
-**NOTE**:  These metrics are mostly for show as Python is not very flexible in terms of performance measurements. It is difficult to measure the exact memory usage of a process in Python. The `Profiler` class is a simple class that uses the `psutil` library to measure the memory and CPU usage of the process. The `Profiler` class is not perfect and should be used as a rough estimate of the performance of the process.
-  
 ## 3.0 Datasets
 
 For the purpose of testing the performance we have obtained two datasets. The first is a very small dataset containing two polygons in the Bolzano area. The second dataset is a larger dataset containing the Alto Adige region.
@@ -57,7 +65,7 @@ The second dataset: `alto_adige.geojson` comes from the Openpolis github reposit
 
 - 116 polygons
 
-## 4.0 Initial Results
+## 4.0 Initial Results (Outdated)
 
 The sections below provide some results for the `small` and `large` dataset. We are comparing the current OpenEO `xvec` implementation first, followed by utilizing `exactextract` to perform the same operation.
 
