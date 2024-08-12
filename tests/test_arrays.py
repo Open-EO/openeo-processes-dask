@@ -48,6 +48,24 @@ def test_array_element(
 
     xr.testing.assert_equal(output_cube, input_cube.isel({"bands": 1}, drop=True))
 
+    # Use a label
+    _process = partial(
+        process_registry["array_element"].implementation,
+        label="B02",
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+
+    xr.testing.assert_equal(output_cube, input_cube.loc[{"bands": "B02"}].drop("bands"))
+
     # When the index is out of range, we expect an ArrayElementNotAvailable exception to be thrown
     _process_not_available = partial(
         process_registry["array_element"].implementation,
@@ -133,6 +151,24 @@ def test_array_concat(array1, array2, expected):
 
     dask_result = array_concat(
         da.from_array(np.array(array1)), da.from_array(np.array(array2))
+    )
+    np.testing.assert_array_equal(dask_result, np.array(expected), strict=True)
+
+
+@pytest.mark.parametrize(
+    "data, value, expected",
+    [
+        ([2, 3], 4, [2, 3, 4]),
+        (["a", "b"], 1, ["a", "b", 1]),
+    ],
+)
+def test_array_append(data, value, expected):
+    np.testing.assert_array_equal(array_append(data, value), expected, strict=True)
+    np.testing.assert_array_equal(
+        array_append(np.array(data), np.array([value])), expected, strict=True
+    )
+    dask_result = array_append(
+        da.from_array(np.array(data)), da.from_array(np.array([value]))
     )
     np.testing.assert_array_equal(dask_result, np.array(expected), strict=True)
 
