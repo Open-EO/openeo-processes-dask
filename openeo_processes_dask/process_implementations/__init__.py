@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 from .arrays import *
 from .comparison import *
 from .cubes import *
+from .cubes.ddmc import *
 from .inspect import *
 from .logic import *
 from .math import *

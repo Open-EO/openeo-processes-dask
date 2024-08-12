@@ -1,7 +1,6 @@
 from ._filter import *
 from .aggregate import *
 from .apply import *
-from .ddmc import *
 from .general import *
 from .indices import *
 from .load import *
