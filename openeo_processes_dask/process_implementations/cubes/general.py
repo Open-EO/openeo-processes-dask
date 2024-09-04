@@ -17,7 +17,7 @@ __all__ = [
     "dimension_labels",
     "add_dimension",
     "rename_dimension",
-    "rename_dimension",
+    "rename_labels",
 ]
 
 
@@ -128,7 +128,7 @@ def rename_dimension(
     return data
 
 
-def rename_dimension(
+def rename_labels(
     data: RasterCube,
     dimension: str,
     target: list[Union[str, float]],
