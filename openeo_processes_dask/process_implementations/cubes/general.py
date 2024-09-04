@@ -114,7 +114,7 @@ def rename_dimension(
         raise Exception(
             f"DimensionExists - A dimension with the specified name already exists. The existing dimensions are: {data.dims}"
         )
-    data = data.rename_dims(**{source: target})
+    data = data.rename({source: target})
     # Register dimension in the openeo accessor
     if source in data.openeo.spatial_dims:
         dim_type = "spatial"
