@@ -1,6 +1,6 @@
+import copy
 from typing import Optional, Union
 
-import copy
 import numpy as np
 import xarray as xr
 from numpy.typing import ArrayLike
