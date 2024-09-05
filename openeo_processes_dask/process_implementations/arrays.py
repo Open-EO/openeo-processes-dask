@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike
+from openeo_pg_parser_networkx.pg_schema import DateTime
 from xarray.core.duck_array_ops import isnull, notnull
 
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
@@ -25,6 +26,7 @@ __all__ = [
     "array_create",
     "array_modify",
     "array_concat",
+    "array_append",
     "array_contains",
     "array_find",
     "array_labels",
@@ -42,6 +44,8 @@ def array_element(
     label: Optional[str] = None,
     return_nodata: Optional[bool] = False,
     axis=None,
+    context=None,
+    dim_labels=None,
 ):
     if index is None and label is None:
         raise ArrayElementParameterMissing(
@@ -54,14 +58,20 @@ def array_element(
         )
 
     if label is not None:
-        raise NotImplementedError(
-            "labelled arrays are currently not implemented. Please use index instead."
-        )
+        if isinstance(label, DateTime):
+            label = label.to_numpy()
+        (index,) = np.where(dim_labels == label)
+        if len(index) == 0:
+            index = None
+        else:
+            index = index[0]
 
     try:
         if index is not None:
             element = np.take(data, index, axis=axis)
             return element
+        else:
+            raise IndexError
     except IndexError:
         if return_nodata:
             logger.warning(
@@ -124,6 +134,20 @@ def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
         )
 
     return concat
+
+
+def array_append(data: ArrayLike, value: Any, label: Optional[Any] = None) -> ArrayLike:
+    if label is not None:
+        raise NotImplementedError("labelled arrays are currently not implemented.")
+
+    if (
+        not isinstance(value, list)
+        and not isinstance(value, np.ndarray)
+        and not isinstance(value, da.core.Array)
+    ):
+        value = [value]
+
+    return array_concat(data, value)
 
 
 def array_contains(data: ArrayLike, value: Any, axis=None) -> bool:
@@ -191,6 +215,8 @@ def first(
     ignore_nodata: Optional[bool] = True,
     axis: Optional[str] = None,
 ):
+    if isinstance(data, list):
+        data = np.asarray(data)
     if len(data) == 0:
         return np.nan
     if axis is None:

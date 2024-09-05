@@ -162,3 +162,78 @@ def load_stac(
         stack = filter_temporal(stack, temporal_extent)
 
     return stack
+
+
+def load_url(url: str, format: str, options={}):
+    import geopandas as gpd
+    import requests
+
+    if format not in ["GeoJSON", "JSON", "Parquet"]:
+        raise Exception(
+            f"FormatUnsuitable: Data can't be loaded with the requested input format {format}."
+        )
+
+    response = requests.get(url)
+    if not response.status_code < 400:
+        raise Exception(f"Provided url {url} unavailable. ")
+
+    if "JSON" in format:
+        url_json = response.json()
+
+    if format == "GeoJSON":
+        for feature in url_json.get("features", {}):
+            if "properties" not in feature:
+                feature["properties"] = {}
+            elif feature["properties"] is None:
+                feature["properties"] = {}
+        if isinstance(url_json.get("crs", {}), dict):
+            crs = url_json.get("crs", {}).get("properties", {}).get("name", 4326)
+        else:
+            crs = int(url_json.get("crs", {}))
+        logger.info(f"CRS in geometries: {crs}.")
+
+        gdf = gpd.GeoDataFrame.from_features(url_json, crs=crs)
+
+    elif "Parquet" in format:
+        import os
+
+        import geoparquet as gpq
+
+        file_name = url.split("/")[-1]
+
+        with open(file_name, "wb") as file:
+            file.write(response.content)
+
+        file_size = os.path.getsize(file_name)
+        if file_size > 0:
+            logger.info(f"File downloaded successfully. File size: {file_size} bytes")
+
+        gdf = gpq.read_geoparquet(file_name)
+        os.system(f"rm -rf {file_name}")
+
+    elif format == "JSON":
+        return url_json
+
+    import xvec
+
+    if not hasattr(gdf, "crs"):
+        gdf = gdf.set_crs("epsg:4326")
+
+    columns = gdf.columns.values
+    variables = []
+    for geom in columns:
+        if geom in [
+            "geometry",
+            "geometries",
+        ]:
+            geo_column = geom
+        else:
+            variables.append(geom)
+    cube = xr.Dataset(
+        data_vars={
+            variable: ([geo_column], gdf[variable].values) for variable in variables
+        },
+        coords={geo_column: gdf[geo_column].values},
+    ).xvec.set_geom_indexes(geo_column, crs=gdf.crs)
+
+    return cube

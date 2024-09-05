@@ -21,15 +21,16 @@ def reduce_dimension(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
-    positional_parameters = {"data": 0}
-    named_parameters = {"context": context}
+    dim_labels = data[dimension].values
 
+    positional_parameters = {"data": 0}
     reduced_data = data.reduce(
         reducer,
         dim=dimension,
         keep_attrs=True,
         positional_parameters=positional_parameters,
-        named_parameters=named_parameters,
+        context=context,
+        dim_labels=dim_labels,
     )
 
     # Preset
