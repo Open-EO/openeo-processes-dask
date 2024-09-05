@@ -117,3 +117,8 @@ def test_rename_labels(temporal_interval, bounding_box, random_raster_data):
         rename_labels(
             input_cube, dimension="bands", target=["B02", "B03", "B04", "B05", "B08"]
         )
+
+    with pytest.raises(Exception):
+        rename_labels(
+            input_cube, dimension="bands", target=["B02", "B03", "B04", "B05", "B08", "B11", "B12"]
+        )

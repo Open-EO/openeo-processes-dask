@@ -1,5 +1,6 @@
 from typing import Optional, Union
 
+import copy
 import numpy as np
 import xarray as xr
 from numpy.typing import ArrayLike
@@ -12,7 +13,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
 )
 
 __all__ = [
-    "create_raster_cube",
+    "create_data_cube",
     "drop_dimension",
     "dimension_labels",
     "add_dimension",
@@ -33,7 +34,7 @@ def drop_dimension(data: RasterCube, name: str) -> RasterCube:
     return data.drop_vars(name).squeeze(name)
 
 
-def create_raster_cube() -> RasterCube:
+def create_data_cube() -> RasterCube:
     return xr.DataArray()
 
 
@@ -134,12 +135,18 @@ def rename_labels(
     target: list[Union[str, float]],
     source: Optional[list[Union[str, float]]] = [],
 ):
-    if dimension not in data.dims:
+    data_rename = copy.deepcopy(data)
+    if dimension not in data_rename.dims:
         raise DimensionNotAvailable(
-            f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
+            f"Provided dimension ({dimension}) not found in data.dims: {data_rename.dims}"
         )
+    if source:
+        if len(source) != len(target):
+            raise Exception(
+                f"LabelMismatch - The number of labels in the parameters `source` and `target` don't match."
+            )
 
-    source_labels = data[dimension].values
+    source_labels = data_rename[dimension].values
     if isinstance(source_labels, np.ndarray):
         source_labels = source_labels.tolist()
     if isinstance(target, np.ndarray):
@@ -158,11 +165,11 @@ def rename_labels(
 
     if not source:
         if len(source_labels) == len(target):
-            data[dimension] = target
+            data_rename[dimension] = target
         elif len(target) < len(source_labels):
             if 0 in source_labels:
                 target_values = target + source_labels[len(target) :]
-                data[dimension] = target_values
+                data_rename[dimension] = target_values
             else:
                 raise Exception(
                     f"LabelsNotEnumerated - The dimension labels are not enumerated."
@@ -178,6 +185,6 @@ def rename_labels(
                 raise Exception(
                     f"LabelNotAvailable - A label with the specified name does not exist."
                 )
-        data[dimension] = target_values
+        data_rename[dimension] = target_values
 
-    return data
+    return data_rename
