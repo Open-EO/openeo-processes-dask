@@ -1,3 +1,4 @@
+import copy
 import itertools
 import logging
 from typing import Any, Callable, Optional, Union
@@ -348,11 +349,12 @@ def count(
     axis=None,
     keepdims=False,
 ):
+    counting = copy.deepcopy(data)
     if condition is None:
-        valid = is_valid(data)
+        valid = is_valid(counting)
         return np.nansum(valid, axis=axis, keepdims=keepdims)
     if condition is True:
-        return np.shape(data)[axis]
+        return np.shape(counting)[axis]
     if callable(condition):
-        count = condition(data)
+        count = condition(counting)
         return np.nansum(count, axis=axis, keepdims=keepdims)
