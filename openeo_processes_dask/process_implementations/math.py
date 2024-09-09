@@ -1,3 +1,5 @@
+import logging
+
 import dask
 import dask.array as da
 import numpy as np
@@ -61,6 +63,8 @@ __all__ = [
     "product",
     "normalized_difference",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 def e():
@@ -290,10 +294,23 @@ def quantiles(
             "The process `quantiles` only allows that either the `probabilities` or the `q` parameter is set."
         )
 
-    if isinstance(probabilities, list):
+    if isinstance(probabilities, int):
+        probabilities = np.arange(1.0 / probabilities, 1, 1.0 / probabilities)
+
+    elif (
+        isinstance(probabilities, list)
+        and len(probabilities) == 1
+        and isinstance(probabilities[0], int)
+    ):
+        probabilities = np.arange(1.0 / probabilities[0], 1, 1.0 / probabilities[0])
+
+    elif isinstance(probabilities, list):
         probabilities = np.array(probabilities)
 
     if q is not None:
+        logger.warning(
+            "This parameter has been **deprecated**. Please use the parameter `probabilities` instead."
+        )
         probabilities = np.arange(1.0 / q, 1, 1.0 / q)
 
     if data.size == 0:
