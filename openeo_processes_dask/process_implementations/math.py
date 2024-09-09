@@ -294,12 +294,15 @@ def quantiles(
             "The process `quantiles` only allows that either the `probabilities` or the `q` parameter is set."
         )
 
-    if isinstance(probabilities, int) or (
+    if isinstance(probabilities, int):
+        probabilities = np.arange(1.0 / probabilities, 1, 1.0 / probabilities)
+
+    elif (
         isinstance(probabilities, list)
         and len(probabilities) == 1
         and isinstance(probabilities[0], int)
     ):
-        probabilities = np.arange(1.0 / probabilities, 1, 1.0 / probabilities)
+        probabilities = np.arange(1.0 / probabilities[0], 1, 1.0 / probabilities[0])
 
     elif isinstance(probabilities, list):
         probabilities = np.array(probabilities)
