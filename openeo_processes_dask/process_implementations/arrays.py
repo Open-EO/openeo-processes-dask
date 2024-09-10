@@ -355,5 +355,8 @@ def count(
     if condition is True:
         return np.nansum(np.ones_like(data), axis=axis, keepdims=keepdims)
     if callable(condition):
-        count = condition(data)
+        if not context:
+            context = {}
+        context.pop("x", None)
+        count = condition(x=data, **context)
         return np.nansum(count, axis=axis, keepdims=keepdims)
