@@ -349,12 +349,11 @@ def count(
     axis=None,
     keepdims=False,
 ):
-    counting = copy.deepcopy(data)
     if condition is None:
-        valid = is_valid(counting)
+        valid = is_valid(data)
         return np.nansum(valid, axis=axis, keepdims=keepdims)
     if condition is True:
-        return np.shape(counting)[axis]
+        return np.nansum(np.ones_like(data), axis=axis, keepdims=keepdims)
     if callable(condition):
-        count = condition(counting)
+        count = condition(data)
         return np.nansum(count, axis=axis, keepdims=keepdims)
