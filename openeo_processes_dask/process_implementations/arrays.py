@@ -1,6 +1,7 @@
+import copy
 import itertools
 import logging
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Union
 
 import dask.array as da
 import numpy as np
@@ -10,6 +11,7 @@ from numpy.typing import ArrayLike
 from openeo_pg_parser_networkx.pg_schema import DateTime
 from xarray.core.duck_array_ops import isnull, notnull
 
+from openeo_processes_dask.process_implementations.comparison import is_valid
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 from openeo_processes_dask.process_implementations.exceptions import (
     ArrayElementNotAvailable,
@@ -35,6 +37,7 @@ __all__ = [
     "order",
     "rearrange",
     "sort",
+    "count",
 ]
 
 
@@ -337,3 +340,20 @@ def sort(
         return data_sorted_flip
     elif nodata == True:  # default sort behaviour, np.nan values are put last
         return data_sorted
+
+
+def count(
+    data: ArrayLike,
+    condition: Optional[Union[Callable, bool]] = None,
+    context: Any = None,
+    axis=None,
+    keepdims=False,
+):
+    if condition is None:
+        valid = is_valid(data)
+        return np.nansum(valid, axis=axis, keepdims=keepdims)
+    if condition is True:
+        return np.nansum(np.ones_like(data), axis=axis, keepdims=keepdims)
+    if callable(condition):
+        count = condition(data)
+        return np.nansum(count, axis=axis, keepdims=keepdims)
