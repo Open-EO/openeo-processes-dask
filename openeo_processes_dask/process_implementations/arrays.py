@@ -32,6 +32,7 @@ __all__ = [
     "array_contains",
     "array_find",
     "array_labels",
+    "array_apply",
     "first",
     "last",
     "order",
@@ -211,6 +212,22 @@ def array_labels(data: ArrayLike) -> ArrayLike:
     if len(data.shape) > 1:
         raise TooManyDimensions("array_labels is only implemented for 1D arrays.")
     return np.arange(len(data))
+
+
+def array_apply(
+    data: ArrayLike, process: Callable, context: Optional[Any] = None
+) -> ArrayLike:
+    if not context:
+        context = {}
+    positional_parameters = {"x": 0}
+    named_parameters = {"x": data, "context": context}
+    if callable(process):
+        process_to_apply = np.vectorize(process)
+        return process_to_apply(
+            data,
+            positional_parameters=positional_parameters,
+            named_parameters=named_parameters,
+        )
 
 
 def first(
