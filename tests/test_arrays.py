@@ -14,6 +14,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
     ArrayElementNotAvailable,
     TooManyDimensions,
 )
+from openeo_processes_dask.process_implementations.math import add
 from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
 
@@ -249,6 +250,17 @@ def test_array_labels():
     np.testing.assert_array_equal(array_labels([1, 0, 3, 2]), [0, 1, 2, 3])
     with pytest.raises(TooManyDimensions):
         array_labels(np.array([[1, 0, 3, 2], [5, 0, 6, 4]]))
+
+
+def test_array_apply(process_registry):
+    _process = partial(
+        process_registry["add"].implementation,
+        y=1,
+        x=ParameterReference(from_parameter="x"),
+    )
+
+    output_cube = array_apply(data=np.array([1, 2, 3, 4, 5, 6]), process=_process)
+    assert (output_cube == [2, 3, 4, 5, 6, 7]).all()
 
 
 def test_first():
