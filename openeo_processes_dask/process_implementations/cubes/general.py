@@ -38,6 +38,23 @@ def create_data_cube() -> RasterCube:
     return xr.DataArray()
 
 
+def trim_cube(data) -> RasterCube:
+    for dim in data.dims:
+        if (
+            dim in data.openeo.temporal_dims
+            or dim in data.openeo.band_dims
+            or dim in data.openeo.other_dims
+        ):
+            values = data[dim].values
+            other_dims = [d for d in data.dims if d != dim]
+            available_data = values[(np.isnan(data)).all(dim=other_dims) == 0]
+            if len(available_data) == 0:
+                raise ValueError(f"No data was found for spatiotemporal extent! ")
+            data = data.sel({dim: available_data})
+
+    return data
+
+
 def dimension_labels(data: RasterCube, dimension: str) -> ArrayLike:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
