@@ -1,7 +1,7 @@
 import json
 import logging
 import warnings
-from typing import Callable
+from typing import Any, Callable, Optional
 
 import dask.array as da
 import geopandas as gpd
@@ -87,16 +87,27 @@ def filter_temporal(
     return filtered
 
 
-def filter_labels(data: RasterCube, condition: Callable, dimension: str) -> RasterCube:
+def filter_labels(
+    data: RasterCube, condition: Callable, dimension: str, context: Optional[Any] = None
+) -> RasterCube:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
-    labels = data[dimension].values
-    label_mask = condition(x=labels)
-    label = labels[label_mask]
-    data = data.sel(**{dimension: label})
+    labels = np.array(data[dimension].values)
+    if not context:
+        context = {}
+    positional_parameters = {"x": 0}
+    named_parameters = {"x": labels, "context": context}
+    filter_condition = np.vectorize(condition)
+    filtered_labels = filter_condition(
+        labels,
+        positional_parameters=positional_parameters,
+        named_parameters=named_parameters,
+    )
+    label = np.argwhere(filtered_labels)
+    data = data.isel(**{dimension: label[0]})
     return data
 
 
