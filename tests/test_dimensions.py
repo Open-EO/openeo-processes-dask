@@ -6,6 +6,7 @@ from openeo_processes_dask.process_implementations.cubes.general import (
     drop_dimension,
     rename_dimension,
     rename_labels,
+    trim_cube,
 )
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionLabelCountMismatch,
@@ -124,3 +125,22 @@ def test_rename_labels(temporal_interval, bounding_box, random_raster_data):
             dimension="bands",
             target=["B02", "B03", "B04", "B05", "B08", "B11", "B12"],
         )
+
+
+@pytest.mark.parametrize("size", [(30, 30, 20, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_trim_cube(temporal_interval, bounding_box, random_raster_data):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+    input_cube[:, :, :, 2] = np.zeros((30, 30, 20)) * np.nan
+    output_cube = trim_cube(input_cube)
+    assert output_cube.shape == (30, 30, 20, 3)
+
+    all_nan = input_cube * np.nan
+    with pytest.raises(ValueError):
+        output_cube = trim_cube(all_nan)
