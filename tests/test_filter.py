@@ -12,6 +12,7 @@ from openeo_processes_dask.process_implementations.cubes._filter import *
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
+    TemporalExtentEmpty,
 )
 from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
@@ -48,6 +49,12 @@ def test_filter_temporal(temporal_interval, bounding_box, random_raster_data):
     with pytest.raises(DimensionNotAvailable):
         filter_temporal(
             data=input_cube, extent=temporal_interval_part, dimension="immissing"
+        )
+
+    with pytest.raises(TemporalExtentEmpty):
+        filter_temporal(
+            data=input_cube,
+            extent=["2018-05-31T23:59:59", "2018-05-15T00:00:00"],
         )
 
     temporal_interval_open = TemporalInterval.parse_obj([None, "2018-05-03T00:00:00"])
