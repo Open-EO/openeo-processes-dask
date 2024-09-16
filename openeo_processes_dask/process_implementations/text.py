@@ -38,5 +38,7 @@ def text_concat(data: list[Any], separator: Any) -> str:
             string += str(separator).lower()
         else:
             string += str(separator)
-
-    return string
+    if separator == "":
+        return string
+    else:
+        return string[:-len(str(separator))]
