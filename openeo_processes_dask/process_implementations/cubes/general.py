@@ -49,7 +49,7 @@ def trim_cube(data) -> RasterCube:
             other_dims = [d for d in data.dims if d != dim]
             available_data = values[(np.isnan(data)).all(dim=other_dims) == 0]
             if len(available_data) == 0:
-                raise ValueError(f"No data was found for spatiotemporal extent! ")
+                raise ValueError(f"Data contains NaN values only. ")
             data = data.sel({dim: available_data})
 
     return data
