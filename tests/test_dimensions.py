@@ -139,7 +139,7 @@ def test_trim_cube(temporal_interval, bounding_box, random_raster_data):
     )
     input_cube[:, :, :, 2] = np.zeros((30, 30, 20)) * np.nan
     output_cube = trim_cube(input_cube)
-    assert (output_cube.shape == (30, 30, 20, 3))
+    assert output_cube.shape == (30, 30, 20, 3)
 
     all_nan = input_cube * np.nan
     with pytest.raises(ValueError):
