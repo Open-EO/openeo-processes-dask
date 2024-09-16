@@ -1,18 +1,14 @@
 import copy
 from functools import partial
 
+import datetime
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 
-from openeo_processes_dask.process_implementations.cubes._filter import (
-    filter_bands,
-    filter_bbox,
-    filter_spatial,
-    filter_temporal,
-)
+from openeo_processes_dask.process_implementations.cubes._filter import *
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
@@ -66,6 +62,26 @@ def test_filter_temporal(temporal_interval, bounding_box, random_raster_data):
     new_coords[1] = pd.NaT
     invalid_input_cube = input_cube.assign_coords({"t": np.array(new_coords)})
     filter_temporal(invalid_input_cube, temporal_interval)
+
+
+@pytest.mark.parametrize("size", [(30, 30, 30, 3)])
+@pytest.mark.parametrize("dtype", [np.uint8])
+def test_filter_labels(temporal_interval, bounding_box, random_raster_data, process_registry):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04"],
+        backend="dask",
+    )    
+    _process = partial(
+        process_registry["eq"].implementation,
+        y="B04",
+        x=ParameterReference(from_parameter="x"),
+    )
+
+    output_cube = filter_labels(data=input_cube, condition=_process, dimension = "bands")
+    assert len(output_cube["bands"]) == 1
 
 
 @pytest.mark.parametrize("size", [(1, 1, 1, 2)])
