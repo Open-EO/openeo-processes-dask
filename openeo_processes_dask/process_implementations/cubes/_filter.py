@@ -70,13 +70,18 @@ def filter_temporal(
     # https://github.com/numpy/numpy/issues/23904
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        start_time = extent[0]
+        if isinstance(extent, list):
+            start_time = extent[0]
+            end_time = extent[1]
+        elif isinstance(extent, TemporalInterval):
+            start_time = extent.start
+            end_time = extent.end
+
         if isinstance(start_time, str):
             start_time = np.datetime64(start_time)
         elif start_time is not None:
             start_time = start_time.to_numpy()
 
-        end_time = extent[1]
         if isinstance(end_time, str):
             end_time = np.datetime64(end_time)
         elif end_time is not None:
