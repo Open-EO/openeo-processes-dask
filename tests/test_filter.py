@@ -1,7 +1,7 @@
 import copy
+import datetime
 from functools import partial
 
-import datetime
 import numpy as np
 import pandas as pd
 import pytest
@@ -66,21 +66,23 @@ def test_filter_temporal(temporal_interval, bounding_box, random_raster_data):
 
 @pytest.mark.parametrize("size", [(30, 30, 30, 3)])
 @pytest.mark.parametrize("dtype", [np.uint8])
-def test_filter_labels(temporal_interval, bounding_box, random_raster_data, process_registry):
+def test_filter_labels(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
     input_cube = create_fake_rastercube(
         data=random_raster_data,
         spatial_extent=bounding_box,
         temporal_extent=temporal_interval,
         bands=["B02", "B03", "B04"],
         backend="dask",
-    )    
+    )
     _process = partial(
         process_registry["eq"].implementation,
         y="B04",
         x=ParameterReference(from_parameter="x"),
     )
 
-    output_cube = filter_labels(data=input_cube, condition=_process, dimension = "bands")
+    output_cube = filter_labels(data=input_cube, condition=_process, dimension="bands")
     assert len(output_cube["bands"]) == 1
 
 

@@ -87,10 +87,9 @@ def filter_temporal(
     return filtered
 
 
-def filter_labels(data: RasterCube, 
-                  condition: Callable, 
-                  dimension: str, 
-                  context: Optional[Any] = None) -> RasterCube:
+def filter_labels(
+    data: RasterCube, condition: Callable, dimension: str, context: Optional[Any] = None
+) -> RasterCube:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
