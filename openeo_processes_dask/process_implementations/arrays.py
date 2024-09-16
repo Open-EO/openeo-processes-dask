@@ -1,14 +1,17 @@
+import copy
 import itertools
 import logging
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Union
 
 import dask.array as da
 import numpy as np
 import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike
+from openeo_pg_parser_networkx.pg_schema import DateTime
 from xarray.core.duck_array_ops import isnull, notnull
 
+from openeo_processes_dask.process_implementations.comparison import is_valid
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 from openeo_processes_dask.process_implementations.exceptions import (
     ArrayElementNotAvailable,
@@ -25,14 +28,17 @@ __all__ = [
     "array_create",
     "array_modify",
     "array_concat",
+    "array_append",
     "array_contains",
     "array_find",
     "array_labels",
+    "array_apply",
     "first",
     "last",
     "order",
     "rearrange",
     "sort",
+    "count",
 ]
 
 
@@ -42,6 +48,8 @@ def array_element(
     label: Optional[str] = None,
     return_nodata: Optional[bool] = False,
     axis=None,
+    context=None,
+    dim_labels=None,
 ):
     if index is None and label is None:
         raise ArrayElementParameterMissing(
@@ -54,14 +62,20 @@ def array_element(
         )
 
     if label is not None:
-        raise NotImplementedError(
-            "labelled arrays are currently not implemented. Please use index instead."
-        )
+        if isinstance(label, DateTime):
+            label = label.to_numpy()
+        (index,) = np.where(dim_labels == label)
+        if len(index) == 0:
+            index = None
+        else:
+            index = index[0]
 
     try:
         if index is not None:
             element = np.take(data, index, axis=axis)
             return element
+        else:
+            raise IndexError
     except IndexError:
         if return_nodata:
             logger.warning(
@@ -126,6 +140,20 @@ def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
     return concat
 
 
+def array_append(data: ArrayLike, value: Any, label: Optional[Any] = None) -> ArrayLike:
+    if label is not None:
+        raise NotImplementedError("labelled arrays are currently not implemented.")
+
+    if (
+        not isinstance(value, list)
+        and not isinstance(value, np.ndarray)
+        and not isinstance(value, da.core.Array)
+    ):
+        value = [value]
+
+    return array_concat(data, value)
+
+
 def array_contains(data: ArrayLike, value: Any, axis=None) -> bool:
     # TODO: Contrary to the process spec, our implementation does interpret temporal strings before checking them here
     # This is somewhat implicit in how we currently parse parameters, so cannot be easily changed.
@@ -186,11 +214,29 @@ def array_labels(data: ArrayLike) -> ArrayLike:
     return np.arange(len(data))
 
 
+def array_apply(
+    data: ArrayLike, process: Callable, context: Optional[Any] = None
+) -> ArrayLike:
+    if not context:
+        context = {}
+    positional_parameters = {"x": 0}
+    named_parameters = {"x": data, "context": context}
+    if callable(process):
+        process_to_apply = np.vectorize(process)
+        return process_to_apply(
+            data,
+            positional_parameters=positional_parameters,
+            named_parameters=named_parameters,
+        )
+
+
 def first(
     data: ArrayLike,
     ignore_nodata: Optional[bool] = True,
     axis: Optional[str] = None,
 ):
+    if isinstance(data, list):
+        data = np.asarray(data)
     if len(data) == 0:
         return np.nan
     if axis is None:
@@ -311,3 +357,23 @@ def sort(
         return data_sorted_flip
     elif nodata == True:  # default sort behaviour, np.nan values are put last
         return data_sorted
+
+
+def count(
+    data: ArrayLike,
+    condition: Optional[Union[Callable, bool]] = None,
+    context: Any = None,
+    axis=None,
+    keepdims=False,
+):
+    if condition is None:
+        valid = is_valid(data)
+        return np.nansum(valid, axis=axis, keepdims=keepdims)
+    if condition is True:
+        return np.nansum(np.ones_like(data), axis=axis, keepdims=keepdims)
+    if callable(condition):
+        if not context:
+            context = {}
+        context.pop("x", None)
+        count = condition(x=data, **context)
+        return np.nansum(count, axis=axis, keepdims=keepdims)

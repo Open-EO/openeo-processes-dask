@@ -9,6 +9,7 @@ from openeo_pg_parser_networkx.pg_schema import ParameterReference
 from openeo_processes_dask.process_implementations.cubes.apply import (
     apply,
     apply_dimension,
+    apply_kernel,
 )
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
@@ -235,3 +236,30 @@ def test_apply_dimension_ordering_processes(
     np.testing.assert_array_equal(
         output_cube_sort.data, rearrange_by_expected_order.data
     )
+
+
+@pytest.mark.parametrize("size", [(6, 5, 4, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_kernel(temporal_interval, bounding_box, random_raster_data):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    # Following kernel should leave cube unchanged
+    kernel = np.asarray([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+
+    output_cube = apply_kernel(data=input_cube, kernel=kernel)
+
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=True,
+        verify_crs=True,
+        expected_results=input_cube,
+    )
+
+    xr.testing.assert_equal(output_cube, input_cube)

@@ -42,8 +42,8 @@ def create_fake_rastercube(
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         t_coords = pd.date_range(
-            start=np.datetime64(temporal_extent.__root__[0].__root__),
-            end=np.datetime64(temporal_extent.__root__[1].__root__),
+            start=np.datetime64(temporal_extent.root[0].root),
+            end=np.datetime64(temporal_extent.root[1].root),
             periods=data.shape[2],
         ).values
 

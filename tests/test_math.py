@@ -2,6 +2,7 @@ import dask.array as da
 import numpy as np
 import pytest
 
+from openeo_processes_dask.process_implementations.exceptions import MinMaxSwapped
 from openeo_processes_dask.process_implementations.math import *
 
 
@@ -12,10 +13,10 @@ def test_quantiles():
     )
     quantiles_1 = [_round(quantile, p=2) for quantile in quantiles_1]
     assert quantiles_1 == [2.07, 2.14, 2.28, 2.7, 3.4, 4.5]
-    quantiles_2 = quantiles(data=np.array([2, 4, 4, 4, 5, 5, 7, 9]), q=4)
+    quantiles_2 = quantiles(data=np.array([2, 4, 4, 4, 5, 5, 7, 9]), probabilities=4)
     quantiles_2 = [_round(quantile, p=2) for quantile in quantiles_2]
     assert quantiles_2 == [4, 4.5, 5.5]
-    quantiles_3 = quantiles(data=np.array([-1, -0.5, np.nan, 1]), q=2)
+    quantiles_3 = quantiles(data=np.array([-1, -0.5, np.nan, 1]), probabilities=[2])
     quantiles_3 = [_round(quantile, p=2) for quantile in quantiles_3]
     assert quantiles_3 == [-0.5]
     quantiles_4 = quantiles(
@@ -36,6 +37,14 @@ def test_sum():
     assert _sum([5, 1]) == 6
     assert _sum([-2, 4, 2.5]) == 4.5
     assert np.isnan(_sum([1, np.nan], ignore_nodata=False))
+
+
+def test_e():
+    assert e() == pytest.approx(2.71828182846)
+
+
+def test_pi():
+    assert pi() == pytest.approx(3.14159265359)
 
 
 @pytest.mark.parametrize(
@@ -78,6 +87,16 @@ def test_normalized_difference(x, y, expected):
     assert np.array_equal(result_np, result_dask.compute(), equal_nan=True)
 
 
+def test_linear_scale_range():
+    array = np.array([5, 0])
+
+    dask_array = da.from_array(array)
+    result_dask = linear_scale_range(dask_array, inputMin=0, inputMax=5)
+    assert np.array_equal(np.array([1, 0]), result_dask.compute(), equal_nan=True)
+    result_dask = linear_scale_range(dask_array, inputMin=5, inputMax=0)
+    assert np.array_equal(np.array([0, 1]), result_dask.compute(), equal_nan=True)
+
+
 def test_clip():
     array = np.array([5, 0])
     result_np = clip(array, min=0, max=2)
@@ -86,3 +105,16 @@ def test_clip():
     result_dask = clip(dask_array, min=0, max=2)
     assert np.array_equal(result_np, result_dask.compute(), equal_nan=True)
     assert np.array_equal(result_np, np.array([2, 0]))
+    with pytest.raises(MinMaxSwapped):
+        clip(dask_array, 10, 0)
+
+
+def test_extrema():
+    array_list = [0, 5, 10]
+    result_np = np.array([0, 10])
+
+    result = extrema(array_list)
+    assert np.array_equal(result_np, result.compute())
+    dask_array = da.from_array(np.array(array_list))
+    result = extrema(dask_array, ignore_nodata=True, axis=0, keepdims=False)
+    assert np.array_equal(result_np, result.compute())

@@ -1,1 +1,1 @@
-from .resample import *
+from .ddmc import *

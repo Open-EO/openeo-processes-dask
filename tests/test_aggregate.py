@@ -1,7 +1,10 @@
 from functools import partial
 
+import geopandas as gpd
 import numpy as np
 import pytest
+import xarray as xr
+import xvec
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 
 from openeo_processes_dask.process_implementations.cubes.aggregate import (
@@ -135,3 +138,56 @@ def test_aggregate_spatial(
     )
 
     assert len(output_cube.dims) < len(reduced_cube.dims)
+
+    gdf = gpd.GeoDataFrame.from_features(polygon_geometry_small, crs="EPSG:4326")
+    xmin, ymin, xmax, ymax = gdf.total_bounds
+
+    expected_values = (
+        reduced_cube.sel(x=slice(xmin, xmax), y=slice(ymin, ymax))
+        .mean(["x", "y"])
+        .values
+    )
+
+    assert (output_cube.values == expected_values).all()
+
+    gdf = gpd.GeoDataFrame.from_features(polygon_geometry_small, crs="EPSG:4326")
+    gdf_equi7 = gdf.to_crs(
+        "+proj=aeqd +lat_0=53 +lon_0=24 +x_0=5837287.81977 +y_0=2121415.69617 +datum=WGS84 +units=m +no_defs"
+    )
+    output_cube_transform = aggregate_spatial(
+        data=reduced_cube, geometries=gdf_equi7, reducer=reducer
+    )
+    assert len(output_cube_transform.dims) == len(output_cube.dims)
+    assert output_cube_transform.shape == output_cube.shape
+
+    geometry_cube = xr.Dataset(
+        data_vars={"variable": (["geometry"], np.arange(len(gdf)))},
+        coords={"geometry": gdf["geometry"].values},
+    ).xvec.set_geom_indexes("geometry", crs=gdf.crs)
+    output_cube_transform = aggregate_spatial(
+        data=reduced_cube, geometries=geometry_cube, reducer=reducer
+    )
+    assert len(output_cube_transform.dims) == len(output_cube.dims)
+    assert output_cube_transform.shape == output_cube.shape
+
+    polygon_geometry_small["crs"] = 4326
+
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=polygon_geometry_small, reducer=reducer
+    )
+
+    assert len(output_cube.dims) < len(reduced_cube.dims)
+
+    geometry_url = "https://raw.githubusercontent.com/ValentinaHutter/polygons/master/polygons_small.json"
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=geometry_url, reducer=reducer
+    )
+
+    assert len(output_cube.geometry) == 38
+
+    geometry = {"type": "Polygon", "coordinates": [[[0, 0], [0, 1], [1, 1], [1, 0]]]}
+    output_cube = aggregate_spatial(
+        data=reduced_cube, geometries=geometry, reducer=reducer
+    )
+
+    assert np.isnan(output_cube.values).all()
