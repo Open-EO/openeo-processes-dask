@@ -11,7 +11,7 @@ from openeo_processes_dask.process_implementations.text import *
         ("Lorem ipsum dolor sit amet", False, "lorem", True),
         ("Lorem ipsum dolor sit amet", True, "lorem", False),
         ("Ä", True, "ä", False),
-        (None, "nan", "null", True)
+        (None, "nan", "null", True),
     ],
 )
 def test_text_begins(string, expected, pattern, case_sensitive):
@@ -30,7 +30,7 @@ def test_text_begins(string, expected, pattern, case_sensitive):
         ("Lorem ipsum dolor sit amet", False, "AMET", True),
         ("Lorem ipsum dolor sit amet", True, "AMET", False),
         ("Ä", True, "ä", False),
-        (None, "nan", "null", True)
+        (None, "nan", "null", True),
     ],
 )
 def test_text_ends(string, expected, pattern, case_sensitive):
@@ -49,7 +49,7 @@ def test_text_ends(string, expected, pattern, case_sensitive):
         ("Lorem ipsum dolor sit amet", False, "Ipsum Dolor", True),
         ("Lorem ipsum dolor sit amet", True, "SIT", False),
         ("ÄÖÜ", True, "ö", False),
-        (None, "nan", "null", True)
+        (None, "nan", "null", True),
     ],
 )
 def test_text_contains(string, expected, pattern, case_sensitive):
@@ -63,11 +63,11 @@ def test_text_contains(string, expected, pattern, case_sensitive):
 @pytest.mark.parametrize(
     "data,expected,separator",
     [
-        (["Hello","World"], "Hello World", " "),
-        ([1,2,3,4,5,6,7,8,9,0], "1234567890", ""),
-        ([None,True,False,1,-1.5,"ß"], "none\ntrue\nfalse\n1\n-1.5\nß", "\n"),
-        ([2,0], "210", 1),
-        ([], "", "")
+        (["Hello", "World"], "Hello World", " "),
+        ([1, 2, 3, 4, 5, 6, 7, 8, 9, 0], "1234567890", ""),
+        ([None, True, False, 1, -1.5, "ß"], "none\ntrue\nfalse\n1\n-1.5\nß", "\n"),
+        ([2, 0], "210", 1),
+        ([], "", ""),
     ],
 )
 def test_text_contains(data, expected, separator):

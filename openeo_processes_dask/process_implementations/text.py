@@ -1,5 +1,6 @@
 from typing import Any, Optional
 
+
 def text_begins(data: str, pattern: str, case_sensitive: Optional[bool] = True) -> str:
     if data:
         if case_sensitive:
@@ -8,15 +9,19 @@ def text_begins(data: str, pattern: str, case_sensitive: Optional[bool] = True) 
             return data.lower().startswith(pattern.lower())
     else:
         return None
-    
-def text_contains(data: str, pattern: str, case_sensitive: Optional[bool] = True) -> str:
+
+
+def text_contains(
+    data: str, pattern: str, case_sensitive: Optional[bool] = True
+) -> str:
     if data:
         if case_sensitive:
             return pattern in data
         else:
-            return pattern.lower() in data.lower() 
+            return pattern.lower() in data.lower()
     else:
         return None
+
 
 def text_ends(data: str, pattern: str, case_sensitive: Optional[bool] = True) -> str:
     if data:
@@ -26,7 +31,8 @@ def text_ends(data: str, pattern: str, case_sensitive: Optional[bool] = True) ->
             return data.lower().endswith(pattern.lower())
     else:
         return None
-    
+
+
 def text_concat(data: list[Any], separator: Any) -> str:
     string = ""
     for elem in data:
@@ -41,4 +47,4 @@ def text_concat(data: list[Any], separator: Any) -> str:
     if separator == "":
         return string
     else:
-        return string[:-len(str(separator))]
+        return string[: -len(str(separator))]
