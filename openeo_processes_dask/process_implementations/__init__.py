@@ -8,6 +8,7 @@ from .cubes import *
 from .inspect import *
 from .logic import *
 from .math import *
+from .text import *
 
 try:
     from .ml import *
