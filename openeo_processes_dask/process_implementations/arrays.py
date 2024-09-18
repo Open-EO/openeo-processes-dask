@@ -165,10 +165,8 @@ def array_contains(data: ArrayLike, value: Any, axis=None) -> bool:
             value_is_valid = True
     if len(np.shape(data)) != 1 and axis is None:
         return False
-    if not value_is_valid:
+    if not value_is_valid or pd.isnull(value):
         return False
-    if pd.isnull(value):
-        return np.isnan(data).any(axis=axis)
     else:
         return np.isin(data, value).any(axis=axis)
 
@@ -188,7 +186,7 @@ def array_find(
     idxs = (data == value).argmax(axis=axis)
 
     mask = ~np.array((data == value).any(axis=axis))
-    if np.isnan(value):
+    if not isinstance(value, str) and np.isnan(value):
         mask = True
     if reverse:
         if axis is None:

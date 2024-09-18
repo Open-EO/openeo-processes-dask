@@ -180,7 +180,7 @@ def test_array_append(data, value, expected):
         ([1, 2, 3], 2, True),
         (["A", "B", "C"], "b", False),
         ([1, 2, 3], "2", False),
-        ([1, 2, np.nan], np.nan, True),
+        ([1, 2, np.nan], np.nan, False),
         ([[2, 1], [3, 4]], [1, 2], False),
         ([[2, 1], [3, 4]], 2, False),
         ([1, 2, 3], np.int64(2), True),
@@ -230,6 +230,7 @@ def test_array_contains_object_dtype():
         ([1, 0, 3, 0, 2], 0, 3, None, True),
         ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [999999, 1, 0, 999999], 0, True),
         ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [2, 1], 1, True),
+        (["A", "B", "C"], "b", 99999, None, False),
     ],
 )
 def test_array_find(data, value, expected, axis, reverse):
