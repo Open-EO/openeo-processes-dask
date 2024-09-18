@@ -33,6 +33,7 @@ __all__ = [
     "array_find",
     "array_labels",
     "array_apply",
+    "array_interpolate_linear",
     "first",
     "last",
     "order",
@@ -232,6 +233,17 @@ def array_apply(
             positional_parameters=positional_parameters,
             named_parameters=named_parameters,
         )
+
+
+def array_interpolate_linear(data: ArrayLike):
+    x = np.arange(len(data))
+    valid = np.isfinite(data)
+    if len(x[valid]) < 2:
+        return data
+    data[~valid] = np.interp(
+        x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
+    )
+    return data
 
 
 def first(

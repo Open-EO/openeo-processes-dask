@@ -264,6 +264,21 @@ def test_array_apply(process_registry):
     assert (output_cube == [2, 3, 4, 5, 6, 7]).all()
 
 
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        ([np.nan, 1, np.nan, 6, np.nan, -8], [np.nan, 1, 3.5, 6, -1, -8]),
+        ([np.nan, 1, np.nan, np.nan], [np.nan, 1, np.nan, np.nan]),
+    ],
+)
+def test_array_interpolate_linear(data, expected):
+    assert np.array_equal(
+        array_interpolate_linear(data),
+        expected,
+        equal_nan=True,
+    )
+
+
 def test_first():
     assert first(np.array([1, 0, 3, 2])) == 1
     assert pd.isnull(first(np.array([np.nan, 2, 3]), ignore_nodata=False))
