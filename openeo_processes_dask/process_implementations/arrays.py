@@ -236,6 +236,8 @@ def array_apply(
 
 
 def array_interpolate_linear(data: ArrayLike):
+    if isinstance(data, list):
+        data = np.array(data)
     x = np.arange(len(data))
     valid = np.isfinite(data)
     if len(x[valid]) < 2:
