@@ -190,6 +190,12 @@ def array_find(
     mask = ~np.array((data == value).any(axis=axis))
     if np.isnan(value):
         mask = True
+    if reverse:
+        if axis is None:
+            size = data.size
+        else:
+            size = data.shape[axis]
+        idxs = size - 1 - idxs
 
     logger.warning(
         "array_find: numpy has no sentinel value for missing data in integer arrays, therefore np.masked_array is used to return the indices of found elements. Further operations might fail if not defined for masked arrays."
