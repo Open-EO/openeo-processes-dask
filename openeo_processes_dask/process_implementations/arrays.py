@@ -33,6 +33,7 @@ __all__ = [
     "array_find",
     "array_labels",
     "array_apply",
+    "array_interpolate_linear",
     "first",
     "last",
     "order",
@@ -165,10 +166,8 @@ def array_contains(data: ArrayLike, value: Any, axis=None) -> bool:
             value_is_valid = True
     if len(np.shape(data)) != 1 and axis is None:
         return False
-    if not value_is_valid:
+    if not value_is_valid or pd.isnull(value):
         return False
-    if pd.isnull(value):
-        return np.isnan(data).any(axis=axis)
     else:
         return np.isin(data, value).any(axis=axis)
 
@@ -188,8 +187,14 @@ def array_find(
     idxs = (data == value).argmax(axis=axis)
 
     mask = ~np.array((data == value).any(axis=axis))
-    if np.isnan(value):
+    if not isinstance(value, str) and np.isnan(value):
         mask = True
+    if reverse:
+        if axis is None:
+            size = data.size
+        else:
+            size = data.shape[axis]
+        idxs = size - 1 - idxs
 
     logger.warning(
         "array_find: numpy has no sentinel value for missing data in integer arrays, therefore np.masked_array is used to return the indices of found elements. Further operations might fail if not defined for masked arrays."
@@ -228,6 +233,19 @@ def array_apply(
             positional_parameters=positional_parameters,
             named_parameters=named_parameters,
         )
+
+
+def array_interpolate_linear(data: ArrayLike):
+    if isinstance(data, list):
+        data = np.array(data)
+    x = np.arange(len(data))
+    valid = np.isfinite(data)
+    if len(x[valid]) < 2:
+        return data
+    data[~valid] = np.interp(
+        x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
+    )
+    return data
 
 
 def first(
