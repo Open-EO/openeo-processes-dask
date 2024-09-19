@@ -277,13 +277,15 @@ def test_array_interpolate_linear(data, expected):
         expected,
         equal_nan=True,
     )
+    data_np = np.array(data)
     assert np.array_equal(
-        array_interpolate_linear(np.array(data)),
+        array_interpolate_linear(data_np),
         expected,
         equal_nan=True,
     )
+    data_da = da.from_array(data_np)
     assert np.array_equal(
-        array_interpolate_linear(da.from_array(np.array(data))).compute(),
+        array_interpolate_linear(data_da),
         expected,
         equal_nan=True,
     )
