@@ -1,5 +1,12 @@
 from typing import Any, Optional
 
+__all__ = [
+    "text_begins",
+    "text_contains",
+    "text_concat",
+    "text_ends",
+]
+
 
 def text_begins(data: str, pattern: str, case_sensitive: Optional[bool] = True) -> str:
     if data:
