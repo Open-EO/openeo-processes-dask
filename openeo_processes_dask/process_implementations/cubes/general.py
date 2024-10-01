@@ -19,6 +19,7 @@ __all__ = [
     "add_dimension",
     "rename_dimension",
     "rename_labels",
+    "trim_cube",
 ]
 
 
