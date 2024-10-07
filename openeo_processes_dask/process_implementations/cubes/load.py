@@ -89,7 +89,7 @@ def load_stac(
     bands: Optional[list[str]] = None,
     properties: Optional[dict] = None,
     resolution: Optional[float] = None,
-    projection: Optional[Union[int,str]] = None,
+    projection: Optional[Union[int, str]] = None,
     resampling: Optional[str] = None,
 ) -> RasterCube:
     stac_type = _validate_stac(url)
@@ -158,8 +158,8 @@ def load_stac(
         raise Exception(
             f"The provided URL is a STAC {stac_type}, which is not yet supported. Please provide a valid URL to a STAC Collection or Item."
         )
-    available_assets = set([tuple(i.assets.keys()) for i in items])
-    if (len(available_assets))>1:
+    available_assets = {tuple(i.assets.keys()) for i in items}
+    if (len(available_assets)) > 1:
         raise OpenEOException(
             f"The resulting STAC Items contain two separate set of assets: {available_assets}. We can't load them at the same time."
         )
@@ -175,10 +175,11 @@ def load_stac(
         if "cube:dimensions" in item_dict["properties"]:
             for d in item_dict["properties"]["cube:dimensions"]:
                 if "reference_system" in item_dict["properties"]["cube:dimensions"][d]:
-                    reference_system = item_dict["properties"]["cube:dimensions"][d]["reference_system"]
+                    reference_system = item_dict["properties"]["cube:dimensions"][d][
+                        "reference_system"
+                    ]
                     break
-    
-    
+
     asset_scale_offset = {}
     zarr_assets = False
     use_xarray_open_kwargs = False
@@ -212,21 +213,25 @@ def load_stac(
     if zarr_assets:
         if use_xarray_open_kwargs:
             datasets = [
-                xr.open_dataset(asset.href,**asset.extra_fields["xarray:open_kwargs"])
-                for item in items for asset in item.assets.values()
+                xr.open_dataset(asset.href, **asset.extra_fields["xarray:open_kwargs"])
+                for item in items
+                for asset in item.assets.values()
                 if any(b in asset.href for b in bands)
-                ]
+            ]
         else:
             datasets = [
-                xr.open_dataset(asset.href,engine="zarr",consolidated=True,chunks={})
-                for item in items for asset in item.assets.values()
+                xr.open_dataset(asset.href, engine="zarr", consolidated=True, chunks={})
+                for item in items
+                for asset in item.assets.values()
                 if any(b in asset.href for b in bands)
-                ]
-        stack = xr.combine_by_coords(datasets, join="exact",combine_attrs="drop_conflicts")
-        stack.rio.write_crs(reference_system,inplace=True)
+            ]
+        stack = xr.combine_by_coords(
+            datasets, join="exact", combine_attrs="drop_conflicts"
+        )
+        stack.rio.write_crs(reference_system, inplace=True)
         # TODO: now drop data which consist in dates. Probably we should allow it if not conflicitng with other data types.
         for d in stack.data_vars:
-            if "datetime" in  str(stack[d].dtype):
+            if "datetime" in str(stack[d].dtype):
                 stack = stack.drop(d)
         stack = stack.to_dataarray(dim="bands")
     else:
