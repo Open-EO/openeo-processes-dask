@@ -88,6 +88,9 @@ def load_stac(
     temporal_extent: Optional[TemporalInterval] = None,
     bands: Optional[list[str]] = None,
     properties: Optional[dict] = None,
+    resolution: Optional[float] = None,
+    projection: Optional[Union[int,str]] = None,
+    resampling: Optional[str] = None,
 ) -> RasterCube:
     stac_type = _validate_stac(url)
 
@@ -232,6 +235,13 @@ def load_stac(
         nodata_set = {asset_scale_offset[k]["nodata"] for k in asset_scale_offset}
         dtype_set = {asset_scale_offset[k]["data_type"] for k in asset_scale_offset}
         kwargs = {}
+        if resolution is not None:
+            kwargs["resolution"] = resolution
+        if projection is not None:
+            kwargs["crs"] = projection
+        if resampling is not None:
+            kwargs["resampling"] = resampling
+
         if len(nodata_set) == 1 and list(nodata_set)[0] == None:
             apply_nodata = False
         if apply_nodata:
