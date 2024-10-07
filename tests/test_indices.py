@@ -22,7 +22,7 @@ def test_ndvi(bounding_box):
     ).isel({"x": slice(0, 20), "y": slice(0, 20)})
 
     # Test whether this works with different band names
-    input_cube = input_cube.rename({"band": "b"})
+    input_cube = input_cube.rename({"bands": "b"})
 
     import dask.array as da
 
