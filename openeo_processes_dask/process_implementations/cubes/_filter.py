@@ -1,7 +1,7 @@
 import json
 import logging
 import warnings
-from typing import Callable
+from typing import Any, Callable, Optional
 
 import dask.array as da
 import geopandas as gpd
@@ -21,6 +21,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
     BandFilterParameterMissing,
     DimensionMissing,
     DimensionNotAvailable,
+    TemporalExtentEmpty,
     TooManyDimensions,
 )
 
@@ -69,15 +70,33 @@ def filter_temporal(
     # https://github.com/numpy/numpy/issues/23904
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        start_time = extent[0]
-        if start_time is not None:
+        if isinstance(extent, TemporalInterval):
+            start_time = extent.start
+            end_time = extent.end
+        else:
+            start_time = extent[0]
+            end_time = extent[1]
+
+        if isinstance(start_time, str):
+            start_time = np.datetime64(start_time)
+        elif start_time is not None:
             start_time = start_time.to_numpy()
-        end_time = extent[1]
-        if end_time is not None:
-            end_time = extent[1].to_numpy() - np.timedelta64(1, "ms")
+
+        if isinstance(end_time, str):
+            end_time = np.datetime64(end_time)
+        elif end_time is not None:
+            end_time = end_time.to_numpy()
+
         # The second element is the end of the temporal interval.
         # The specified instance in time is excluded from the interval.
         # See https://processes.openeo.org/#filter_temporal
+        if end_time is not None:
+            end_time -= np.timedelta64(1, "ms")
+
+        if start_time is not None and end_time is not None and end_time < start_time:
+            raise TemporalExtentEmpty(
+                "The temporal extent is empty. The second instant in time must always be greater/later than the first instant in time."
+            )
 
         data = data.where(~np.isnat(data[applicable_temporal_dimension]), drop=True)
         filtered = data.loc[
@@ -87,16 +106,27 @@ def filter_temporal(
     return filtered
 
 
-def filter_labels(data: RasterCube, condition: Callable, dimension: str) -> RasterCube:
+def filter_labels(
+    data: RasterCube, condition: Callable, dimension: str, context: Optional[Any] = None
+) -> RasterCube:
     if dimension not in data.dims:
         raise DimensionNotAvailable(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
-    labels = data[dimension].values
-    label_mask = condition(x=labels)
-    label = labels[label_mask]
-    data = data.sel(**{dimension: label})
+    labels = np.array(data[dimension].values)
+    if not context:
+        context = {}
+    positional_parameters = {"x": 0}
+    named_parameters = {"x": labels, "context": context}
+    filter_condition = np.vectorize(condition)
+    filtered_labels = filter_condition(
+        labels,
+        positional_parameters=positional_parameters,
+        named_parameters=named_parameters,
+    )
+    label = np.argwhere(filtered_labels)
+    data = data.isel(**{dimension: label[0]})
     return data
 
 
