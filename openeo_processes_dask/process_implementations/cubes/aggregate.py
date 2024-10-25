@@ -55,7 +55,7 @@ def aggregate_temporal(
             )
         t = temporal_dims[0]
 
-    intervals_np = np.array(intervals, dtype=np.datetime64).astype("float")
+    intervals_np = np.array(intervals, dtype=np.datetime64).astype(float)
     intervals_flat = np.reshape(
         intervals_np, np.shape(intervals_np)[0] * np.shape(intervals_np)[1]
     )
