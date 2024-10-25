@@ -36,8 +36,6 @@ def aggregate_temporal(
     context: Optional[dict] = None,
     **kwargs,
 ) -> RasterCube:
-    from xarray.groupers import BinGrouper
-
     temporal_dims = data.openeo.temporal_dims
 
     if dimension is not None:
@@ -79,7 +77,7 @@ def aggregate_temporal(
 
     intervals_flat = np.unique(intervals_flat)
     data[t] = data[t].values.astype("float")
-    grouped_data = data.groupby({t: BinGrouper(bins=intervals_flat)})
+    grouped_data = data.groupby_bins(t, bins=intervals_flat)
     positional_parameters = {"data": 0}
     groups = grouped_data.reduce(
         reducer, keep_attrs=True, positional_parameters=positional_parameters
