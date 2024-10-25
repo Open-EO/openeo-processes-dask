@@ -33,6 +33,7 @@ from tests.mockdata import create_fake_rastercube
 def test_aggregate_temporal(
     temporal_extent,
     intervals,
+    labels,
     expected,
     bounding_box,
     random_raster_data,
@@ -52,7 +53,7 @@ def test_aggregate_temporal(
     )
 
     output_cube = aggregate_temporal(
-        data=input_cube, intervals=intervals, reducer=reducer
+        data=input_cube, intervals=intervals, reducer=reducer, labels=labels
     )
 
     general_output_checks(
