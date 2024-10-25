@@ -76,7 +76,7 @@ def aggregate_temporal(
     labels_nans = labels_nans[~mask]
 
     intervals_flat = np.unique(intervals_flat)
-    data[t] = data[t].values.astype("float")
+    data[t] = np.datetime64(data[t].values).astype("float")
     grouped_data = data.groupby_bins(t, bins=intervals_flat)
     positional_parameters = {"data": 0}
     groups = grouped_data.reduce(
@@ -84,7 +84,7 @@ def aggregate_temporal(
     )
     groups[t + "_bins"] = labels_nans
     data_agg_temp = groups.sel({t + "_bins": labels})
-    data_agg_temp = data_agg_temp.rename(t + "_bins", t)
+    data_agg_temp = data_agg_temp.rename({t + "_bins": t})
 
     return data_agg_temp
 

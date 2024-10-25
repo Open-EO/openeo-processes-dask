@@ -17,7 +17,7 @@ from tests.mockdata import create_fake_rastercube
 @pytest.mark.parametrize("size", [(6, 5, 100, 4)])
 @pytest.mark.parametrize("dtype", [np.float64])
 @pytest.mark.parametrize(
-    "temporal_extent,intervals,expected",
+    "temporal_extent,intervals,labels, expected",
     [
         (
             ["2018-01-01", "2019-01-01"],
@@ -25,6 +25,7 @@ from tests.mockdata import create_fake_rastercube
                 ["2018-01-01T12:00:00", "2018-06-01T12:00:00"],
                 ["2018-07-01T12:00:00", "2018-12-01T12:00:00"],
             ],
+            ["half-1", "half-2"],
             2,
         )
     ],
