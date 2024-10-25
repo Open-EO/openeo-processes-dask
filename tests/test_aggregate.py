@@ -20,7 +20,7 @@ from tests.mockdata import create_fake_rastercube
     "temporal_extent,intervals,labels, expected",
     [
         (
-            ["2018-01-01", "2019-01-01"],
+            ["2018-01-01T00:00:00", "2019-01-01T00:00:00"],
             [
                 ["2018-01-01T12:00:00", "2018-06-01T12:00:00"],
                 ["2018-07-01T12:00:00", "2018-12-01T12:00:00"],
