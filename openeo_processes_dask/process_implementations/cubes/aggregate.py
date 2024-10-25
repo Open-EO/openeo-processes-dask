@@ -43,7 +43,7 @@ def aggregate_temporal(
             raise DimensionNotAvailable(
                 f"A dimension with the specified name: {dimension} does not exist."
             )
-        applicable_temporal_dimension = dimension
+        t = dimension
     else:
         if not temporal_dims:
             raise DimensionNotAvailable(
@@ -53,13 +53,41 @@ def aggregate_temporal(
             raise TooManyDimensions(
                 f"The data cube contains multiple temporal dimensions: {temporal_dims}. The parameter `dimension` must be specified."
             )
-        applicable_temporal_dimension = temporal_dims[0]
+        t = temporal_dims[0]
 
-    aggregated_data = data.groupby_bins(
-        group=applicable_temporal_dimension, labels=labels
+    intervals_np = np.array(intervals, dtype=np.datetime64).astype(float)
+    intervals_flat = np.reshape(
+        intervals_np, np.shape(intervals_np)[0] * np.shape(intervals_np)[1]
     )
 
-    raise NotImplementedError("aggregate_temporal is currently not implemented")
+    if not labels:
+        labels = np.array(intervals, dtype="datetime64[s]").astype(str)[:, 0]
+    if (intervals_np[1:, 0] < intervals_np[:-1, 1]).any():
+        raise NotImplementedError(
+            "Aggregating data for overlapping time ranges is not implemented. "
+        )
+
+    mask = np.zeros((len(labels) * 2) - 2).astype(bool)
+    mask[1::2] = np.isin(intervals_np[1:, 0], intervals_np[:-1, 1])
+    mask = np.append(mask, np.array([False, True]))
+
+    labels_nans = np.arange(len(labels) * 2).astype(str)
+    labels_nans[::2] = labels
+    labels_nans = labels_nans[~mask]
+
+    intervals_flat = np.unique(intervals_flat)
+    t_coords = data[t].values.astype(str)
+    data[t] = np.array(t_coords, dtype="datetime64[s]").astype(float)
+    grouped_data = data.groupby_bins(t, bins=intervals_flat)
+    positional_parameters = {"data": 0}
+    groups = grouped_data.reduce(
+        reducer, keep_attrs=True, positional_parameters=positional_parameters
+    )
+    groups[t + "_bins"] = labels_nans
+    data_agg_temp = groups.sel({t + "_bins": labels})
+    data_agg_temp = data_agg_temp.rename({t + "_bins": t})
+
+    return data_agg_temp
 
 
 def aggregate_temporal_period(

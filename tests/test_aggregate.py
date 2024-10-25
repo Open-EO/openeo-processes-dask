@@ -7,14 +7,64 @@ import xarray as xr
 import xvec
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 
-from openeo_processes_dask.process_implementations.cubes.aggregate import (
-    aggregate_spatial,
-    aggregate_temporal_period,
-)
+from openeo_processes_dask.process_implementations.cubes.aggregate import *
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from openeo_processes_dask.process_implementations.math import mean
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
+
+
+@pytest.mark.parametrize("size", [(6, 5, 100, 4)])
+@pytest.mark.parametrize("dtype", [np.float64])
+@pytest.mark.parametrize(
+    "temporal_extent,intervals,labels, expected",
+    [
+        (
+            ["2018-01-01T00:00:00", "2019-01-01T00:00:00"],
+            [
+                ["2018-01-01T12:00:00", "2018-06-01T12:00:00"],
+                ["2018-07-01T12:00:00", "2018-12-01T12:00:00"],
+            ],
+            ["half-1", "half-2"],
+            2,
+        )
+    ],
+)
+def test_aggregate_temporal(
+    temporal_extent,
+    intervals,
+    labels,
+    expected,
+    bounding_box,
+    random_raster_data,
+    process_registry,
+):
+    """"""
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=TemporalInterval.parse_obj(temporal_extent),
+        bands=["B02", "B03", "B04", "B08"],
+    )
+
+    reducer = partial(
+        process_registry["mean"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube = aggregate_temporal(
+        data=input_cube, intervals=intervals, reducer=reducer, labels=labels
+    )
+
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=True,
+        verify_crs=True,
+    )
+
+    assert len(output_cube.t) == expected
+    assert isinstance(output_cube.t.values[0], str)
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
