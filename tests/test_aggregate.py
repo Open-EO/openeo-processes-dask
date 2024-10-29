@@ -98,7 +98,7 @@ def test_aggregate_temporal_period_numpy_equals_dask(
 
 
 @pytest.mark.parametrize("size", [(30, 30, 30, 3)])
-@pytest.mark.parametrize("dtype", [np.int8])
+@pytest.mark.parametrize("dtype", [np.float32])
 def test_aggregate_spatial(
     random_raster_data,
     bounding_box,
