@@ -14,6 +14,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
     ArrayElementNotAvailable,
     TooManyDimensions,
 )
+from openeo_processes_dask.process_implementations.math import add
 from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
 
@@ -179,7 +180,7 @@ def test_array_append(data, value, expected):
         ([1, 2, 3], 2, True),
         (["A", "B", "C"], "b", False),
         ([1, 2, 3], "2", False),
-        ([1, 2, np.nan], np.nan, True),
+        ([1, 2, np.nan], np.nan, False),
         ([[2, 1], [3, 4]], [1, 2], False),
         ([[2, 1], [3, 4]], 2, False),
         ([1, 2, 3], np.int64(2), True),
@@ -221,14 +222,15 @@ def test_array_contains_object_dtype():
     [
         ([1, 0, 3, 2], 3, 2, None, False),
         ([1, 0, 3, 2, np.nan, 3], np.nan, 999999, None, False),
-        ([1, 0, 3, 2], 3, 2, None, False),
+        ([1, 0, 3, 0, 2], 0, 1, None, False),
         ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [999999, 1, 0, 999999], 0, False),
         ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [2, 1], 1, False),
-        ([1, 0, 3, 2], 3, 1, None, True),
+        ([1, 0, 3, 2], 3, 2, None, True),
         ([1, 0, 3, 2, np.nan, 3], np.nan, 999999, None, True),
-        ([1, 0, 3, 2], 3, 1, None, True),
-        ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [999999, 0, 1, 999999], 0, True),
-        ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [1, 2], 1, True),
+        ([1, 0, 3, 0, 2], 0, 3, None, True),
+        ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [999999, 1, 0, 999999], 0, True),
+        ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [2, 1], 1, True),
+        (["A", "B", "C"], "b", 99999, None, False),
     ],
 )
 def test_array_find(data, value, expected, axis, reverse):
@@ -249,6 +251,44 @@ def test_array_labels():
     np.testing.assert_array_equal(array_labels([1, 0, 3, 2]), [0, 1, 2, 3])
     with pytest.raises(TooManyDimensions):
         array_labels(np.array([[1, 0, 3, 2], [5, 0, 6, 4]]))
+
+
+def test_array_apply(process_registry):
+    _process = partial(
+        process_registry["add"].implementation,
+        y=1,
+        x=ParameterReference(from_parameter="x"),
+    )
+
+    output_cube = array_apply(data=np.array([1, 2, 3, 4, 5, 6]), process=_process)
+    assert (output_cube == [2, 3, 4, 5, 6, 7]).all()
+
+
+@pytest.mark.parametrize(
+    "data, expected",
+    [
+        ([np.nan, 1, np.nan, 6, np.nan, -8], [np.nan, 1, 3.5, 6, -1, -8]),
+        ([np.nan, 1, np.nan, np.nan], [np.nan, 1, np.nan, np.nan]),
+    ],
+)
+def test_array_interpolate_linear(data, expected):
+    assert np.array_equal(
+        array_interpolate_linear(data),
+        expected,
+        equal_nan=True,
+    )
+    data_np = np.array(data)
+    assert np.array_equal(
+        array_interpolate_linear(data_np),
+        expected,
+        equal_nan=True,
+    )
+    data_da = da.from_array(data_np)
+    assert np.array_equal(
+        array_interpolate_linear(data_da),
+        expected,
+        equal_nan=True,
+    )
 
 
 def test_first():
@@ -459,3 +499,83 @@ def test_reduce_dimension(
     )
     assert output_cube[0, 0, 0].data.compute().item() is True
     assert not output_cube[slice(1, None), :, :].data.compute().any()
+
+
+@pytest.mark.parametrize("size", [(3, 3, 2, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_count(temporal_interval, bounding_box, random_raster_data, process_registry):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process = partial(
+        process_registry["count"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube) + 4)
+
+    _process = partial(
+        process_registry["count"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        condition=True,
+    )
+    output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="bands")
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube) + 4)
+
+    _process = partial(
+        process_registry["count"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        condition=process_registry["gt"].implementation,
+    )
+    output_cube = reduce_dimension(
+        data=input_cube,
+        reducer=_process,
+        dimension="bands",
+        context={"y": -100},
+    )
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube) + 4)
+
+    _process = partial(
+        process_registry["count"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        condition=process_registry["is_infinite"].implementation,
+    )
+    output_cube = reduce_dimension(
+        data=input_cube,
+        reducer=_process,
+        dimension="bands",
+    )
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=False,
+        verify_crs=True,
+    )
+    assert output_cube.dims == ("x", "y", "t")
+    xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))

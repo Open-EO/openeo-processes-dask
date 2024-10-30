@@ -1,6 +1,7 @@
+import copy
 import itertools
 import logging
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Union
 
 import dask.array as da
 import numpy as np
@@ -10,6 +11,7 @@ from numpy.typing import ArrayLike
 from openeo_pg_parser_networkx.pg_schema import DateTime
 from xarray.core.duck_array_ops import isnull, notnull
 
+from openeo_processes_dask.process_implementations.comparison import is_valid
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array
 from openeo_processes_dask.process_implementations.exceptions import (
     ArrayElementNotAvailable,
@@ -30,11 +32,14 @@ __all__ = [
     "array_contains",
     "array_find",
     "array_labels",
+    "array_apply",
+    "array_interpolate_linear",
     "first",
     "last",
     "order",
     "rearrange",
     "sort",
+    "count",
 ]
 
 
@@ -161,10 +166,8 @@ def array_contains(data: ArrayLike, value: Any, axis=None) -> bool:
             value_is_valid = True
     if len(np.shape(data)) != 1 and axis is None:
         return False
-    if not value_is_valid:
+    if not value_is_valid or pd.isnull(value):
         return False
-    if pd.isnull(value):
-        return np.isnan(data).any(axis=axis)
     else:
         return np.isin(data, value).any(axis=axis)
 
@@ -184,8 +187,14 @@ def array_find(
     idxs = (data == value).argmax(axis=axis)
 
     mask = ~np.array((data == value).any(axis=axis))
-    if np.isnan(value):
+    if not isinstance(value, str) and np.isnan(value):
         mask = True
+    if reverse:
+        if axis is None:
+            size = data.size
+        else:
+            size = data.shape[axis]
+        idxs = size - 1 - idxs
 
     logger.warning(
         "array_find: numpy has no sentinel value for missing data in integer arrays, therefore np.masked_array is used to return the indices of found elements. Further operations might fail if not defined for masked arrays."
@@ -208,6 +217,35 @@ def array_labels(data: ArrayLike) -> ArrayLike:
     if len(data.shape) > 1:
         raise TooManyDimensions("array_labels is only implemented for 1D arrays.")
     return np.arange(len(data))
+
+
+def array_apply(
+    data: ArrayLike, process: Callable, context: Optional[Any] = None
+) -> ArrayLike:
+    if not context:
+        context = {}
+    positional_parameters = {"x": 0}
+    named_parameters = {"x": data, "context": context}
+    if callable(process):
+        process_to_apply = np.vectorize(process)
+        return process_to_apply(
+            data,
+            positional_parameters=positional_parameters,
+            named_parameters=named_parameters,
+        )
+
+
+def array_interpolate_linear(data: ArrayLike):
+    if isinstance(data, list):
+        data = np.array(data)
+    x = np.arange(len(data))
+    valid = np.isfinite(data)
+    if len(x[valid]) < 2:
+        return data
+    data[~valid] = np.interp(
+        x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
+    )
+    return data
 
 
 def first(
@@ -337,3 +375,23 @@ def sort(
         return data_sorted_flip
     elif nodata == True:  # default sort behaviour, np.nan values are put last
         return data_sorted
+
+
+def count(
+    data: ArrayLike,
+    condition: Optional[Union[Callable, bool]] = None,
+    context: Any = None,
+    axis=None,
+    keepdims=False,
+):
+    if condition is None:
+        valid = is_valid(data)
+        return np.nansum(valid, axis=axis, keepdims=keepdims)
+    if condition is True:
+        return np.nansum(np.ones_like(data), axis=axis, keepdims=keepdims)
+    if callable(condition):
+        if not context:
+            context = {}
+        context.pop("x", None)
+        count = condition(x=data, **context)
+        return np.nansum(count, axis=axis, keepdims=keepdims)

@@ -13,10 +13,10 @@ def test_quantiles():
     )
     quantiles_1 = [_round(quantile, p=2) for quantile in quantiles_1]
     assert quantiles_1 == [2.07, 2.14, 2.28, 2.7, 3.4, 4.5]
-    quantiles_2 = quantiles(data=np.array([2, 4, 4, 4, 5, 5, 7, 9]), q=4)
+    quantiles_2 = quantiles(data=np.array([2, 4, 4, 4, 5, 5, 7, 9]), probabilities=4)
     quantiles_2 = [_round(quantile, p=2) for quantile in quantiles_2]
     assert quantiles_2 == [4, 4.5, 5.5]
-    quantiles_3 = quantiles(data=np.array([-1, -0.5, np.nan, 1]), q=2)
+    quantiles_3 = quantiles(data=np.array([-1, -0.5, np.nan, 1]), probabilities=[2])
     quantiles_3 = [_round(quantile, p=2) for quantile in quantiles_3]
     assert quantiles_3 == [-0.5]
     quantiles_4 = quantiles(
