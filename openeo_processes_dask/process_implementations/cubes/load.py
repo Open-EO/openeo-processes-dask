@@ -209,7 +209,7 @@ def load_stac(
                 "data_type": asset_dtype,
                 "type": asset_type,
             }
-    # print(asset_scale_offset)
+
     if zarr_assets:
         if use_xarray_open_kwargs:
             datasets = [
@@ -257,6 +257,7 @@ def load_stac(
             if dtype is not None:
                 kwargs["nodata"] = np.dtype(dtype).type(kwargs["nodata"])
         # TODO: the dimension names (like "bands") should come from the STAC metadata and not hardcoded
+        # Note: unfortunately, converting the dataset to a dataarray, casts all the data types to the same
         if bands is not None:
             stack = odc.stac.load(items, bands=bands, chunks={}, **kwargs).to_dataarray(
                 dim="bands"

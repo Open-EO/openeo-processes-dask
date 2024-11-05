@@ -76,6 +76,7 @@ def merge_cubes(
                     "context": context,
                 }
 
+                crs = concat_both_cubes_rechunked.rio.crs
                 merged_cube = concat_both_cubes_rechunked.reduce(
                     overlap_resolver,
                     dim=NEW_DIM_NAME,
@@ -83,6 +84,7 @@ def merge_cubes(
                     positional_parameters=positional_parameters,
                     named_parameters=named_parameters,
                 )
+                merged_cube.rio.write_crs(crs,inplace=True)
         else:
             # Example 1 & 2
             dims_requiring_resolve = [
