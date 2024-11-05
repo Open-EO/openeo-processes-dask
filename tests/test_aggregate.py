@@ -117,7 +117,7 @@ def test_aggregate_temporal_period(
     )
 
     assert len(output_cube.t) == expected
-    assert type(output_cube.t.values[0]) in [str, np.datetime64]
+    assert output_cube.t.values[0].dtype.type in [np.str_, np.datetime64]
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
