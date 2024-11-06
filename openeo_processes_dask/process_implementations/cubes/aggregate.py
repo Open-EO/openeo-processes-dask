@@ -23,6 +23,8 @@ from openeo_processes_dask.process_implementations.exceptions import (
     TooManyDimensions,
 )
 
+from memory_profiler import profile
+
 __all__ = ["aggregate_temporal", "aggregate_temporal_period", "aggregate_spatial"]
 
 logger = logging.getLogger(__name__)
@@ -245,7 +247,7 @@ def aggregate_temporal_period(
             data=data, intervals=intervals, reducer=reducer, labels=labels
         )
 
-
+@profile
 def aggregate_spatial(
     data: RasterCube,
     geometries,
