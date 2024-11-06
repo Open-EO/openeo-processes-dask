@@ -75,9 +75,14 @@ def test_aggregate_temporal(
         (["2018-05-01", "2018-05-02"], "hour", 25),
         (["2018-05-01", "2018-06-01"], "day", 32),
         (["2018-05-01", "2018-06-01"], "week", 5),
+        (["2018-05-01", "2018-08-31"], "dekad", 12),
+        (["2018-05-15", "2018-08-14"], "dekad", 10),
         (["2018-05-01", "2018-06-01"], "month", 2),
         (["2018-01-01", "2018-12-31"], "season", 5),
+        (["2018-05-01", "2019-04-30"], "tropical-season", 2),
         (["2018-01-01", "2018-12-31"], "year", 1),
+        (["2019-01-01", "2022-12-31"], "decade", 2),
+        (["2019-01-01", "2022-12-31"], "decade-ad", 2),
     ],
 )
 def test_aggregate_temporal_period(
@@ -113,7 +118,7 @@ def test_aggregate_temporal_period(
     )
 
     assert len(output_cube.t) == expected
-    assert isinstance(output_cube.t.values[0], np.datetime64)
+    assert output_cube.t.values[0].dtype.type in [np.str_, np.datetime64]
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
