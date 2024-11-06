@@ -156,8 +156,8 @@ def get_intervals(data, period):
             start=day_start, end=f"{year_start}-{month_start}-22", freq="10D"
         ).strftime(format)
         for date in pd.date_range(
-            start=start, end=f"{year_end}-{month_end}-01", freq="1MS"
-        ):
+            start=f"{year_start}-{month_start}-22", end=end, freq="1MS"
+        )[:-1]:
             intervals = intervals.append(
                 pd.date_range(start=date, freq="10D", periods=3).strftime(format)
             )
