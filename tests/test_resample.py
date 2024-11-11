@@ -3,12 +3,13 @@ from functools import partial
 import numpy as np
 import pytest
 from odc.geo.geobox import resolution_from_affine
-from openeo_pg_parser_networkx.pg_schema import ParameterReference
+from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 from pyproj.crs import CRS
 
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from openeo_processes_dask.process_implementations.cubes.resample import (
     resample_cube_spatial,
+    resample_cube_temporal,
     resample_spatial,
 )
 from tests.general_checks import general_output_checks
@@ -137,3 +138,61 @@ def test_resample_cube_spatial(
     )
 
     assert output_cube.odc.spatial_dims == ("y", "x")
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float64])
+@pytest.mark.parametrize(
+    "temporal_extent_1,temporal_extent_2",
+    [
+        (["2018-05-01", "2018-06-01"], ["2018-05-05", "2018-06-05"]),
+        (["2019-01-01", "2019-03-01"], ["2019-02-01", "2019-03-01"]),
+    ],
+)
+def test_aggregate_temporal_period(
+    temporal_extent_1,
+    temporal_extent_2,
+    bounding_box,
+    random_raster_data,
+    process_registry,
+):
+    """"""
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=TemporalInterval.parse_obj(temporal_extent_1),
+        bands=["B02", "B03", "B04", "B08"],
+    )
+
+    target_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=TemporalInterval.parse_obj(temporal_extent_2),
+        bands=["B02", "B03", "B04", "B08"],
+    )
+
+    output_cube = resample_cube_temporal(
+        data=input_cube, target=target_cube, dimension=None, valid_within=None
+    )
+
+    general_output_checks(
+        input_cube=input_cube,
+        output_cube=output_cube,
+        verify_attrs=True,
+        verify_crs=True,
+    )
+
+    assert len(output_cube.t) == len(target_cube.t)
+    assert (output_cube.t.values == target_cube.t.values).all()
+
+    output_cube = resample_cube_temporal(
+        data=input_cube, target=target_cube, dimension="t", valid_within=2
+    )
+
+    assert len(output_cube.t) == len(target_cube.t)
+    assert (output_cube.t.values == target_cube.t.values).all()
+
+    with pytest.raises(Exception):
+        resample_cube_temporal(
+            data=input_cube, target=target_cube, dimension="time", valid_within=None
+        )
