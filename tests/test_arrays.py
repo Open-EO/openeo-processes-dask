@@ -117,6 +117,16 @@ def test_array_create(data, repeat):
 
 
 @pytest.mark.parametrize(
+    "data, labels",
+    [([2, 4, 6], [3, 4, 5]), ([1000, 2000, 4000], ["B02", "B03", "B04"])],
+)
+def test_array_create_labeled(data, labels):
+    labeled_array = array_create_labeled(data, labels)
+    assert (labeled_array.values == data).all()
+    assert (labeled_array["labels"].values == labels).all()
+
+
+@pytest.mark.parametrize(
     "data, values, index, length, expected",
     [
         ([2, 3], [4, 7], 1, 0, [2, 4, 7, 3]),
@@ -135,6 +145,17 @@ def test_array_modify(data, values, index, length, expected):
     dask_result = array_modify(da.from_array(np.array(data)), values, index, length)
     assert isinstance(dask_result, da.Array)
     np.testing.assert_equal(dask_result.compute(), expected)
+
+
+def test_array_modify_labels():
+    array1 = array_create_labeled([1000, 2000, 4000], ["B02", "B03", "B04"])
+    array2 = array_create_labeled([5000, 6000, 7000], ["B05", "B06", "B07"])
+    modified_array = array_modify(array1, array2, 1)
+    assert len(modified_array.values) == 6
+    assert (modified_array.values == [1000, 2000, 5000, 6000, 7000, 4000]).all()
+    assert (
+        modified_array["labels"].values == ["B02", "B03", "B05", "B06", "B07", "B04"]
+    ).all()
 
 
 @pytest.mark.parametrize(
@@ -172,6 +193,13 @@ def test_array_append(data, value, expected):
         da.from_array(np.array(data)), da.from_array(np.array([value]))
     )
     np.testing.assert_array_equal(dask_result, np.array(expected), strict=True)
+
+
+def test_array_append_labels():
+    array1 = array_create_labeled([1000, 2000, 4000], ["B02", "B03", "B04"])
+    append = array_append(array1, value=5000, label="B05")
+    assert len(append.values) == 4
+    assert (append.values == [1000, 2000, 4000, 5000]).all()
 
 
 @pytest.mark.parametrize(
@@ -246,11 +274,22 @@ def test_array_find(data, value, expected, axis, reverse):
     np.testing.assert_array_equal(result_dask, expected)
 
 
+def test_array_find_labels():
+    """Tests `array_find_label` function."""
+    find = array_find_label([1, 2, 4], label="B03", dim_labels=["B02", "B03", "B04"])
+    assert find
+    array1 = array_create_labeled([1000, 2000, 4000], ["B02", "B03", "B04"])
+    find = array_find_label(array1, label="B03")
+    assert find
+
+
 def test_array_labels():
     """Tests `array_labels` function."""
-    np.testing.assert_array_equal(array_labels([1, 0, 3, 2]), [0, 1, 2, 3])
-    with pytest.raises(TooManyDimensions):
-        array_labels(np.array([[1, 0, 3, 2], [5, 0, 6, 4]]))
+    labels1 = array_labels([1, 2, 4], dim_labels=["B02", "B03", "B04"])
+    assert find
+    array = array_create_labeled([1000, 2000, 4000], ["B02", "B03", "B04"])
+    labels2 = array_labels(array)
+    assert (labels1 == labels2).all()
 
 
 def test_array_apply(process_registry):
@@ -262,6 +301,17 @@ def test_array_apply(process_registry):
 
     output_cube = array_apply(data=np.array([1, 2, 3, 4, 5, 6]), process=_process)
     assert (output_cube == [2, 3, 4, 5, 6, 7]).all()
+
+
+def test_array_filter(process_registry):
+    _process = partial(
+        process_registry["gt"].implementation,
+        y=3,
+        x=ParameterReference(from_parameter="x"),
+    )
+
+    output_cube = array_filter(data=np.array([1, 2, 3, 4, 5, 6]), condition=_process)
+    assert (output_cube == [4, 5, 6]).all()
 
 
 @pytest.mark.parametrize(
@@ -286,6 +336,21 @@ def test_array_interpolate_linear(data, expected):
     data_da = da.from_array(data_np)
     assert np.array_equal(
         array_interpolate_linear(data_da),
+        expected,
+        equal_nan=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "data, expected, labels",
+    [
+        ([2, np.nan, 6, np.nan, 8], [2, 5, 6, 7, 8], [2, 5, 6, 7, 8]),
+        ([2, np.nan, 6, np.nan, 8], [2, 5, 6, 7, 8], ["2", "5", "6", "7", "8"]),
+    ],
+)
+def test_array_interpolate_linear(data, expected, labels):
+    assert np.array_equal(
+        array_interpolate_linear(data, dim_labels=labels).values,
         expected,
         equal_nan=True,
     )

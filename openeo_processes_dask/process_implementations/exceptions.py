@@ -22,6 +22,18 @@ class ArrayElementNotAvailable(OpenEOException):
     pass
 
 
+class ArrayLabelConflict(OpenEOException):
+    pass
+
+
+class ArrayLengthMismatch(OpenEOException):
+    pass
+
+
+class LabelExists(OpenEOException):
+    pass
+
+
 class TooManyDimensions(OpenEOException):
     pass
 
