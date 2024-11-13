@@ -324,6 +324,8 @@ def quantiles(
         result = np.quantile(
             data, q=probabilities, method="linear", axis=axis, keepdims=keepdims
         )
+    if axis:
+        result = np.moveaxis(result, 0, axis)
 
     return result
 
