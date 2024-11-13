@@ -304,7 +304,7 @@ def array_filter(
             positional_parameters=positional_parameters,
             named_parameters=named_parameters,
         )
-        data = data[filtered_data]
+        data = data[filtered_data.astype(bool)]
         if len(labels) > 0:
             labels = labels[filtered_data]
             data = array_create_labeled(data, labels)
@@ -349,8 +349,10 @@ def array_apply(
 
 def array_interpolate_linear(data: ArrayLike, dim_labels=None):
     x, data = get_labels(data)
+    if len(x) > 0:
+        dim_labels = x
     if dim_labels:
-        x = dim_labels
+        x = np.array(dim_labels)
     if np.array(x).dtype.type is np.str_:
         try:
             x = np.array(x, dtype="datetime64").astype(float)
@@ -367,6 +369,8 @@ def array_interpolate_linear(data: ArrayLike, dim_labels=None):
     data[~valid] = np.interp(
         x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
     )
+    if dim_labels:
+        data = array_create_labeled(data, dim_labels)
     return data
 
 

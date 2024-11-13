@@ -151,10 +151,10 @@ def test_array_modify_labels():
     array1 = array_create_labeled([1000, 2000, 4000], ["B02", "B03", "B04"])
     array2 = array_create_labeled([5000, 6000, 7000], ["B05", "B06", "B07"])
     modified_array = array_modify(array1, array2, 1)
-    assert len(modified_array.values) == 6
-    assert (modified_array.values == [1000, 2000, 5000, 6000, 7000, 4000]).all()
+    assert len(modified_array.values) == 5
+    assert (modified_array.values == [1000, 5000, 6000, 7000, 4000]).all()
     assert (
-        modified_array["labels"].values == ["B02", "B03", "B05", "B06", "B07", "B04"]
+        modified_array["labels"].values == ["B02", "B05", "B06", "B07", "B04"]
     ).all()
 
 
@@ -286,7 +286,6 @@ def test_array_find_labels():
 def test_array_labels():
     """Tests `array_labels` function."""
     labels1 = array_labels([1, 2, 4], dim_labels=["B02", "B03", "B04"])
-    assert find
     array = array_create_labeled([1000, 2000, 4000], ["B02", "B03", "B04"])
     labels2 = array_labels(array)
     assert (labels1 == labels2).all()
@@ -346,9 +345,14 @@ def test_array_interpolate_linear(data, expected):
     [
         ([2, np.nan, 6, np.nan, 8], [2, 5, 6, 7, 8], [2, 5, 6, 7, 8]),
         ([2, np.nan, 6, np.nan, 8], [2, 5, 6, 7, 8], ["2", "5", "6", "7", "8"]),
+        (
+            [2, np.nan, 6, np.nan, 8],
+            [2, 5, 6, 7, 8],
+            ["2024-01-02", "2024-01-05", "2024-01-06", "2024-01-07", "2024-01-08"],
+        ),
     ],
 )
-def test_array_interpolate_linear(data, expected, labels):
+def test_array_interpolate_linear_labels(data, expected, labels):
     assert np.array_equal(
         array_interpolate_linear(data, dim_labels=labels).values,
         expected,
