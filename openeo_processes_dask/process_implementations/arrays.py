@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "array_element",
     "array_create",
-    "array_created_labeled",
+    "array_create_labeled",
     "array_modify",
     "array_concat",
     "array_append",
