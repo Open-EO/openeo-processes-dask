@@ -354,7 +354,7 @@ def test_array_interpolate_linear(data, expected):
 )
 def test_array_interpolate_linear_labels(data, expected, labels):
     assert np.array_equal(
-        array_interpolate_linear(data, dim_labels=labels).values,
+        array_interpolate_linear(data, dim_labels=labels),
         expected,
         equal_nan=True,
     )

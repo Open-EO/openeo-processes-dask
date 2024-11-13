@@ -369,8 +369,6 @@ def array_interpolate_linear(data: ArrayLike, dim_labels=None):
     data[~valid] = np.interp(
         x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
     )
-    if dim_labels:
-        data = array_create_labeled(data, dim_labels)
     return data
 
 
