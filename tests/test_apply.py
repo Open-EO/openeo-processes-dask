@@ -229,7 +229,7 @@ def test_apply_dimension_quantile_processes(
         process=_process_quantile,
         dimension="t",
     )
-    assert (output_cube_quantile.shape == (6, 5, probability-1, 4))
+    assert output_cube_quantile.shape == (6, 5, probability - 1, 4)
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
