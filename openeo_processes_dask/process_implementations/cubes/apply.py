@@ -45,7 +45,10 @@ def apply_dimension(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
+    keepdims = False
     is_new_dim_added = target_dimension is not None
+    if is_new_dim_added:
+        keepdims = True
 
     if target_dimension is None:
         target_dimension = dimension
@@ -67,7 +70,7 @@ def apply_dimension(
             "positional_parameters": positional_parameters,
             "named_parameters": named_parameters,
             "axis": reordered_data.get_axis_num(dimension),
-            "keepdims": True,
+            "keepdims": keepdims,
             "source_transposed_axis": data.get_axis_num(dimension),
             "context": context,
         },
