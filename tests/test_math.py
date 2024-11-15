@@ -120,6 +120,7 @@ def test_extrema():
     result = extrema(dask_array, ignore_nodata=True, axis=0, keepdims=False)
     assert np.array_equal(result_np, result.compute())
 
+
 def test_cumproduct():
     array_list = [1, 2, 3, np.nan, 4, 5]
     result_np = [[1, 2, 6, np.nan, 24, 120]]
