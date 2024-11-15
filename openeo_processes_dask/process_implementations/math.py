@@ -119,7 +119,6 @@ def _min(data, ignore_nodata=True, axis=None, keepdims=False):
         return np.nanmin(data, axis=axis, keepdims=keepdims)
     else:
         return np.min(data, axis=axis, keepdims=keepdims)
-    
 
 
 def _cumsum(data, ignore_nodata=True):
@@ -136,7 +135,8 @@ def _cumsum(data, ignore_nodata=True):
             cumulative_sum += value
             result.append(cumulative_sum)
     return result
-    
+
+
 def _cumproduct(data, ignore_nodata=True):
     result = []
     cumulative_product = 1
@@ -152,9 +152,10 @@ def _cumproduct(data, ignore_nodata=True):
             result.append(cumulative_product)
     return result
 
+
 def _cummin(data, ignore_nodata=True):
     result = []
-    current_min = float('inf')
+    current_min = float("inf")
     for value in data:
         if value is np.nan:
             if ignore_nodata:
@@ -167,9 +168,10 @@ def _cummin(data, ignore_nodata=True):
             result.append(current_min)
     return result
 
+
 def _cummax(data, ignore_nodata=True):
     result = []
-    current_max = float('-inf')
+    current_max = float("-inf")
     for value in data:
         if value is np.nan:
             if ignore_nodata:
