@@ -26,10 +26,10 @@ __all__ = [
     "add",
     "_sum",
     "_min",
-    "_cumsum",
-    "_cumproduct",
-    "_cummin",
-    "_cummax",
+    "cumsum",
+    "cumproduct",
+    "cummin",
+    "cummax",
     "_max",
     "median",
     "mean",
@@ -121,7 +121,7 @@ def _min(data, ignore_nodata=True, axis=None, keepdims=False):
         return np.min(data, axis=axis, keepdims=keepdims)
 
 
-def _cumsum(data, ignore_nodata=True):
+def cumsum(data, ignore_nodata=True):
     result = []
     cumulative_sum = 0
     for value in data:
@@ -137,7 +137,7 @@ def _cumsum(data, ignore_nodata=True):
     return result
 
 
-def _cumproduct(data, ignore_nodata=True):
+def cumproduct(data, ignore_nodata=True):
     result = []
     cumulative_product = 1
     for value in data:
@@ -153,7 +153,7 @@ def _cumproduct(data, ignore_nodata=True):
     return result
 
 
-def _cummin(data, ignore_nodata=True):
+def cummin(data, ignore_nodata=True):
     result = []
     current_min = float("inf")
     for value in data:
@@ -169,7 +169,7 @@ def _cummin(data, ignore_nodata=True):
     return result
 
 
-def _cummax(data, ignore_nodata=True):
+def cummax(data, ignore_nodata=True):
     result = []
     current_max = float("-inf")
     for value in data:
