@@ -4,6 +4,7 @@ import pytest
 
 from openeo_processes_dask.process_implementations.exceptions import MinMaxSwapped
 from openeo_processes_dask.process_implementations.math import *
+from openeo_processes_dask.process_implementations.math import _cumproduct
 
 
 def test_quantiles():
@@ -118,3 +119,10 @@ def test_extrema():
     dask_array = da.from_array(np.array(array_list))
     result = extrema(dask_array, ignore_nodata=True, axis=0, keepdims=False)
     assert np.array_equal(result_np, result.compute())
+
+def test_cumproduct():
+    array_list = [1, 2, 3, np.nan, 4, 5]
+    result_np = [[1, 2, 6, np.nan, 24, 120]]
+
+    result = _cumproduct(array_list)
+    assert np.array_equal(result_np, result)

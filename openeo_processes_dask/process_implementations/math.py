@@ -26,6 +26,10 @@ __all__ = [
     "add",
     "_sum",
     "_min",
+    "_cumsum",
+    "_cumproduct",
+    "_cummin",
+    "_cummax",
     "_max",
     "median",
     "mean",
@@ -115,6 +119,68 @@ def _min(data, ignore_nodata=True, axis=None, keepdims=False):
         return np.nanmin(data, axis=axis, keepdims=keepdims)
     else:
         return np.min(data, axis=axis, keepdims=keepdims)
+    
+
+
+def _cumsum(data, ignore_nodata=True):
+    result = []
+    cumulative_sum = 0
+    for value in data:
+        if value is np.nan:
+            if ignore_nodata:
+                result.append(np.nan)
+            else:
+                result.extend([np.nan] * (len(data) - len(result)))
+                break
+        else:
+            cumulative_sum += value
+            result.append(cumulative_sum)
+    return result
+    
+def _cumproduct(data, ignore_nodata=True):
+    result = []
+    cumulative_product = 1
+    for value in data:
+        if value is np.nan:
+            if ignore_nodata:
+                result.append(np.nan)
+            else:
+                result.extend([np.nan] * (len(data) - len(result)))
+                break
+        else:
+            cumulative_product *= value
+            result.append(cumulative_product)
+    return result
+
+def _cummin(data, ignore_nodata=True):
+    result = []
+    current_min = float('inf')
+    for value in data:
+        if value is np.nan:
+            if ignore_nodata:
+                result.append(np.nan)
+            else:
+                result.extend([np.nan] * (len(data) - len(result)))
+                break
+        else:
+            current_min = min(current_min, value)
+            result.append(current_min)
+    return result
+
+def _cummax(data, ignore_nodata=True):
+    result = []
+    current_max = float('-inf')
+    for value in data:
+        if value is np.nan:
+            if ignore_nodata:
+                result.append(np.nan)
+            else:
+                result.extend([np.nan] * (len(data) - len(result)))
+                break
+        else:
+            current_max = max(current_max, value)
+            result.append(current_max)
+    return result
 
 
 def _max(data, ignore_nodata=True, axis=None, keepdims=False):
