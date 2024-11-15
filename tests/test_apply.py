@@ -257,3 +257,74 @@ def test_apply_kernel(temporal_interval, bounding_box, random_raster_data):
     )
 
     xr.testing.assert_equal(output_cube, input_cube)
+
+
+# TODO: testing cummin, cummax
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_cumsum_process(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_cumsum = partial(
+        process_registry["cumsum"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube_cumsum = apply_dimension(
+        data=input_cube,
+        process=_process_cumsum,
+        dimension="t",
+    ).compute()
+
+    original_abs_sum = np.sum(np.abs(input_cube.data))
+
+    cumsum_total = np.sum(np.abs(output_cube_cumsum.data))
+
+    assert cumsum_total >= original_abs_sum
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_cumproduct_process(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_cumsum = partial(
+        process_registry["cumproduct"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube_cumprod = apply_dimension(
+        data=input_cube,
+        process=_process_cumsum,
+        dimension="t",
+    ).compute()
+
+    # TODO: Looking for better solution of following steps
+
+    original_data = np.abs(input_cube.data)
+    original_data[np.isnan(original_data)] = 0
+    original_abs_prod = np.sum(original_data)
+
+    cumprod_data = np.abs(output_cube_cumprod.data)
+    cumprod_data[np.isnan(cumprod_data)] = 0
+    cumprod_total = np.sum(cumprod_data)
+
+    assert cumprod_total >= original_abs_prod

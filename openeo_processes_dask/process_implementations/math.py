@@ -121,67 +121,54 @@ def _min(data, ignore_nodata=True, axis=None, keepdims=False):
         return np.min(data, axis=axis, keepdims=keepdims)
 
 
-def cumsum(data, ignore_nodata=True):
-    result = []
-    cumulative_sum = 0
-    for value in data:
-        if value is np.nan:
-            if ignore_nodata:
-                result.append(np.nan)
-            else:
-                result.extend([np.nan] * (len(data) - len(result)))
-                break
-        else:
-            cumulative_sum += value
-            result.append(cumulative_sum)
+def cumsum(data, ignore_nodata=True, axis=None):
+    nan_mask = np.isnan(data)
+
+    if ignore_nodata:
+        result = np.nancumsum(data, axis=axis)
+    else:
+        result = np.cumsum(data, axis=axis)
+
+    result[nan_mask] = np.nan
     return result
 
 
-def cumproduct(data, ignore_nodata=True):
-    result = []
-    cumulative_product = 1
-    for value in data:
-        if value is np.nan:
-            if ignore_nodata:
-                result.append(np.nan)
-            else:
-                result.extend([np.nan] * (len(data) - len(result)))
-                break
-        else:
-            cumulative_product *= value
-            result.append(cumulative_product)
+def cumproduct(data, ignore_nodata=True, axis=None):
+    nan_mask = np.isnan(data)
+
+    if ignore_nodata:
+        result = np.nancumprod(data, axis=axis)
+    else:
+        result = np.cumprod(data, axis=axis)
+
+    result[nan_mask] = np.nan
     return result
 
 
 def cummin(data, ignore_nodata=True):
-    result = []
-    current_min = float("inf")
-    for value in data:
-        if value is np.nan:
-            if ignore_nodata:
-                result.append(np.nan)
-            else:
-                result.extend([np.nan] * (len(data) - len(result)))
-                break
-        else:
-            current_min = min(current_min, value)
-            result.append(current_min)
+    nan_mask = np.isnan(data)
+
+    if ignore_nodata:
+        data_filled = np.where(nan_mask, np.inf, data)
+        result = np.minimum.accumulate(data_filled)
+    else:
+        result = np.minimum.accumulate(data)
+
+    result[nan_mask] = np.nan
     return result
 
 
 def cummax(data, ignore_nodata=True):
-    result = []
-    current_max = float("-inf")
-    for value in data:
-        if value is np.nan:
-            if ignore_nodata:
-                result.append(np.nan)
-            else:
-                result.extend([np.nan] * (len(data) - len(result)))
-                break
-        else:
-            current_max = max(current_max, value)
-            result.append(current_max)
+    data = np.array(data)
+    nan_mask = np.isnan(data)
+
+    if ignore_nodata:
+        data_filled = np.where(nan_mask, -np.inf, data)
+        result = np.maximum.accumulate(data_filled)
+    else:
+        result = np.maximum.accumulate(data)
+
+    result[nan_mask] = np.nan
     return result
 
 

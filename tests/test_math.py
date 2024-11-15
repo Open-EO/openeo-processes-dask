@@ -120,9 +120,36 @@ def test_extrema():
     assert np.array_equal(result_np, result.compute())
 
 
+# TODO: add all cumtests (more advanced tests)
+
+
 def test_cumproduct():
     array_list = [1, 2, 3, np.nan, 4, 5]
     result_np = [1, 2, 6, np.nan, 24, 120]
 
     result = cumproduct(array_list)
+    assert np.array_equal(result_np, result, equal_nan=True)
+
+
+def test_cumsum():
+    array_list = [1, 2, 3, np.nan, 4, 5]
+    result_np = [1, 3, 6, np.nan, 10, 15]
+
+    result = cumsum(array_list)
+    assert np.array_equal(result_np, result, equal_nan=True)
+
+
+def test_cummin():
+    array_list = [4, 3, 3, np.nan, 1, 5]
+    result_np = [4, 3, 3, np.nan, 1, 1]
+
+    result = cummin(array_list)
+    assert np.array_equal(result_np, result, equal_nan=True)
+
+
+def test_cummax():
+    array_list = [1, 2, 6, np.nan, 4, 5]
+    result_np = [1, 2, 6, np.nan, 6, 6]
+
+    result = cummax(array_list)
     assert np.array_equal(result_np, result, equal_nan=True)
