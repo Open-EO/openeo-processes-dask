@@ -50,9 +50,11 @@ __all__ = [
 ]
 
 
-def get_labels(data, dimension="labels"):
+def get_labels(data, dimension="labels", axis=0):
     if isinstance(data, xr.DataArray):
         dimension = data.dims[0] if len(data.dims) == 1 else dimension
+        if axis:
+            dimension = data.dims[axis]
         labels = data[dimension].values
         data = data.values
     else:
@@ -82,7 +84,7 @@ def array_element(
         )
 
     if isinstance(data, xr.DataArray):
-        dim_labels, data = get_labels(data)
+        dim_labels, data = get_labels(data, axis=axis)
 
     if label is not None:
         if len(dim_labels) == 0:
@@ -143,13 +145,10 @@ def array_create_labeled(data: ArrayLike, labels: ArrayLike) -> ArrayLike:
 
 
 def array_modify(
-    data: ArrayLike,
-    values: ArrayLike,
-    index: int,
-    length: Optional[int] = 1,
+    data: ArrayLike, values: ArrayLike, index: int, length: Optional[int] = 1, axis=None
 ) -> ArrayLike:
-    labels, data = get_labels(data)
-    values_labels, values = get_labels(values)
+    labels, data = get_labels(data, axis=axis)
+    values_labels, values = get_labels(values, axis=axis)
 
     if index > len(data):
         raise ArrayElementNotAvailable(
@@ -160,10 +159,25 @@ def array_modify(
             "At least one label exists in both arrays and the conflict must be resolved before."
         )
 
-    first = data[:index]
-    modified = np.append(first, values)
-    if index + length < len(data):
-        modified = np.append(modified, data[index + length :])
+    def modify(data):
+        first = data[:index]
+        modified = np.append(first, values)
+        if index + length < len(data):
+            modified = np.append(modified, data[index + length :])
+        return modified
+
+    if axis:
+        if _is_dask_array(data):
+            if data.size > 50000000:
+                raise Exception(
+                    f"Cannot load data of shape: {data.shape} into memory. "
+                )
+            # currently, there seems to be no way around loading the values,
+            # apply_along_axis cannot handle dask arrays
+            data = data.compute()
+        modified = np.apply_along_axis(modify, axis=axis, arr=data)
+    else:
+        modified = modify(data)
 
     if len(labels) > 0:
         first = labels[:index]
@@ -250,7 +264,7 @@ def array_find(
     reverse: Optional[bool] = False,
     axis: Optional[int] = None,
 ) -> np.number:
-    labels, data = get_labels(data)
+    labels, data = get_labels(data, axis)
 
     if reverse:
         data = np.flip(data, axis=axis)
@@ -290,9 +304,9 @@ def array_find_label(data: ArrayLike, label: Union[str, int, float], dim_labels=
 
 
 def array_filter(
-    data: ArrayLike, condition: Callable, context: Optional[Any] = None
+    data: ArrayLike, condition: Callable, context: Optional[Any] = None, axis=None
 ) -> ArrayLike:
-    labels, data = get_labels(data)
+    labels, data = get_labels(data, axis=axis)
     if not context:
         context = {}
     positional_parameters = {"x": 0}
@@ -304,7 +318,17 @@ def array_filter(
             positional_parameters=positional_parameters,
             named_parameters=named_parameters,
         )
-        data = data[filtered_data.astype(bool)]
+        if len(np.shape(data)) == 1:
+            data = data[filtered_data.astype(bool)]
+        else:
+            if axis:
+                n_axis = len(np.shape(data))
+                for ax in range(n_axis - 1, -1, -1):
+                    if ax != axis:
+                        filtered_data = filtered_data.astype(bool).all(axis=ax)
+                filtered_data = np.argwhere(filtered_data).flatten()
+                data = np.take(data, filtered_data, axis=axis)
+                return data
         if len(labels) > 0:
             labels = labels[filtered_data]
             data = array_create_labeled(data, labels)
@@ -347,10 +371,12 @@ def array_apply(
     raise Exception(f"Could not apply process as it is not callable. ")
 
 
-def array_interpolate_linear(data: ArrayLike, dim_labels=None):
-    x, data = get_labels(data)
+def array_interpolate_linear(data: ArrayLike, axis=None, dim_labels=None):
+    return_label = False
+    x, data = get_labels(data, axis=axis)
     if len(x) > 0:
         dim_labels = x
+        return_label = True
     if dim_labels:
         x = np.array(dim_labels)
     if np.array(x).dtype.type is np.str_:
@@ -362,13 +388,37 @@ def array_interpolate_linear(data: ArrayLike, dim_labels=None):
             except Exception:
                 x = np.arange(len(data))
     if len(x) == 0:
-        x = np.arange(len(data))
-    valid = np.isfinite(data)
-    if len(x[valid]) < 2:
+        if axis:
+            x = np.arange(data.shape[axis])
+        else:
+            x = np.arange(len(data))
+
+    def interp(data):
+        valid = np.isfinite(data)
+        if (valid == 1).all():
+            return data
+        if len(x[valid]) < 2:
+            return data
+        data[~valid] = np.interp(
+            x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
+        )
+
         return data
-    data[~valid] = np.interp(
-        x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
-    )
+
+    if axis:
+        if _is_dask_array(data):
+            if data.size > 50000000:
+                raise Exception(
+                    f"Cannot load data of shape: {data.shape} into memory. "
+                )
+            # currently, there seems to be no way around loading the values,
+            # apply_along_axis cannot handle dask arrays
+            data = data.compute()
+        data = np.apply_along_axis(interp, axis=axis, arr=data)
+    else:
+        data = interp(data)
+    if return_label:
+        return array_create_labeled(data=data, labels=dim_labels)
     return data
 
 

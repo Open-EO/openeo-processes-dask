@@ -232,6 +232,96 @@ def test_apply_dimension_quantile_processes(
     assert output_cube_quantile.shape == (6, 5, probability - 1, 4)
 
 
+@pytest.mark.parametrize("size", [(6, 5, 10, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_interpolate_processes(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+    input_cube[3, 2, 5, 0] = np.nan
+
+    _process_interpolate = partial(
+        process_registry["array_interpolate_linear"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube = apply_dimension(
+        data=input_cube,
+        process=_process_interpolate,
+        dimension="t",
+    )
+    assert not np.isfinite(input_cube[3, 2, 5, 0])
+    assert np.isfinite(output_cube[3, 2, 5, 0])
+
+
+@pytest.mark.parametrize("size", [(6, 5, 10, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_modify_processes(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_modify = partial(
+        process_registry["array_modify"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        values=[2, 3],
+        index=3,
+    )
+
+    output_cube = apply_dimension(
+        data=input_cube,
+        process=_process_modify,
+        dimension="bands",
+    )
+    assert output_cube.shape == (6, 5, 10, 5)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 10, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_filter_processes(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _condition = partial(
+        process_registry["gt"].implementation,
+        x=ParameterReference(from_parameter="x"),
+        y=10,
+    )
+
+    _process_filter = partial(
+        process_registry["array_filter"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        condition=_condition,
+    )
+
+    output_cube = apply_dimension(
+        data=input_cube,
+        process=_process_filter,
+        dimension="bands",
+    )
+    print(output_cube)
+    assert output_cube.shape <= input_cube.shape
+
+
 @pytest.mark.parametrize("size", [(6, 5, 4, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_apply_kernel(temporal_interval, bounding_box, random_raster_data):
