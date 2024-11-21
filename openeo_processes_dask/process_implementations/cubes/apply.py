@@ -47,7 +47,7 @@ def apply_dimension(
 
     keepdims = False
     is_new_dim_added = target_dimension is not None
-    if is_new_dim_added:
+    if is_new_dim_added and target_dimension not in data.dims:
         keepdims = True
 
     if target_dimension is None:
@@ -77,12 +77,34 @@ def apply_dimension(
         exclude_dims={dimension},
     )
 
-    reordered_result = result.transpose(*data.dims, ...).rename(
-        {dimension: target_dimension}
-    )
+    reordered_result = result.transpose(*data.dims, ...)
 
-    if len(reordered_result[target_dimension]) == 1:
-        reordered_result[target_dimension] = ["0"]
+    # Case 1: target_dimension is not defined/ is source dimension
+    if dimension == target_dimension:
+        # dimension labels preserved
+        # if the number of source dimension's values is equal to the number of computed values
+        result_len = len(reordered_result[dimension])
+        if len(reordered_data[dimension]) == result_len:
+            reordered_result[dimension] == reordered_data[dimension].values
+        else:
+            reordered_result[dimension] = np.arange(result_len)
+    elif target_dimension in reordered_result.dims:
+        # source dimension is not target dimension
+        # target dimension exists with a single label only
+        if len(reordered_result[target_dimension]) == 1:
+            reordered_result = reordered_result.drop_vars(target_dimension).squeeze(
+                target_dimension
+            )
+            reordered_result = reordered_result.rename({dimension: target_dimension})
+            reordered_result[dimension] = np.arange(result_len)
+        else:
+            raise Exception(
+                f"Cannot rename dimension {dimension} to {target_dimension} as {target_dimension} already exists in dataset and contains more than one label: {reordered_result[target_dimension]}. See process definition. "
+            )
+    else:
+        # source dimension is not the target dimension and the latter does not exist
+        reordered_result = reordered_result.rename({dimension: target_dimension})
+        reordered_result[dimension] = np.arange(result_len)
 
     if data.rio.crs is not None:
         try:
