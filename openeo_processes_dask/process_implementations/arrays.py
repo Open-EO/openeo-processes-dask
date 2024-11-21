@@ -83,8 +83,7 @@ def array_element(
             "The process `array_element` only allows that either the `index` or the `labels` parameter is set."
         )
 
-    if isinstance(data, xr.DataArray):
-        dim_labels, data = get_labels(data, axis=axis)
+    dim_labels, data = get_labels(data, axis=axis)
 
     if label is not None:
         if len(dim_labels) == 0:
@@ -189,7 +188,7 @@ def array_modify(
     return modified
 
 
-def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
+def array_concat(array1: ArrayLike, array2: ArrayLike, axis=None) -> ArrayLike:
     labels1, array1 = get_labels(array1)
     labels2, array2 = get_labels(array2)
 
@@ -198,7 +197,21 @@ def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
             "At least one label exists in both arrays and the conflict must be resolved before."
         )
 
-    concat = np.concatenate([array1, array2])
+    if (len(array1.shape) - len(array2.shape)) == 1:
+        if axis is None:
+            s1 = np.array(list(array1.shape))
+            s2 = list(array2.shape)
+            s2.append(0)
+            s2 = np.array(s2)
+
+            axis = np.argmax(s1 != s2)
+
+        array2 = np.expand_dims(array2, axis=axis)
+
+    if axis:
+        concat = np.concatenate([array1, array2], axis=axis)
+    else:
+        concat = np.concatenate([array1, array2])
 
     # e.g. concating int32 and str arrays results in the result being cast to a Unicode dtype of a certain length (e.g. <U22).
     # There isn't really anything better to do as numpy does not support heterogenuous arrays.
