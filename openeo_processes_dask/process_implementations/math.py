@@ -145,29 +145,29 @@ def cumproduct(data, ignore_nodata=True, axis=None):
     return result
 
 
-def cummin(data, ignore_nodata=True):
+def cummin(data, ignore_nodata=True, axis=None):
     data = np.array(data)
     nan_mask = np.isnan(data)
 
     if ignore_nodata:
         data_filled = np.where(nan_mask, np.inf, data)
-        result = np.minimum.accumulate(data_filled)
+        result = np.minimum.accumulate(data_filled, axis=axis)
     else:
-        result = np.minimum.accumulate(data)
+        result = np.minimum.accumulate(data, axis=axis)
 
     result[nan_mask] = np.nan
     return result
 
 
-def cummax(data, ignore_nodata=True):
+def cummax(data, ignore_nodata=True, axis=None):
     data = np.array(data)
     nan_mask = np.isnan(data)
 
     if ignore_nodata:
         data_filled = np.where(nan_mask, -np.inf, data)
-        result = np.maximum.accumulate(data_filled)
+        result = np.maximum.accumulate(data_filled, axis=axis)
     else:
-        result = np.maximum.accumulate(data)
+        result = np.maximum.accumulate(data, axis=axis)
 
     result[nan_mask] = np.nan
     return result

@@ -127,12 +127,24 @@ def test_cumproduct():
     result = cumproduct(array_list)
     assert np.array_equal(result_np, result, equal_nan=True)
 
+    array_list = [1, 2, 3, np.nan, 3, 1]
+    result_np = [1, 2, 6, np.nan, np.nan, np.nan]
+
+    result = cumproduct(array_list, ignore_nodata=False)
+    assert np.array_equal(result_np, result, equal_nan=True)
+
 
 def test_cumsum():
     array_list = [1, 3, np.nan, 3, 1]
     result_np = [1, 4, np.nan, 7, 8]
 
     result = cumsum(array_list)
+    assert np.array_equal(result_np, result, equal_nan=True)
+
+    array_list = [1, 3, np.nan, 3, 1]
+    result_np = [1, 4, np.nan, np.nan, np.nan]
+
+    result = cumsum(array_list, ignore_nodata=False)
     assert np.array_equal(result_np, result, equal_nan=True)
 
 
@@ -143,10 +155,22 @@ def test_cummin():
     result = cummin(array_list)
     assert np.array_equal(result_np, result, equal_nan=True)
 
+    array_list = [1, 3, np.nan, 3, 1]
+    result_np = [1, 1, np.nan, np.nan, np.nan]
+
+    result = cummin(array_list, ignore_nodata=False)
+    assert np.array_equal(result_np, result, equal_nan=True)
+
 
 def test_cummax():
     array_list = [1, 3, np.nan, 5, 1]
     result_np = [1, 3, np.nan, 5, 5]
 
     result = cummax(array_list)
+    assert np.array_equal(result_np, result, equal_nan=True)
+
+    array_list = [1, 3, np.nan, 3, 1]
+    result_np = [1, 3, np.nan, np.nan, np.nan]
+
+    result = cummax(array_list, ignore_nodata=False)
     assert np.array_equal(result_np, result, equal_nan=True)

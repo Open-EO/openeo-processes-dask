@@ -259,9 +259,6 @@ def test_apply_kernel(temporal_interval, bounding_box, random_raster_data):
     xr.testing.assert_equal(output_cube, input_cube)
 
 
-# TODO: testing cummin
-
-
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
 def test_apply_dimension_cumsum_process(
@@ -292,6 +289,22 @@ def test_apply_dimension_cumsum_process(
 
     assert cumsum_total >= original_abs_sum
 
+    input_cube.data[:, :, 15, :] = np.nan
+
+    _process_cumsum_with_nan = partial(
+        process_registry["cumsum"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=False,
+    )
+
+    output_cube_cumsum_with_nan = apply_dimension(
+        data=input_cube,
+        process=_process_cumsum_with_nan,
+        dimension="t",
+    ).compute()
+
+    assert np.isnan(output_cube_cumsum_with_nan[0, 0, 20, 0].values)
+
 
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
@@ -317,8 +330,6 @@ def test_apply_dimension_cumproduct_process(
         dimension="t",
     ).compute()
 
-    # TODO: Looking for better solution of following steps
-
     original_data = np.abs(input_cube.data)
     original_data[np.isnan(original_data)] = 0
     original_abs_prod = np.sum(original_data)
@@ -328,6 +339,22 @@ def test_apply_dimension_cumproduct_process(
     cumprod_total = np.sum(cumprod_data)
 
     assert cumprod_total >= original_abs_prod
+
+    input_cube.data[:, :, 15, :] = np.nan
+
+    _process_cumprod_with_nan = partial(
+        process_registry["cumproduct"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=False,
+    )
+
+    output_cube_cumprod_with_nan = apply_dimension(
+        data=input_cube,
+        process=_process_cumprod_with_nan,
+        dimension="t",
+    ).compute()
+
+    assert np.isnan(output_cube_cumprod_with_nan[0, 0, 20, 0].values)
 
 
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
@@ -359,6 +386,22 @@ def test_apply_dimension_cummax_process(
 
     assert np.all(cummax_total >= original_abs_max)
 
+    input_cube.data[:, :, 15, :] = np.nan
+
+    _process_cummax_with_nan = partial(
+        process_registry["cummax"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=False,
+    )
+
+    output_cube_cummax_with_nan = apply_dimension(
+        data=input_cube,
+        process=_process_cummax_with_nan,
+        dimension="t",
+    ).compute()
+
+    assert np.isnan(output_cube_cummax_with_nan[0, 0, 16, 0].values)
+
 
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
 @pytest.mark.parametrize("dtype", [np.float32])
@@ -384,10 +427,23 @@ def test_apply_dimension_cummin_process(
         dimension="t",
     ).compute()
 
-    print(input_cube.data.shape)
-    print(output_cube_cummin.data.shape)
-
     original_abs_min = np.min(input_cube.data, axis=0)
     cummin_total = np.min(output_cube_cummin.data, axis=0)
 
     assert np.all(cummin_total <= original_abs_min)
+
+    input_cube.data[:, :, 15, :] = np.nan
+
+    _process_cummin_with_nan = partial(
+        process_registry["cummin"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=False,
+    )
+
+    output_cube_cummin_with_nan = apply_dimension(
+        data=input_cube,
+        process=_process_cummin_with_nan,
+        dimension="t",
+    ).compute()
+
+    assert np.isnan(output_cube_cummin_with_nan[0, 0, 16, 0].values)
