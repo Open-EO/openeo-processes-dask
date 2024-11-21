@@ -347,3 +347,193 @@ def test_apply_kernel(temporal_interval, bounding_box, random_raster_data):
     )
 
     xr.testing.assert_equal(output_cube, input_cube)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_cumsum_process(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_cumsum = partial(
+        process_registry["cumsum"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube_cumsum = apply_dimension(
+        data=input_cube,
+        process=_process_cumsum,
+        dimension="t",
+    ).compute()
+
+    original_abs_sum = np.sum(np.abs(input_cube.data))
+
+    cumsum_total = np.sum(np.abs(output_cube_cumsum.data))
+
+    assert cumsum_total >= original_abs_sum
+
+    input_cube.data[:, :, 15, :] = np.nan
+
+    _process_cumsum_with_nan = partial(
+        process_registry["cumsum"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=False,
+    )
+
+    output_cube_cumsum_with_nan = apply_dimension(
+        data=input_cube,
+        process=_process_cumsum_with_nan,
+        dimension="t",
+    ).compute()
+
+    assert np.isnan(output_cube_cumsum_with_nan[0, 0, 20, 0].values)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_cumproduct_process(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_cumsum = partial(
+        process_registry["cumproduct"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube_cumprod = apply_dimension(
+        data=input_cube,
+        process=_process_cumsum,
+        dimension="t",
+    ).compute()
+
+    original_data = np.abs(input_cube.data)
+    original_data[np.isnan(original_data)] = 0
+    original_abs_prod = np.sum(original_data)
+
+    cumprod_data = np.abs(output_cube_cumprod.data)
+    cumprod_data[np.isnan(cumprod_data)] = 0
+    cumprod_total = np.sum(cumprod_data)
+
+    assert cumprod_total >= original_abs_prod
+
+    input_cube.data[:, :, 15, :] = np.nan
+
+    _process_cumprod_with_nan = partial(
+        process_registry["cumproduct"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=False,
+    )
+
+    output_cube_cumprod_with_nan = apply_dimension(
+        data=input_cube,
+        process=_process_cumprod_with_nan,
+        dimension="t",
+    ).compute()
+
+    assert np.isnan(output_cube_cumprod_with_nan[0, 0, 20, 0].values)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_cummax_process(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_cummax = partial(
+        process_registry["cummax"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube_cummax = apply_dimension(
+        data=input_cube,
+        process=_process_cummax,
+        dimension="t",
+    ).compute()
+
+    original_abs_max = np.max(input_cube.data, axis=0)
+    cummax_total = np.max(output_cube_cummax.data, axis=0)
+
+    assert np.all(cummax_total >= original_abs_max)
+
+    input_cube.data[:, :, 15, :] = np.nan
+
+    _process_cummax_with_nan = partial(
+        process_registry["cummax"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=False,
+    )
+
+    output_cube_cummax_with_nan = apply_dimension(
+        data=input_cube,
+        process=_process_cummax_with_nan,
+        dimension="t",
+    ).compute()
+
+    assert np.isnan(output_cube_cummax_with_nan[0, 0, 16, 0].values)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_cummin_process(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_cummin = partial(
+        process_registry["cummin"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube_cummin = apply_dimension(
+        data=input_cube,
+        process=_process_cummin,
+        dimension="t",
+    ).compute()
+
+    original_abs_min = np.min(input_cube.data, axis=0)
+    cummin_total = np.min(output_cube_cummin.data, axis=0)
+
+    assert np.all(cummin_total <= original_abs_min)
+
+    input_cube.data[:, :, 15, :] = np.nan
+
+    _process_cummin_with_nan = partial(
+        process_registry["cummin"].implementation,
+        data=ParameterReference(from_parameter="data"),
+        ignore_nodata=False,
+    )
+
+    output_cube_cummin_with_nan = apply_dimension(
+        data=input_cube,
+        process=_process_cummin_with_nan,
+        dimension="t",
+    ).compute()
+
+    assert np.isnan(output_cube_cummin_with_nan[0, 0, 16, 0].values)
