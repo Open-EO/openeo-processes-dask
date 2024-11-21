@@ -146,6 +146,9 @@ def cumproduct(data, ignore_nodata=True, axis=None):
 
 
 def cummin(data, ignore_nodata=True):
+    if isinstance(data, da.Array):
+        data = data.compute()
+
     nan_mask = np.isnan(data)
 
     if ignore_nodata:

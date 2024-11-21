@@ -259,7 +259,7 @@ def test_apply_kernel(temporal_interval, bounding_box, random_raster_data):
     xr.testing.assert_equal(output_cube, input_cube)
 
 
-# TODO: testing cummin, cummax
+# TODO: testing cummin
 
 
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
@@ -328,3 +328,66 @@ def test_apply_dimension_cumproduct_process(
     cumprod_total = np.sum(cumprod_data)
 
     assert cumprod_total >= original_abs_prod
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_cummax_process(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_cummax = partial(
+        process_registry["cummax"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube_cummax = apply_dimension(
+        data=input_cube,
+        process=_process_cummax,
+        dimension="t",
+    ).compute()
+
+    original_abs_max = np.max(input_cube.data, axis=0)
+    cummax_total = np.max(output_cube_cummax.data, axis=0)
+
+    assert np.all(cummax_total >= original_abs_max)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 30, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_dimension_cummin_process(
+    temporal_interval, bounding_box, random_raster_data, process_registry
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process_cummin = partial(
+        process_registry["cummin"].implementation,
+        data=ParameterReference(from_parameter="data"),
+    )
+
+    output_cube_cummin = apply_dimension(
+        data=input_cube,
+        process=_process_cummin,
+        dimension="t",
+    ).compute()
+
+    print(input_cube.data.shape)
+    print(output_cube_cummin.data.shape)
+
+    original_abs_min = np.min(input_cube.data, axis=0)
+    cummin_total = np.min(output_cube_cummin.data, axis=0)
+
+    assert np.all(cummin_total <= original_abs_min)
