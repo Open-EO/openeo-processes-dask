@@ -61,7 +61,7 @@ def get_labels(data, dimension="labels", axis=0, dim_labels=None):
         labels = []
         if isinstance(data, list):
             data = np.asarray(data)
-    if dim_labels:
+    if not isinstance(dim_labels, type(None)):
         labels = dim_labels
     return labels, data
 
