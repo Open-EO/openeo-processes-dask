@@ -232,7 +232,20 @@ def array_append(
     value: Any,
     label: Optional[Any] = None,
     dim_labels=None,
+    axis=None,
 ) -> ArrayLike:
+    if axis:
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+        if (isinstance(value, np.ndarray) or isinstance(value, da.core.Array)) and len(
+            value.flatten()
+        ) == 1:
+            value = value.flatten()[0]
+
+        value = np.take(np.ones_like(data), indices=0, axis=axis) * value
+        concat = array_concat(data, value, axis=axis)
+        return concat
+
     if dim_labels:
         data = array_create_labeled(data=data, labels=dim_labels)
     if label is not None:
