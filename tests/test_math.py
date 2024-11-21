@@ -120,9 +120,6 @@ def test_extrema():
     assert np.array_equal(result_np, result.compute())
 
 
-# TODO: add all cumtests (more advanced tests)
-
-
 def test_cumproduct():
     array_list = [1, 2, 3, np.nan, 3, 1]
     result_np = [1, 2, 6, np.nan, 18, 18]
