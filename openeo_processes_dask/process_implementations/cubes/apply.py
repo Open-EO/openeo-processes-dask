@@ -79,11 +79,15 @@ def apply_dimension(
 
     reordered_result = result.transpose(*data.dims, ...)
 
+    if dimension in reordered_result.dims:
+        result_len = len(reordered_result[dimension])
+    else:
+        result_len = 1
+
     # Case 1: target_dimension is not defined/ is source dimension
     if dimension == target_dimension:
         # dimension labels preserved
         # if the number of source dimension's values is equal to the number of computed values
-        result_len = len(reordered_result[dimension])
         if len(reordered_data[dimension]) == result_len:
             reordered_result[dimension] == reordered_data[dimension].values
         else:

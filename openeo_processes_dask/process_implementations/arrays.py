@@ -50,7 +50,7 @@ __all__ = [
 ]
 
 
-def get_labels(data, dimension="labels", axis=0):
+def get_labels(data, dimension="labels", axis=0, dim_labels=None):
     if isinstance(data, xr.DataArray):
         dimension = data.dims[0] if len(data.dims) == 1 else dimension
         if axis:
@@ -61,6 +61,8 @@ def get_labels(data, dimension="labels", axis=0):
         labels = []
         if isinstance(data, list):
             data = np.asarray(data)
+    if dim_labels:
+        labels = dim_labels
     return labels, data
 
 
@@ -82,8 +84,7 @@ def array_element(
         raise ArrayElementParameterConflict(
             "The process `array_element` only allows that either the `index` or the `labels` parameter is set."
         )
-
-    dim_labels, data = get_labels(data, axis=axis)
+    dim_labels, data = get_labels(data, axis=axis, dim_labels=dim_labels)
 
     if label is not None:
         if len(dim_labels) == 0:
