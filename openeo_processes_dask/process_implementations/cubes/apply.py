@@ -45,7 +45,10 @@ def apply_dimension(
             f"Provided dimension ({dimension}) not found in data.dims: {data.dims}"
         )
 
-    keepdims = True
+    keepdims = False
+    is_new_dim_added = target_dimension is not None
+    if is_new_dim_added:
+        keepdims = True
 
     if target_dimension is None:
         target_dimension = dimension
@@ -105,7 +108,7 @@ def apply_dimension(
     else:
         # source dimension is not the target dimension and the latter does not exist
         reordered_result = reordered_result.rename({dimension: target_dimension})
-        reordered_result[dimension] = np.arange(result_len)
+        reordered_result[target_dimension] = np.arange(result_len)
 
     if data.rio.crs is not None:
         try:
