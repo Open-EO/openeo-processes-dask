@@ -43,13 +43,8 @@ def resample_spatial(
 ):
     """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
 
-    if (
-        data.openeo.y_dim is None
-        or data.openeo.x_dim is None
-    ):
-        raise DimensionMissing(
-            f"Spatial dimension missing for dataset: {data} "
-        )
+    if data.openeo.y_dim is None or data.openeo.x_dim is None:
+        raise DimensionMissing(f"Spatial dimension missing for dataset: {data} ")
 
     methods_list = [
         "near",
@@ -119,34 +114,28 @@ def resample_spatial(
 def resample_cube_spatial(
     data: RasterCube, target: RasterCube, method="near", options=None
 ) -> RasterCube:
-
-    if (
-        target.openeo.y_dim is None
-        or target.openeo.x_dim is None
-    ):
+    if target.openeo.y_dim is None or target.openeo.x_dim is None:
         raise DimensionMissing(
             f"Spatial dimension missing for target dataset: {target} "
         )
 
     target_resolution, target_crs = None, None
-    if hasattr(target, 'rio'):
-        if hasattr(target.rio, 'resolution'):
+    if hasattr(target, "rio"):
+        if hasattr(target.rio, "resolution"):
             if type(target.rio.resolution()) in [tuple, list]:
                 target_resolution = target.rio.resolution()[0]
             else:
                 target_resolution = target.rio.resolution()
-        if hasattr(target.rio, 'crs'):
+        if hasattr(target.rio, "crs"):
             target_crs = target.rio.crs
     if not target_crs:
-        raise OpenEOException(
-            f"Projection not found in target dataset: {target} "
-        )
+        raise OpenEOException(f"Projection not found in target dataset: {target} ")
     if not target_resolution:
-        raise OpenEOException(
-            f"Resolution not found in target dataset: {target} "
-        )
+        raise OpenEOException(f"Resolution not found in target dataset: {target} ")
 
-    resampled_data = resample_spatial(data = data, projection=target_crs, resolution=target_resolution, method=method)
+    resampled_data = resample_spatial(
+        data=data, projection=target_crs, resolution=target_resolution, method=method
+    )
 
     return resampled_data
 
