@@ -166,10 +166,9 @@ def test_resample_cube_spatial_small(
     resampled_cube = resample_spatial(
         data=input_cube, projection=output_crs, resolution=output_res
     )
-    print("RESAMPLE: ", output_crs, output_res, resampled_cube.shape)
 
     output_cube = resample_cube_spatial(
-        data=input_cube, target=resampled_cube[:25,:25,:15,:3], method="average"
+        data=input_cube, target=resampled_cube[10:60, 20:150,:,:], method="average"
     )
 
     general_output_checks(
@@ -180,7 +179,7 @@ def test_resample_cube_spatial_small(
         verify_crs=False,
     )
 
-    assert (list(output_cube.shape) < list(resampled_cube.shape))
+    assert (list(output_cube.shape) == list(resampled_cube.shape))
 
 
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
