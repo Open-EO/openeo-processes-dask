@@ -3,8 +3,16 @@ from typing import Callable, Optional, Union
 import numpy as np
 import scipy.ndimage
 import xarray as xr
+from shapely.geometry import MultiPolygon, Polygon, shape
+from shapely.ops import unary_union
 
-from openeo_processes_dask.process_implementations.data_model import RasterCube
+from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
+    mask_polygon,
+)
+from openeo_processes_dask.process_implementations.data_model import (
+    RasterCube,
+    VectorCube,
+)
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
     KernelDimensionsUneven,
@@ -165,3 +173,40 @@ def apply_kernel(
         cval = 0
 
     return convolve(data, kernel, mode, cval, replace_invalid) * factor
+
+
+def apply_polygon(
+    data: RasterCube,
+    polygons: Union[VectorCube, dict],
+    process: Callable,
+    mask_value: Optional[Union[int, float, str, None]] = None,
+    context: Optional[dict] = None,
+) -> RasterCube:
+    if isinstance(polygons, dict) and polygons.get("type") == "FeatureCollection":
+        polygon_geometries = [
+            shape(feature["geometry"]) for feature in polygons["features"]
+        ]
+    elif isinstance(polygons, dict) and polygons.get("type") in [
+        "Polygon",
+        "MultiPolygon",
+    ]:
+        polygon_geometries = [shape(polygons)]
+    else:
+        raise ValueError(
+            "Unsupported polygons format. Expected GeoJSON-like FeatureCollection or Polygon."
+        )
+
+    unified_polygon = unary_union(polygon_geometries)
+
+    if isinstance(unified_polygon, MultiPolygon) and len(unified_polygon.geoms) < len(
+        polygon_geometries
+    ):
+        raise Exception("GeometriesOverlap")
+
+    masked_data = mask_polygon(data, polygons, replacement=np.nan)
+
+    processed_data = apply(masked_data, process, context=context)
+
+    result = mask_polygon(processed_data, polygons, replacement=mask_value)
+
+    return result

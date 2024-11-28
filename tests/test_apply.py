@@ -10,6 +10,10 @@ from openeo_processes_dask.process_implementations.cubes.apply import (
     apply,
     apply_dimension,
     apply_kernel,
+    apply_polygon,
+)
+from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
+    mask_polygon,
 )
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
@@ -482,3 +486,44 @@ def test_apply_dimension_cummin_process(
     ).compute()
 
     assert np.isnan(output_cube_cummin_with_nan[0, 0, 16, 0].values)
+
+
+@pytest.mark.parametrize("size", [(6, 5, 4, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_apply_polygon(
+    temporal_interval,
+    bounding_box,
+    random_raster_data,
+    polygon_geometry_small,
+    process_registry,
+):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    _process = partial(
+        process_registry["add"].implementation,
+        y=1,
+        x=ParameterReference(from_parameter="x"),
+    )
+
+    output_cube = apply_polygon(
+        data=input_cube,
+        polygons=polygon_geometry_small,
+        process=_process,
+        mask_value=np.nan,
+    )
+
+    assert len(output_cube.dims) == len(input_cube.dims)
+
+    expected_result_mask = mask_polygon(data=input_cube, mask=polygon_geometry_small)
+
+    expected_results = expected_result_mask + 1
+
+    assert len(output_cube.dims) == len(expected_results.dims)
+
+    assert output_cube.all() == expected_results.all()
