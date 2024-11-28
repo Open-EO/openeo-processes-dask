@@ -180,8 +180,10 @@ def apply_polygon(
     ):
         raise Exception("GeometriesOverlap")
 
-    masked_data = mask_polygon(data, polygons, replacement=mask_value)
+    masked_data = mask_polygon(data, polygons, replacement=np.nan)
 
     processed_data = apply(masked_data, process, context=context)
 
-    return processed_data
+    result = mask_polygon(processed_data, polygons, replacement=mask_value)
+
+    return result
