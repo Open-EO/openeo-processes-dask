@@ -50,7 +50,7 @@ __all__ = [
 ]
 
 
-def get_labels(data, dimension="labels", axis=0):
+def get_labels(data, dimension="labels", axis=0, dim_labels=None):
     if isinstance(data, xr.DataArray):
         dimension = data.dims[0] if len(data.dims) == 1 else dimension
         if axis:
@@ -61,6 +61,8 @@ def get_labels(data, dimension="labels", axis=0):
         labels = []
         if isinstance(data, list):
             data = np.asarray(data)
+    if not isinstance(dim_labels, type(None)):
+        labels = dim_labels
     return labels, data
 
 
@@ -82,9 +84,7 @@ def array_element(
         raise ArrayElementParameterConflict(
             "The process `array_element` only allows that either the `index` or the `labels` parameter is set."
         )
-
-    if isinstance(data, xr.DataArray):
-        dim_labels, data = get_labels(data, axis=axis)
+    dim_labels, data = get_labels(data, axis=axis, dim_labels=dim_labels)
 
     if label is not None:
         if len(dim_labels) == 0:
@@ -189,7 +189,7 @@ def array_modify(
     return modified
 
 
-def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
+def array_concat(array1: ArrayLike, array2: ArrayLike, axis=None) -> ArrayLike:
     labels1, array1 = get_labels(array1)
     labels2, array2 = get_labels(array2)
 
@@ -198,7 +198,21 @@ def array_concat(array1: ArrayLike, array2: ArrayLike) -> ArrayLike:
             "At least one label exists in both arrays and the conflict must be resolved before."
         )
 
-    concat = np.concatenate([array1, array2])
+    if (len(array1.shape) - len(array2.shape)) == 1:
+        if axis is None:
+            s1 = np.array(list(array1.shape))
+            s2 = list(array2.shape)
+            s2.append(0)
+            s2 = np.array(s2)
+
+            axis = np.argmax(s1 != s2)
+
+        array2 = np.expand_dims(array2, axis=axis)
+
+    if axis:
+        concat = np.concatenate([array1, array2], axis=axis)
+    else:
+        concat = np.concatenate([array1, array2])
 
     # e.g. concating int32 and str arrays results in the result being cast to a Unicode dtype of a certain length (e.g. <U22).
     # There isn't really anything better to do as numpy does not support heterogenuous arrays.
@@ -219,7 +233,20 @@ def array_append(
     value: Any,
     label: Optional[Any] = None,
     dim_labels=None,
+    axis=None,
 ) -> ArrayLike:
+    if axis:
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+        if (isinstance(value, np.ndarray) or isinstance(value, da.core.Array)) and len(
+            value.flatten()
+        ) == 1:
+            value = value.flatten()[0]
+
+        value = np.take(np.ones_like(data), indices=0, axis=axis) * value
+        concat = array_concat(data, value, axis=axis)
+        return concat
+
     if dim_labels:
         data = array_create_labeled(data=data, labels=dim_labels)
     if label is not None:
