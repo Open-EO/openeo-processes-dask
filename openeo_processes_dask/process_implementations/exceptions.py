@@ -108,3 +108,7 @@ class KernelDimensionsUneven(OpenEOException):
 
 class MinMaxSwapped(OpenEOException):
     pass
+
+
+class UnitMismatch(OpenEOException):
+    pass
