@@ -140,59 +140,42 @@ def vector_data_cube() -> VectorCube:
 
 
 @pytest.fixture
-def geometry_point(
-    x=10.47, y=46.12, crs="EPSG:4326"
-):
+def geometry_point(x=10.47, y=46.12, crs="EPSG:4326"):
     # Create a small polygon
     coordinates = [x, y]
-    
+
     geometry = {
         "type": "FeatureCollection",
         "features": [
             {
                 "id": "0",
                 "type": "Feature",
-                "properties": {
-                    "id": "0",
-                    "class": 1
-                },
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": coordinates
-                }
+                "properties": {"id": "0", "class": 1},
+                "geometry": {"type": "Point", "coordinates": coordinates},
             }
-        ]
+        ],
     }
 
     return geometry
 
 
-
 @pytest.fixture
-def geometry_dict(
-    west=10.47, east=10.48, south=46.12, north=46.18, crs="EPSG:4326"
-):
+def geometry_dict(west=10.47, east=10.48, south=46.12, north=46.18, crs="EPSG:4326"):
     # Create a small polygon
     coordinates = [
         [[west, south], [west, north], [east, north], [east, south], [west, south]]
     ]
-    
+
     geometry = {
         "type": "FeatureCollection",
         "features": [
             {
                 "id": "0",
                 "type": "Feature",
-                "properties": {
-                    "id": "0",
-                    "class": 1
-                },
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": coordinates
-                }
+                "properties": {"id": "0", "class": 1},
+                "geometry": {"type": "Polygon", "coordinates": coordinates},
             }
-        ]
+        ],
     }
 
     return geometry

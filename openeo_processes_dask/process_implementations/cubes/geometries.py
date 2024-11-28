@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import Callable, Optional, Union
+from typing import Optional
 
 import geopandas as gpd
 import numpy as np
@@ -8,9 +8,7 @@ import shapely
 import xarray as xr
 import xvec
 
-from openeo_processes_dask.process_implementations.data_model import (
-    VectorCube,
-)
+from openeo_processes_dask.process_implementations.data_model import VectorCube
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionNotAvailable,
     UnitMismatch,
@@ -34,9 +32,7 @@ def load_geojson(data: dict, properties: Optional[list[str]] = []) -> VectorCube
                     feature["properties"] = {}
             if isinstance(data.get("crs", {}), dict):
                 DEFAULT_CRS = (
-                    data.get("crs", {})
-                    .get("properties", {})
-                    .get("name", DEFAULT_CRS)
+                    data.get("crs", {}).get("properties", {}).get("name", DEFAULT_CRS)
                 )
             else:
                 DEFAULT_CRS = int(data.get("crs", {}))
@@ -73,7 +69,7 @@ def load_geojson(data: dict, properties: Optional[list[str]] = []) -> VectorCube
 
                     for i, feature in enumerate(data["features"]):
                         value = feature.get("properties", {}).get(key, None)
-                        values[i,:] = value
+                        values[i, :] = value
                 elif len(property) > 1:
                     dimensions.append("properties")
                     keys = list(property.keys())
@@ -82,7 +78,7 @@ def load_geojson(data: dict, properties: Optional[list[str]] = []) -> VectorCube
                     for i, feature in enumerate(data["features"]):
                         for j, key in enumerate(keys):
                             value = feature.get("properties", {}).get(key, None)
-                            values[i,j] = value
+                            values[i, j] = value
 
     elif len(properties) == 1:
         property = properties[0]
@@ -104,7 +100,7 @@ def load_geojson(data: dict, properties: Optional[list[str]] = []) -> VectorCube
 
                     for i, feature in enumerate(data["features"]):
                         value = feature.get("properties", {}).get(property, None)
-                        values[i,:] = value
+                        values[i, :] = value
     else:
         if "features" in data:
             dimensions.append("properties")
@@ -113,14 +109,9 @@ def load_geojson(data: dict, properties: Optional[list[str]] = []) -> VectorCube
             for i, feature in enumerate(data["features"]):
                 for j, key in enumerate(properties):
                     value = feature.get("properties", {}).get(key, None)
-                    values[i,j] = value
+                    values[i, j] = value
 
-
-    output_vector_cube = xr.DataArray(
-        values,
-        coords = coordinates, 
-        dims = dimensions
-    )
+    output_vector_cube = xr.DataArray(values, coords=coordinates, dims=dimensions)
     output_vector_cube = output_vector_cube.xvec.set_geom_indexes(
         "geometry", crs=gdf.crs
     )
@@ -131,49 +122,47 @@ def vector_buffer(geometries: VectorCube, distance: float) -> VectorCube:
     from shapely import buffer
 
     geometries_copy = copy.deepcopy(geometries)
-    
+
     if isinstance(geometries_copy, xr.DataArray) and "geometry" in geometries_copy.dims:
-        if hasattr(geometries_copy, 'xvec') and hasattr(geometries_copy["geometry"], 'crs'):
+        if hasattr(geometries_copy, "xvec") and hasattr(
+            geometries_copy["geometry"], "crs"
+        ):
             if geometries_copy["geometry"].crs.is_geographic:
-                raise UnitMismatch("The unit of the spatial reference system is not meters, but the given distance is in meters.")
+                raise UnitMismatch(
+                    "The unit of the spatial reference system is not meters, but the given distance is in meters."
+                )
 
         geometry = geometries_copy["geometry"].values.tolist()
 
         new_geometry = [buffer(geom, distance) for geom in geometry]
 
         geometries_copy["geometry"] = new_geometry
-    
+
         return geometries_copy
-    
+
     else:
         raise DimensionNotAvailable(f"No geometry dimension found in {geometries}")
 
 
 def vector_reproject(
-    data: VectorCube, 
-    projection, 
-    dimension: Optional[str] = None
+    data: VectorCube, projection, dimension: Optional[str] = None
 ) -> VectorCube:
-    
     DEFAULT_CRS = "epsg:4326"
 
     data_copy = copy.deepcopy(data)
 
     if not dimension:
         dimension = "geometry"
-    
-    if isinstance(data, xr.DataArray) and dimension in data.dims:
 
-        if hasattr(data, 'xvec') and hasattr(data[dimension], 'crs'):
+    if isinstance(data, xr.DataArray) and dimension in data.dims:
+        if hasattr(data, "xvec") and hasattr(data[dimension], "crs"):
             data_copy = data_copy.xvec.to_crs({dimension: projection})
-    
+
             return data_copy
         else:
-            data_copy = data_copy.xvec.set_geom_indexes(
-                dimension, crs=DEFAULT_CRS
-            )
+            data_copy = data_copy.xvec.set_geom_indexes(dimension, crs=DEFAULT_CRS)
             data_copy = data_copy.xvec.to_crs({dimension: projection})
-    
+
             return data_copy
     else:
         raise DimensionNotAvailable(f"No geometry dimension found in {data}")
