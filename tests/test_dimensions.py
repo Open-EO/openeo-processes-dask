@@ -1,13 +1,7 @@
 import numpy as np
 import pytest
 
-from openeo_processes_dask.process_implementations.cubes.general import (
-    add_dimension,
-    drop_dimension,
-    rename_dimension,
-    rename_labels,
-    trim_cube,
-)
+from openeo_processes_dask.process_implementations.cubes.general import *
 from openeo_processes_dask.process_implementations.exceptions import (
     DimensionLabelCountMismatch,
     DimensionNotAvailable,
@@ -125,6 +119,30 @@ def test_rename_labels(temporal_interval, bounding_box, random_raster_data):
             dimension="bands",
             target=["B02", "B03", "B04", "B05", "B08", "B11", "B12"],
         )
+
+
+@pytest.mark.parametrize("size", [(30, 30, 2, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_rename_labels_time(temporal_interval, bounding_box, random_raster_data):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    t_labels = dimension_labels(input_cube, dimension="t")
+    output_cube = rename_labels(
+        input_cube, dimension="t", source=t_labels, target=["first_date", "second_date"]
+    )
+    assert "first_date" in output_cube["t"].values
+
+
+    output_cube_2 = rename_labels(
+        input_cube, dimension="t", source=[t_labels[-1]], target=["second_date"]
+    )
+    assert "second_date" in output_cube_2["t"].values
 
 
 @pytest.mark.parametrize("size", [(30, 30, 20, 4)])
