@@ -138,7 +138,6 @@ def test_rename_labels_time(temporal_interval, bounding_box, random_raster_data)
     )
     assert "first_date" in output_cube["t"].values
 
-
     output_cube_2 = rename_labels(
         input_cube, dimension="t", source=[t_labels[-1]], target=["second_date"]
     )
