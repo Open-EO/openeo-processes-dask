@@ -185,7 +185,6 @@ def test_resample_cube_spatial_small(
     assert (output_cube["y"].values == resampled_cube["y"].values).all()
 
 
-
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
 @pytest.mark.parametrize("dtype", [np.float64])
 @pytest.mark.parametrize(
