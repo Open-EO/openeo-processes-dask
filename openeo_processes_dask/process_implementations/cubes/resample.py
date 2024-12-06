@@ -136,6 +136,49 @@ def resample_cube_spatial(
     resampled_data = resample_spatial(
         data=data, projection=target_crs, resolution=target_resolution, method=method
     )
+    def align_arrays(a, b, res):
+        desc = 1
+        if len(a) == 1 and len(b) == 1:
+            return a
+        elif len(a) == 1 and len(b) > 1:
+            if b[0] > b[1]:
+                desc = -1
+        elif len(a) > len(b):
+            b0 = np.absolute(b[0]-a).argmin()
+            blen = len(b)
+            close = np.isclose(b, a[b0:b0+blen], atol=res*0.99)
+            if close.all():
+                return a[b0:b0+blen]
+            else:
+                raise Exception("Coordinates could not be aligned! ")
+        else:
+            if b[0] > b[1]:
+                desc = -1
+                if a[0] < a[1]:
+                    a = np.flip(a)
+            else:
+                if a[0] > a[1]:
+                    a = np.flip(a)
+        a0 = np.absolute(b-a[0]).argmin()
+        alen = len(a)
+        close = np.isclose(a, b[a0:a0+alen], atol=res*0.99)
+        if not close.all():
+            raise Exception("Coordinates could not be aligned! ")
+
+        new_b = np.arange(b[0], a[0], res*desc)
+        new_b = np.append(new_b, a)
+        new_b = np.append(new_b, np.flip(np.arange(b[-1], a[-1], -res*desc)))
+        if len(b) != len(new_b):
+            raise Exception("Coordinates could not be aligned! ")
+        return new_b
+
+    x_data = resampled_data[resampled_data.openeo.x_dim[0]].values
+    x_target = target[target.openeo.x_dim[0]].values
+    resampled_data[resampled_data.openeo.x_dim[0]] = align_arrays(x_target, x_data, target_resolution)
+
+    y_data = resampled_data[resampled_data.openeo.y_dim[0]].values
+    y_target = target[target.openeo.y_dim[0]].values
+    resampled_data[resampled_data.openeo.y_dim[0]] = align_arrays(y_target, y_data, target_resolution)
 
     return resampled_data
 
