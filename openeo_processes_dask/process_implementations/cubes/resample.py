@@ -187,14 +187,14 @@ def resample_cube_spatial(
 
     x_data = resampled_data[resampled_data.openeo.x_dim[0]].values
     x_target = target[target.openeo.x_dim[0]].values
-    if not (x_data == x_target).all():
+    if not (len(x_data) == len(x_target) and (x_data == x_target).all()):
         resampled_data[resampled_data.openeo.x_dim[0]] = align_arrays(
             x_target, x_data, target_resolution
         )
 
     y_data = resampled_data[resampled_data.openeo.y_dim[0]].values
     y_target = target[target.openeo.y_dim[0]].values
-    if not (y_data == y_target).all():
+    if not (len(y_data) == len(y_target) and (y_data == y_target).all()):
         resampled_data[resampled_data.openeo.y_dim[0]] = align_arrays(
             y_target, y_data, target_resolution
         )
