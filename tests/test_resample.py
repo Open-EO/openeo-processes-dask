@@ -2,6 +2,7 @@ from functools import partial
 
 import numpy as np
 import pytest
+import xarray as xr
 from odc.geo.geobox import resolution_from_affine
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 from pyproj.crs import CRS
@@ -180,6 +181,8 @@ def test_resample_cube_spatial_small(
     )
 
     assert list(output_cube.shape) == list(resampled_cube.shape)
+    assert (output_cube["x"].values == resampled_cube["x"].values).all()
+    assert (output_cube["y"].values == resampled_cube["y"].values).all()
 
 
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
