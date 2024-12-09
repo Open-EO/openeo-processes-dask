@@ -152,6 +152,18 @@ def resample_cube_spatial(
                 return a[b0 : b0 + blen]
             else:
                 raise Exception("Coordinates could not be aligned! ")
+        elif len(a) == len(b):
+            if b[0] > b[1]:
+                if a[0] < a[1]:
+                    a = np.flip(a)
+            else:
+                if a[0] > a[1]:
+                    a = np.flip(a)
+            close = np.isclose(b, a, atol=res * 0.99)
+            if close.all():
+                return a
+            else:
+                raise Exception("Coordinates could not be aligned! ")
         else:
             if b[0] > b[1]:
                 desc = -1
