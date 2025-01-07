@@ -95,7 +95,7 @@ def polygon_geometry_small(
 
 @pytest.fixture
 def temporal_interval(interval=["2018-05-01", "2018-06-01"]) -> TemporalInterval:
-    return TemporalInterval.parse_obj(interval)
+    return TemporalInterval(interval)
 
 
 @pytest.fixture
