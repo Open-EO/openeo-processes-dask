@@ -5,7 +5,11 @@ import numpy as np
 import pytest
 import xarray as xr
 import xvec
-from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval, TemporalIntervals
+from openeo_pg_parser_networkx.pg_schema import (
+    ParameterReference,
+    TemporalInterval,
+    TemporalIntervals,
+)
 
 from openeo_processes_dask.process_implementations.cubes.aggregate import *
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
@@ -31,18 +35,24 @@ from tests.mockdata import create_fake_rastercube
         (
             ["2018-01-01T00:00:00", "2019-01-01T00:00:00"],
             [
-                TemporalInterval.model_validate(["2018-01-01T12:00:00", "2018-06-01T12:00:00"]),
-                TemporalInterval.model_validate(["2018-07-01T12:00:00", "2018-12-01T12:00:00"]),
+                TemporalInterval.model_validate(
+                    ["2018-01-01T12:00:00", "2018-06-01T12:00:00"]
+                ),
+                TemporalInterval.model_validate(
+                    ["2018-07-01T12:00:00", "2018-12-01T12:00:00"]
+                ),
             ],
             ["half-1", "half-2"],
             2,
         ),
         (
             ["2018-01-01T00:00:00", "2019-01-01T00:00:00"],
-            TemporalIntervals.model_validate([
-                ["2018-01-01T12:00:00", "2018-06-01T12:00:00"],
-                ["2018-07-01T12:00:00", "2018-12-01T12:00:00"],
-            ]),
+            TemporalIntervals.model_validate(
+                [
+                    ["2018-01-01T12:00:00", "2018-06-01T12:00:00"],
+                    ["2018-07-01T12:00:00", "2018-12-01T12:00:00"],
+                ]
+            ),
             ["half-1", "half-2"],
             2,
         ),
