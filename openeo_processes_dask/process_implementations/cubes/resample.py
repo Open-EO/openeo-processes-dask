@@ -178,9 +178,11 @@ def resample_cube_spatial(
         if not close.all():
             raise Exception("Coordinates could not be aligned! ")
 
-        new_b = np.flip(np.arange(a[0], b[0] - (res * desc)*0.51, - res * desc))
+        new_b = np.flip(np.arange(a[0], b[0] - (res * desc) * 0.51, -res * desc))
         new_b = np.append(new_b, a[1:-1])
-        new_b = np.append(new_b, (np.arange(a[-1], b[-1] + (res * desc)*0.5, res * desc)))
+        new_b = np.append(
+            new_b, (np.arange(a[-1], b[-1] + (res * desc) * 0.5, res * desc))
+        )
         if len(b) != len(new_b):
             raise Exception("Coordinates could not be aligned! ")
         return new_b
