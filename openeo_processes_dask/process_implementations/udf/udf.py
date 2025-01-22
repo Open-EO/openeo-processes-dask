@@ -15,7 +15,7 @@ def run_udf(
     data: da.Array, udf: str, runtime: str, context: Optional[dict] = None
 ) -> RasterCube:
     data = XarrayDataCube(xr.DataArray(data))
-    data = UdfData(proj={"EPSG": 900913}, datacube_list=[data], user_context=context)
+    data = UdfData(datacube_list=[data], user_context=context)
     result = run_udf_code(code=udf, data=data)
     cubes = result.get_datacube_list()
     if len(cubes) != 1:

@@ -20,9 +20,9 @@ def test_run_udf(temporal_interval, bounding_box, random_raster_data):
     )
 
     udf = """
-from openeo.udf import XarrayDataCube
-def apply_datacube(cube: XarrayDataCube, context: dict) -> XarrayDataCube:
-    return cube
+import xarray as xr
+def apply_datacube(cube: xr.DataArray, context: dict) -> xr.DataArray:
+    return cube + 1
 """
 
     output_cube = run_udf(data=input_cube, udf=udf, runtime="Python")
@@ -32,7 +32,7 @@ def apply_datacube(cube: XarrayDataCube, context: dict) -> XarrayDataCube:
         output_cube=output_cube,
         verify_attrs=True,
         verify_crs=True,
-        expected_results=input_cube,
+        expected_results=input_cube + 1,
     )
 
-    xr.testing.assert_equal(output_cube, input_cube)
+    xr.testing.assert_equal(output_cube, input_cube + 1)
