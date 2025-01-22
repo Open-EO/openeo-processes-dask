@@ -55,6 +55,15 @@ def aggregate_temporal(
                 f"The data cube contains multiple temporal dimensions: {temporal_dims}. The parameter `dimension` must be specified."
             )
         t = temporal_dims[0]
+    if isinstance(intervals, TemporalIntervals) or isinstance(intervals, list):
+        interval_str = []
+        for interval in intervals:
+            if isinstance(interval, TemporalInterval):
+                interval_0 = str(interval[0].root)
+                interval_1 = str(interval[1].root)
+                interval_str.append([interval_0, interval_1])
+        if interval_str:
+            intervals = interval_str
 
     intervals_np = (
         np.array(intervals, dtype=np.datetime64).astype("datetime64[s]").astype(float)
