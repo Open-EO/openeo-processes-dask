@@ -34,6 +34,7 @@ def apply(
             "positional_parameters": positional_parameters,
             "named_parameters": named_parameters,
         },
+        keep_attrs=True,
     )
     return result
 
