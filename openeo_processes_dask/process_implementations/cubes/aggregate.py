@@ -1,3 +1,4 @@
+import copy
 import gc
 import logging
 from typing import Callable, Optional, Union
@@ -43,7 +44,7 @@ def aggregate_temporal(
             raise DimensionNotAvailable(
                 f"A dimension with the specified name: {dimension} does not exist."
             )
-        applicable_temporal_dimension = dimension
+        t = dimension
     else:
         if not temporal_dims:
             raise DimensionNotAvailable(
@@ -53,13 +54,155 @@ def aggregate_temporal(
             raise TooManyDimensions(
                 f"The data cube contains multiple temporal dimensions: {temporal_dims}. The parameter `dimension` must be specified."
             )
-        applicable_temporal_dimension = temporal_dims[0]
+        t = temporal_dims[0]
+    if isinstance(intervals, TemporalIntervals) or isinstance(intervals, list):
+        interval_str = []
+        for interval in intervals:
+            if isinstance(interval, TemporalInterval):
+                interval_0 = str(interval[0].root)
+                interval_1 = str(interval[1].root)
+                interval_str.append([interval_0, interval_1])
+        if interval_str:
+            intervals = interval_str
 
-    aggregated_data = data.groupby_bins(
-        group=applicable_temporal_dimension, labels=labels
+    intervals_np = (
+        np.array(intervals, dtype=np.datetime64).astype("datetime64[s]").astype(float)
+    )
+    intervals_flat = np.reshape(
+        intervals_np, np.shape(intervals_np)[0] * np.shape(intervals_np)[1]
     )
 
-    raise NotImplementedError("aggregate_temporal is currently not implemented")
+    if not labels:
+        labels = np.array(intervals, dtype="datetime64[s]").astype(str)[:, 0]
+    if (intervals_np[1:, 0] < intervals_np[:-1, 1]).any():
+        raise NotImplementedError(
+            "Aggregating data for overlapping time ranges is not implemented. "
+        )
+
+    mask = np.zeros((len(labels) * 2) - 2).astype(bool)
+    mask[1::2] = np.isin(intervals_np[1:, 0], intervals_np[:-1, 1])
+    mask = np.append(mask, np.array([False, True]))
+
+    labels_nans = np.arange(len(labels) * 2).astype(str)
+    labels_nans[::2] = labels
+    labels_nans = labels_nans[~mask]
+
+    intervals_flat = np.unique(intervals_flat)
+    data_copy = copy.deepcopy(data)
+    t_coords = data_copy[t].values.astype(str)
+    data_copy[t] = np.array(t_coords, dtype="datetime64[s]").astype(float)
+    grouped_data = data_copy.groupby_bins(t, bins=intervals_flat)
+    positional_parameters = {"data": 0}
+    groups = grouped_data.reduce(
+        reducer, keep_attrs=True, positional_parameters=positional_parameters
+    )
+    groups[t + "_bins"] = labels_nans
+    data_agg_temp = groups.sel({t + "_bins": labels})
+    data_agg_temp = data_agg_temp.rename({t + "_bins": t})
+
+    return data_agg_temp
+
+
+def get_intervals(data, period):
+    format = "%Y-%m-%dT%H:%M:%S"
+    start, end = data["t"].values[0], data["t"].values[-1]
+    year_start = pd.to_datetime(start).year
+    year_end = pd.to_datetime(end).year
+    month_start = pd.to_datetime(start).month
+    month_end = pd.to_datetime(end).month
+
+    if period == "decade":
+        year_start = np.datetime64(
+            (np.floor(year_start / 10) * 10).astype(int).astype(str)
+        )
+        year_end = np.datetime64((np.ceil(year_end / 10) * 10).astype(int).astype(str))
+        intervals = pd.date_range(start=year_start, end=year_end, freq="10YS").strftime(
+            format
+        )
+        labels = pd.date_range(start=year_start, end=year_end, freq="10YS").strftime(
+            "%Y"
+        )[:-1]
+    elif period == "decade-ad":
+        year_start = np.datetime64(
+            (np.floor(year_start / 10) * 10 + 1).astype(int).astype(str)
+        )
+        year_end = np.datetime64(
+            (np.ceil(year_end / 10) * 10 + 1).astype(int).astype(str)
+        )
+        intervals = pd.date_range(start=year_start, end=year_end, freq="10YS").strftime(
+            format
+        )
+        labels = pd.date_range(start=year_start, end=year_end, freq="10YS").strftime(
+            "%Y"
+        )[:-1]
+    elif period == "tropical-season":
+        if month_start >= 5 and month_start < 10:
+            month_start = np.datetime64(str(year_start) + "-05-01")
+        elif month_start < 5:
+            month_start = np.datetime64(str(year_start - 1) + "-11-01")
+        else:
+            month_start = np.datetime64(str(year_start) + "-11-01")
+        if month_end >= 5 and month_end < 10:
+            month_end = np.datetime64(str(year_end) + "-11-01")
+        elif month_end < 5:
+            month_end = np.datetime64(str(year_end) + "-05-01")
+        else:
+            month_end = np.datetime64(str(year_end + 1) + "-05-01")
+        intervals = pd.period_range(
+            start=month_start, end=month_end, freq="6M"
+        ).strftime(format)
+        labels = []
+        for interval in intervals[:-1]:
+            if "-11-" in interval:
+                labels.append(interval[:5] + "ndjfma")
+            if "-05-" in interval:
+                labels.append(interval[:5] + "mjjaso")
+    elif period == "dekad":
+        day = pd.to_datetime(start).day
+        day_start = (np.floor(day / 10) * 10 + 1).astype(int).astype(str)
+        day_start = f"{year_start}-{month_start}-{day_start}"
+        intervals = pd.date_range(
+            start=day_start, end=f"{year_start}-{month_start}-22", freq="10D"
+        ).strftime(format)
+        for date in pd.date_range(
+            start=f"{year_start}-{month_start}-22", end=end, freq="1MS"
+        )[:-1]:
+            intervals = intervals.append(
+                pd.date_range(start=date, freq="10D", periods=3).strftime(format)
+            )
+        day = pd.to_datetime(end).day
+        periods = (np.ceil((day - 1) / 10)).astype(int)
+        day_end = f"{year_end}-{month_end}-01"
+        if day > 21:
+            day_end = pd.date_range(start=day_end, freq="10D", periods=periods)
+            days = 7
+            last_day = day_end[-1] + pd.DateOffset(days=7)
+            while last_day.day != 1:
+                days += 1
+                last_day = day_end[-1] + pd.DateOffset(days=days)
+            day_end = day_end.append(pd.DatetimeIndex(data=[str(last_day)])).strftime(
+                format
+            )
+        else:
+            day_end = pd.date_range(
+                start=day_end, freq="10D", periods=periods + 1
+            ).strftime(format)
+        intervals = intervals.append(day_end)
+        labels = []
+        for interval in intervals[:-1]:
+            year = pd.DatetimeIndex(data=[interval]).year.astype(int)[0]
+            dekad = int(pd.DatetimeIndex(data=[interval]).day_of_year[0] / 10)
+            label = f"{year}-{dekad}" if dekad > 9 else f"{year}-0{dekad}"
+            labels.append(label)
+    else:
+        raise NotImplementedError(
+            f"The provided period '{period})' is not implemented. "
+        )
+    interval_array = np.array(intervals, dtype=str)
+    interval_matrix = np.zeros((len(interval_array) - 1, 2)).astype(str)
+    interval_matrix[:, 0] = interval_array[:-1]
+    interval_matrix[:, 1] = interval_array[1:]
+    return interval_matrix, list(labels)
 
 
 def aggregate_temporal_period(
@@ -98,17 +241,18 @@ def aggregate_temporal_period(
 
     if period in periods_to_frequency.keys():
         frequency = periods_to_frequency[period]
-    else:
-        raise NotImplementedError(
-            f"The provided period '{period})' is not implemented yet. The available ones are {list(periods_to_frequency.keys())}."
+        resampled_data = data.resample({applicable_temporal_dimension: frequency})
+
+        positional_parameters = {"data": 0}
+        return resampled_data.reduce(
+            reducer, keep_attrs=True, positional_parameters=positional_parameters
         )
 
-    resampled_data = data.resample({applicable_temporal_dimension: frequency})
-
-    positional_parameters = {"data": 0}
-    return resampled_data.reduce(
-        reducer, keep_attrs=True, positional_parameters=positional_parameters
-    )
+    else:
+        intervals, labels = get_intervals(data, period)
+        return aggregate_temporal(
+            data=data, intervals=intervals, reducer=reducer, labels=labels
+        )
 
 
 def aggregate_spatial(

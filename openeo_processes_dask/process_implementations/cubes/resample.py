@@ -1,8 +1,10 @@
 import logging
 from typing import Optional, Union
 
+import numpy as np
 import odc.geo.xr
 import rioxarray  # needs to be imported to set .rio accessor on xarray objects.
+import xarray as xr
 from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
 
@@ -14,7 +16,7 @@ from openeo_processes_dask.process_implementations.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["resample_spatial", "resample_cube_spatial"]
+__all__ = ["resample_spatial", "resample_cube_spatial", "resample_cube_temporal"]
 
 resample_methods_list = [
     "near",
@@ -41,6 +43,30 @@ def resample_spatial(
 ):
     """Resamples the spatial dimensions (x,y) of the data cube to a specified resolution and/or warps the data cube to the target projection. At least resolution or projection must be specified."""
 
+    if data.openeo.y_dim is None or data.openeo.x_dim is None:
+        raise DimensionMissing(f"Spatial dimension missing for dataset: {data} ")
+
+    methods_list = [
+        "near",
+        "bilinear",
+        "cubic",
+        "cubicspline",
+        "lanczos",
+        "average",
+        "mode",
+        "max",
+        "min",
+        "med",
+        "q1",
+        "q3",
+    ]
+
+    if method not in methods_list:
+        raise Exception(
+            f'Selected resampling method "{method}" is not available! Please select one of '
+            f"[{', '.join(methods_list)}]"
+        )
+
     # Assert resampling method is correct.
     if method == "near":
         method = "nearest"
@@ -51,18 +77,9 @@ def resample_spatial(
             f"[{', '.join(resample_methods_list)}]"
         )
 
-    dims = list(data.dims)
+    dim_order = data.dims
 
-    known_dims = []
-    if len(data.openeo.band_dims) > 0:
-        known_dims.append(data.openeo.band_dims[0])
-    if len(data.openeo.temporal_dims) > 0:
-        known_dims.append(data.openeo.temporal_dims[0])
-    known_dims += [data.openeo.y_dim, data.openeo.x_dim]
-
-    other_dims = [dim for dim in dims if dim not in known_dims]
-
-    data_cp = data.transpose(*other_dims, *known_dims)
+    data_cp = data.transpose(..., data.openeo.y_dim, data.openeo.x_dim)
 
     if projection is None:
         projection = data_cp.rio.crs
@@ -86,6 +103,8 @@ def resample_spatial(
 
     if reprojected.openeo.y_dim != data.openeo.y_dim:
         reprojected = reprojected.rename({reprojected.openeo.y_dim: data.openeo.y_dim})
+
+    reprojected = reprojected.transpose(*dim_order)
 
     reprojected.attrs["crs"] = data_cp.rio.crs
 
@@ -157,3 +176,48 @@ def resample_cube_spatial(
         if k.lower() != "crs":
             resampled_data.attrs[k] = v
     return resampled_data
+
+
+def resample_cube_temporal(data, target, dimension=None, valid_within=None):
+    if dimension is None:
+        if len(data.openeo.temporal_dims) > 0:
+            dimension = data.openeo.temporal_dims[0]
+        else:
+            raise Exception("DimensionNotAvailable")
+    if dimension not in data.dims:
+        raise Exception("DimensionNotAvailable")
+    if dimension not in target.dims:
+        if len(target.openeo.temporal_dims) > 0:
+            target_time = target.openeo.temporal_dims[0]
+        else:
+            raise Exception("DimensionNotAvailable")
+        target = target.rename({target_time: dimension})
+    index = []
+    for d in target[dimension].values:
+        difference = np.abs(d - data[dimension].values)
+        nearest = np.argwhere(difference == np.min(difference))
+        # The rare case of ties is resolved by choosing the earlier timestamps. (index 0)
+        if np.shape(nearest) == (2, 1):
+            nearest = nearest[0]
+        if np.shape(nearest) == (1, 2):
+            nearest = nearest[:, 0]
+        index.append(int(nearest))
+    times_at_target_time = data[dimension].values[index]
+    new_data = data.loc[{dimension: times_at_target_time}]
+    filter_values = new_data[dimension].values
+    new_data[dimension] = target[dimension].values
+    # valid_within
+    if valid_within is None:
+        new_data = new_data
+    else:
+        minimum = np.timedelta64(valid_within, "D")
+        filter_valid = np.abs(filter_values - new_data[dimension].values) <= minimum
+        times_valid = new_data[dimension].values[filter_valid]
+        valid_data = new_data.loc[{dimension: times_valid}]
+        filter_nan = np.abs(filter_values - new_data[dimension].values) > minimum
+        times_nan = new_data[dimension].values[filter_nan]
+        nan_data = new_data.loc[{dimension: times_nan}] * np.nan
+        combined = xr.concat([valid_data, nan_data], dim=dimension)
+        new_data = combined.sortby(dimension)
+    new_data.attrs = data.attrs
+    return new_data

@@ -13,6 +13,8 @@ from openeo_processes_dask.process_implementations.utils import get_scalar_type
 __all__ = [
     "is_infinite",
     "is_valid",
+    "is_nan",
+    "is_nodata",
     "eq",
     "neq",
     "gt",
@@ -33,6 +35,16 @@ def is_infinite(x: ArrayLike):
 def is_valid(x: ArrayLike):
     finite = np.logical_not(is_infinite(x))
     return np.logical_and(notnull(x), finite)
+
+
+def is_nodata(x: ArrayLike):
+    return x is None
+
+
+def is_nan(x: ArrayLike):
+    if is_nodata(x):
+        return is_nodata(x)
+    return np.isnan(x)
 
 
 def eq(

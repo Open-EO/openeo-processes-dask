@@ -95,7 +95,7 @@ def fit_regr_random_forest(
     if isinstance(predictors, gpd.GeoDataFrame):
         predictors = dask_geopandas.from_geopandas(predictors, npartitions=1)
 
-    if isinstance(predictors, dask_geopandas.core.GeoDataFrame):
+    if isinstance(predictors, dask_geopandas.expr.GeoDataFrame):
         data_ddf = (
             predictors.to_dask_dataframe().reset_index().repartition(npartitions=1)
         )

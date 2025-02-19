@@ -9,13 +9,7 @@ import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.process_implementations import merge_cubes
-from openeo_processes_dask.process_implementations.comparison import (
-    between,
-    eq,
-    is_infinite,
-    is_valid,
-    neq,
-)
+from openeo_processes_dask.process_implementations.comparison import *
 from openeo_processes_dask.process_implementations.cubes.apply import apply
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
@@ -71,6 +65,33 @@ def test_is_inf(value, expected, is_dask):
 
     if is_dask:
         assert hasattr(output, "dask")
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (1, False),
+        (np.nan, True),
+    ],
+)
+def test_is_nan(value, expected):
+    value = np.asarray(value)
+
+    is_dask = da.from_array(value)
+
+    output = is_nan(value)
+    np.testing.assert_array_equal(output, expected)
+
+    assert hasattr(is_nan(is_dask), "dask")
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [(1, False), ("Test", False), (None, True), ([np.nan, np.nan], False)],
+)
+def test_is_nodata(value, expected):
+    output = is_nodata(value)
+    np.testing.assert_array_equal(output, expected)
 
 
 @pytest.mark.parametrize(
