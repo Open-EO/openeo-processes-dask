@@ -114,91 +114,67 @@ def resample_spatial(
 def resample_cube_spatial(
     data: RasterCube, target: RasterCube, method="near", options=None
 ) -> RasterCube:
-    if target.openeo.y_dim is None or target.openeo.x_dim is None:
+    methods_list = [
+        "near",
+        "bilinear",
+        "cubic",
+        "cubicspline",
+        "lanczos",
+        "average",
+        "mode",
+        "max",
+        "min",
+        "med",
+        "q1",
+        "q3",
+    ]
+
+    if (
+        data.openeo.y_dim is None
+        or data.openeo.x_dim is None
+        or target.openeo.y_dim is None
+        or target.openeo.x_dim is None
+    ):
         raise DimensionMissing(
-            f"Spatial dimension missing for target dataset: {target} "
+            f"Spatial dimension missing from data or target. Available dimensions for data: {data.dims} for target: {target.dims}"
         )
 
-    target_resolution, target_crs = None, None
-    if hasattr(target, "rio"):
-        if hasattr(target.rio, "resolution"):
-            if type(target.rio.resolution()) in [tuple, list]:
-                target_resolution = target.rio.resolution()[0]
-            else:
-                target_resolution = target.rio.resolution()
-        if hasattr(target.rio, "crs"):
-            target_crs = target.rio.crs
-    if not target_crs:
-        raise OpenEOException(f"Projection not found in target dataset: {target} ")
-    if not target_resolution:
-        raise OpenEOException(f"Resolution not found in target dataset: {target} ")
+    # ODC reproject requires y to be before x
+    required_dim_order = (..., data.openeo.y_dim, data.openeo.x_dim)
 
-    resampled_data = resample_spatial(
-        data=data, projection=target_crs, resolution=target_resolution, method=method
+    data_reordered = data.transpose(*required_dim_order, missing_dims="ignore")
+    target_reordered = target.transpose(*required_dim_order, missing_dims="ignore")
+
+    if method == "near":
+        method = "nearest"
+
+    elif method not in methods_list:
+        raise Exception(
+            f'Selected resampling method "{method}" is not available! Please select one of '
+            f"[{', '.join(methods_list)}]"
+        )
+
+    resampled_data = data_reordered.odc.reproject(
+        target_reordered.odc.geobox, resampling=method
     )
 
-    def align_arrays(a, b, res):
-        desc = 1
-        if len(a) == 1 and len(b) == 1:
-            return a
-        elif len(a) == 1 and len(b) > 1:
-            if b[0] > b[1]:
-                desc = -1
-        elif len(a) > len(b):
-            b0 = np.absolute(b[0] - a).argmin()
-            blen = len(b)
-            close = np.isclose(b, a[b0 : b0 + blen], atol=res * 0.99)
-            if close.all():
-                return a[b0 : b0 + blen]
-            else:
-                raise Exception("Coordinates could not be aligned! ")
-        elif len(a) == len(b):
-            if b[0] > b[1]:
-                if a[0] < a[1]:
-                    a = np.flip(a)
-            else:
-                if a[0] > a[1]:
-                    a = np.flip(a)
-            close = np.isclose(b, a, atol=res * 0.99)
-            if close.all():
-                return a
-            else:
-                raise Exception("Coordinates could not be aligned! ")
-        else:
-            if b[0] > b[1]:
-                desc = -1
-                if a[0] < a[1]:
-                    a = np.flip(a)
-            else:
-                if a[0] > a[1]:
-                    a = np.flip(a)
-        a0 = np.absolute(b - a[0]).argmin()
-        alen = len(a)
-        close = np.isclose(a, b[a0 : a0 + alen], atol=res * 0.99)
-        if not close.all():
-            raise Exception("Coordinates could not be aligned! ")
+    resampled_data.rio.write_crs(target_reordered.rio.crs, inplace=True)
 
-        new_b = np.arange(b[0], a[0], res * desc)
-        new_b = np.append(new_b, a)
-        new_b = np.append(new_b, np.flip(np.arange(b[-1], a[-1], -res * desc)))
-        if len(b) != len(new_b):
-            raise Exception("Coordinates could not be aligned! ")
-        return new_b
-
-    x_data = resampled_data[resampled_data.openeo.x_dim[0]].values
-    x_target = target[target.openeo.x_dim[0]].values
-    if not (len(x_data) == len(x_target) and (x_data == x_target).all()):
-        resampled_data[resampled_data.openeo.x_dim[0]] = align_arrays(
-            x_target, x_data, target_resolution
+    try:
+        # odc.reproject renames the coordinates according to the geobox, this undoes that.
+        resampled_data = resampled_data.rename(
+            {"longitude": data.openeo.x_dim, "latitude": data.openeo.y_dim}
         )
+    except ValueError:
+        pass
 
-    y_data = resampled_data[resampled_data.openeo.y_dim[0]].values
-    y_target = target[target.openeo.y_dim[0]].values
-    if not (len(y_data) == len(y_target) and (y_data == y_target).all()):
-        resampled_data[resampled_data.openeo.y_dim[0]] = align_arrays(
-            y_target, y_data, target_resolution
-        )
+    # Order axes back to how they were before
+    resampled_data = resampled_data.transpose(*data.dims)
 
+    # Ensure that attrs except crs are copied over
+    for k, v in data.attrs.items():
+        if k.lower() != "crs":
+            resampled_data.attrs[k] = v
     return resampled_data
 
 

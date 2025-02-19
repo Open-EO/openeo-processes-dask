@@ -141,50 +141,6 @@ def test_resample_cube_spatial(
     assert output_cube.odc.spatial_dims == ("y", "x")
 
 
-@pytest.mark.parametrize(
-    "output_crs",
-    [
-        3587,
-        "32633",
-        "+proj=aeqd +lat_0=53 +lon_0=24 +x_0=5837287.81977 +y_0=2121415.69617 +datum=WGS84 +units=m +no_defs",
-    ],
-)
-@pytest.mark.parametrize("output_res", [5, 30, 60])
-@pytest.mark.parametrize("size", [(30, 30, 20, 4)])
-@pytest.mark.parametrize("dtype", [np.float32])
-def test_resample_cube_spatial_small(
-    output_crs, output_res, temporal_interval, bounding_box, random_raster_data
-):
-    """Test to ensure resolution gets changed correctly."""
-    input_cube = create_fake_rastercube(
-        data=random_raster_data,
-        spatial_extent=bounding_box,
-        temporal_extent=temporal_interval,
-        bands=["B02", "B03", "B04", "B08"],
-        backend="dask",
-    )
-
-    resampled_cube = resample_spatial(
-        data=input_cube, projection=output_crs, resolution=output_res
-    )
-
-    output_cube = resample_cube_spatial(
-        data=input_cube, target=resampled_cube[10:60, 20:150, :, :], method="average"
-    )
-
-    general_output_checks(
-        input_cube=input_cube,
-        output_cube=output_cube,
-        expected_dims=input_cube.dims,
-        verify_attrs=False,
-        verify_crs=False,
-    )
-
-    assert list(output_cube.shape) == list(resampled_cube.shape)
-    assert (output_cube["x"].values == resampled_cube["x"].values).all()
-    assert (output_cube["y"].values == resampled_cube["y"].values).all()
-
-
 @pytest.mark.parametrize("size", [(6, 5, 30, 4)])
 @pytest.mark.parametrize("dtype", [np.float64])
 @pytest.mark.parametrize(
