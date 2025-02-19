@@ -9,6 +9,7 @@ from .inspect import *
 from .logic import *
 from .math import *
 from .text import *
+from .udf import *
 
 try:
     from .ml import *
