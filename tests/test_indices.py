@@ -9,26 +9,26 @@ from openeo_processes_dask.process_implementations.exceptions import (
     NirBandAmbiguous,
     RedBandAmbiguous,
 )
-from tests.conftest import _random_raster_data
 from tests.general_checks import general_output_checks
+from tests.mockdata import create_fake_rastercube
 
 
-def test_ndvi(bounding_box):
-    url = "./tests/data/stac/s2_l2a_test_item.json"
-    input_cube = load_stac(
-        url=url,
+@pytest.mark.parametrize("size", [(20, 20, 10, 2)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_ndvi(temporal_interval, bounding_box, random_raster_data, process_registry):
+    input_cube = create_fake_rastercube(
+        data=random_raster_data,
         spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
         bands=["red", "nir"],
-    ).isel({"x": slice(0, 20), "y": slice(0, 20)})
+        backend="dask",
+    )
 
     # Test whether this works with different band names
+
+    input_cube = input_cube.rename("s2")
     input_cube = input_cube.rename({"bands": "b"})
-
-    import dask.array as da
-
-    numpy_data = _random_raster_data(input_cube.data.shape, dtype=np.float64)
-
-    input_cube.data = da.from_array(numpy_data, chunks=("auto", "auto", "auto", -1))
+    input_cube = input_cube.assign_coords(common_name=("b", ["red", "nir"]))
 
     output = ndvi(input_cube)
 
@@ -82,4 +82,4 @@ def test_ndvi(bounding_box):
     )
 
     with pytest.raises(BandExists):
-        output_with_extra_dim = ndvi(input_cube, target_band="time")
+        output_with_extra_dim = ndvi(input_cube, target_band="t")
