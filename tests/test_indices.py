@@ -25,7 +25,6 @@ def test_ndvi(temporal_interval, bounding_box, random_raster_data, process_regis
     )
 
     # Test whether this works with different band names
-
     input_cube = input_cube.rename("s2")
     input_cube = input_cube.rename({"bands": "b"})
     input_cube = input_cube.assign_coords(common_name=("b", ["red", "nir"]))
