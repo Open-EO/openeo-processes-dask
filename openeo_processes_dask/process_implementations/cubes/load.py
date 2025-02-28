@@ -216,19 +216,22 @@ def load_stac(
                 xr.open_dataset(asset.href, **asset.extra_fields["xarray:open_kwargs"])
                 for item in items
                 for asset in item.assets.values()
-                if any(b in asset.href for b in bands)
+                if 1
+                # if any(b in asset.href for b in bands)
             ]
         else:
             datasets = [
                 xr.open_dataset(asset.href, engine="zarr", consolidated=True, chunks={})
                 for item in items
                 for asset in item.assets.values()
-                if any(b in asset.href for b in bands)
+                if 1
+                # if any(b in asset.href for b in bands)
             ]
         stack = xr.combine_by_coords(
             datasets, join="exact", combine_attrs="drop_conflicts"
         )
-        stack.rio.write_crs(reference_system, inplace=True)
+        if not stack.rio.crs:
+            stack.rio.write_crs(reference_system, inplace=True)
         # TODO: now drop data which consist in dates. Probably we should allow it if not conflicitng with other data types.
         for d in stack.data_vars:
             if "datetime" in str(stack[d].dtype):
