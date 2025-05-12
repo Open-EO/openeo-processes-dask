@@ -139,13 +139,15 @@ def _check_oscar_connection(
 
 def _check_oscar_service(
     oscar_client: Client, service: str, service_config: Optional[dict] = None
-) -> None:
+) -> tuple:
     """
     Check if the OSCAR service is available, if not, create it
 
-    :param client: OSCAR client
+    :param oscar_client: OSCAR client
     :param service: OSCAR service
     :param service_config: OSCAR service config
+
+    :return: Tuple containing minio_info, input_info, and output_info
 
     :raises OscarServiceNotFound: If the OSCAR service is not found
     :raises OscarServiceCreationError: If the OSCAR service creation fails
@@ -163,8 +165,16 @@ def _check_oscar_service(
     except Exception as e:
         logger.info(f"OSCAR service {service} is not available, creating...")
         try:
-            creation = oscar_client.create_service(service_config)
-            logger.info(f"OSCAR service {creation} created")
+            oscar_client.create_service(service_config)
+            logger.info(f"OSCAR service {service} created")
+            
+            service_info = oscar_client.get_service(service)
+            service_data = json.loads(service_info.text)
+            minio_info = service_data["storage_providers"]["minio"]["default"]
+            input_info = service_data["input"][0]
+            output_info = service_data["output"][0]
+            
+            return minio_info, input_info, output_info
         except Exception as e:
             raise OscarServiceCreationError(
                 f"OSCAR service {service} creation failed: {e}"
