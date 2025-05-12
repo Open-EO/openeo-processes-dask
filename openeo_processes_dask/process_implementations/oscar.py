@@ -1,21 +1,20 @@
-#TODO:
+# TODO:
 # Exceptions to be moved to the appropriate module in /processes/exceptions.py
 # Adjust the process JSON definition to fit the new function signature
 # Test the implementation
 # !!!Input data handling!!!
 # STAC API output registration
 
+import json
+import logging
 import os
 import uuid
-import logging
-import json
 from typing import Optional
 
-from oscar_python.client import Client
 import oscar_python._utils as utils
-from minio import Minio
 import requests
-
+from minio import Minio
+from oscar_python.client import Client
 
 __all__ = ["run_oscar"]
 
@@ -25,32 +24,42 @@ logger = logging.getLogger(__name__)
 class OpenEOException(Exception):
     pass
 
+
 class OpenEOAuthError(OpenEOException):
     pass
+
 
 class EGIAuthError(OpenEOException):
     pass
 
+
 class OscarNotAvailable(OpenEOException):
     pass
+
 
 class OscarUrlError(OpenEOException):
     pass
 
+
 class OscarServiceNotFound(OpenEOException):
     pass
+
 
 class OscarServiceCreationError(OpenEOException):
     pass
 
+
 class OscarServiceError(OpenEOException):
     pass
+
 
 class MinioConnectionError(OpenEOException):
     pass
 
+
 class MinioUploadError(OpenEOException):
     pass
+
 
 class MinioDownloadError(OpenEOException):
     pass
@@ -77,6 +86,7 @@ def _get_refresh_token(
 
     return refresh_token
 
+
 def _get_access_token(refresh_token: str) -> str:
     """
     Get the access token using the refresh token.
@@ -99,11 +109,9 @@ def _get_access_token(refresh_token: str) -> str:
         access_token = response.json()
         return access_token["access_token"]
     except requests.exceptions.RequestException as e:
-        raise EGIAuthError(
-            f"Failed to retrieve access token: {e}"
-        )
-    
-    
+        raise EGIAuthError(f"Failed to retrieve access token: {e}")
+
+
 def _check_oscar_connection(
     oscar_endpoint: str,
     auth_token: str,
@@ -167,13 +175,13 @@ def _check_oscar_service(
         try:
             oscar_client.create_service(service_config)
             logger.info(f"OSCAR service {service} created")
-            
+
             service_info = oscar_client.get_service(service)
             service_data = json.loads(service_info.text)
             minio_info = service_data["storage_providers"]["minio"]["default"]
             input_info = service_data["input"][0]
             output_info = service_data["output"][0]
-            
+
             return minio_info, input_info, output_info
         except Exception as e:
             raise OscarServiceCreationError(
@@ -226,6 +234,7 @@ def _upload_file_minio(client: Minio, input_info, input_file):
 
     return random.split("_")[0]
 
+
 def _wait_and_download_output(client: Client, output_info, output) -> str:
     """
     Wait for the output file to be available in MinIO and download it
@@ -241,25 +250,29 @@ def _wait_and_download_output(client: Client, output_info, output) -> str:
 
     with client.listen_bucket_notification(
         output_info["path"].split("/")[0],
-        prefix='/'.join(output_info["path"].split("/")[1:]),
+        prefix="/".join(output_info["path"].split("/")[1:]),
         events=["s3:ObjectCreated:*", "s3:ObjectRemoved:*"],
     ) as events:
         for event in events:
             outputfile = event["Records"][0]["s3"]["object"]["key"]
             print(event["Records"][0]["s3"]["object"]["key"])
             break
-    
+
     try:
-        client.fget_object(output_info["path"].split("/")[0], 
-                       outputfile,
-                       output + "/" + outputfile.split("/")[-1])
+        client.fget_object(
+            output_info["path"].split("/")[0],
+            outputfile,
+            output + "/" + outputfile.split("/")[-1],
+        )
     except Exception as e:
         raise MinioDownloadError(f"MinIO download failed: {e}")
-    
+
     return output + "/" + outputfile.split("/")[-1]
 
-def _run_oscar_service(client: Client, oscar_endpoint: str, service: str, auth_token: str, output: str) -> str:
 
+def _run_oscar_service(
+    client: Client, oscar_endpoint: str, service: str, auth_token: str, output: str
+) -> str:
     response = None
 
     try:
@@ -268,16 +281,23 @@ def _run_oscar_service(client: Client, oscar_endpoint: str, service: str, auth_t
                 {
                     "requestParameters": {
                         "principalId": "uid",
-                        "sourceIPAddress": "ip"
+                        "sourceIPAddress": "ip",
                     },
                 }
             ]
         }
-        json_data = json.dumps(data).encode('utf-8')
+        json_data = json.dumps(data).encode("utf-8")
         if auth_token:
             headers = utils.get_headers_with_token(auth_token)
             try:
-                response = requests.request("post", oscar_endpoint + "/job/" + service, headers=headers, verify=client.ssl, data=json_data, timeout=1500)
+                response = requests.request(
+                    "post",
+                    oscar_endpoint + "/job/" + service,
+                    headers=headers,
+                    verify=client.ssl,
+                    data=json_data,
+                    timeout=1500,
+                )
             except requests.exceptions.RequestException as e:
                 raise OscarServiceError(f"OSCAR service {service} failed: {e}")
         else:
@@ -285,6 +305,7 @@ def _run_oscar_service(client: Client, oscar_endpoint: str, service: str, auth_t
     except Exception as err:
         print("Failed with: ", err)
     return response
+
 
 def run_oscar(
     token_env_var: str,
@@ -321,22 +342,28 @@ def run_oscar(
     auth_token = _get_access_token(refresh_token)
 
     oscar_client = _check_oscar_connection(oscar_endpoint, auth_token)
-    
+
     # Checks if the service is available, if not, creates it
     # and gets the minio info, input info and output info
-    minio_info, input_info, output_info = _check_oscar_service(oscar_client, service, service_config)
-    
+    minio_info, input_info, output_info = _check_oscar_service(
+        oscar_client, service, service_config
+    )
+
     minio_client = _connect_minio(minio_info)
-    
+
     # Optional if we want to upload an input file
     random_file_name = _upload_file_minio(minio_client, input_info, input_file)
-    
+
     # Executes the OSCAR service
-    response = _run_oscar_service(oscar_client, oscar_endpoint, service, auth_token, output)
-    
+    response = _run_oscar_service(
+        oscar_client, oscar_endpoint, service, auth_token, output
+    )
+
     # Waits and returns the result
     # Need to check the actual formatting though
     # We will only need the S3 link
-    output_file = _wait_and_download_output(_connect_minio(minio_info), output_info, output)
+    output_file = _wait_and_download_output(
+        _connect_minio(minio_info), output_info, output
+    )
 
     return output_file
