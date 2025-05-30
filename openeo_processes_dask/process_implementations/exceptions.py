@@ -112,3 +112,47 @@ class MinMaxSwapped(OpenEOException):
 
 class UnitMismatch(OpenEOException):
     pass
+
+
+class OpenEOException(Exception):
+    pass
+
+
+class OpenEOAuthError(OpenEOException):
+    pass
+
+
+class EGIAuthError(OpenEOException):
+    pass
+
+
+class OscarNotAvailable(OpenEOException):
+    pass
+
+
+class OscarUrlError(OpenEOException):
+    pass
+
+
+class OscarServiceNotFound(OpenEOException):
+    pass
+
+
+class OscarServiceCreationError(OpenEOException):
+    pass
+
+
+class OscarServiceError(OpenEOException):
+    pass
+
+
+class MinioConnectionError(OpenEOException):
+    pass
+
+
+class MinioUploadError(OpenEOException):
+    pass
+
+
+class MinioDownloadError(OpenEOException):
+    pass

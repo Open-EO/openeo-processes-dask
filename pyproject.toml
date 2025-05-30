@@ -46,6 +46,8 @@ pyarrow = "^15.0.2"
 openeo = ">=0.36.0"
 numpy = { version = "<2.0.0", optional = false }
 pystac = { version = "<1.12.0", optional = false }
+oscar-python = "1.2.1"
+minio = "^7.2.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
