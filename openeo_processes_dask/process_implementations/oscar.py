@@ -1,15 +1,24 @@
-# TODO:
-# Exceptions to be moved to the appropriate module in /processes/exceptions.py
-# Adjust the process JSON definition to fit the new function signature
-# Test the implementation
-# !!!Input data handling!!!
-# STAC API output registration
-
+# TODO: GET RID OF ALL THE LOGS WHICH LOG SENSITIVE DATA
+# THIS IS ONLY MEANT FOR DEVELOPMENT
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 import json
 import logging
 import os
 import uuid
 from typing import Optional
+
+from openeo_processes_dask.process_implementations.exceptions import (
+    OpenEOAuthError,
+    OscarNotAvailable,
+    OscarUrlError,
+    OscarServiceNotFound,
+    OscarServiceCreationError,
+    OscarServiceError,
+    MinioConnectionError,
+    MinioUploadError,
+    MinioDownloadError,
+    EGIAuthError
+)
 
 import oscar_python._utils as utils
 import requests
@@ -18,55 +27,19 @@ from oscar_python.client import Client
 
 __all__ = ["run_oscar"]
 
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s - %(message)s"
+)
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
 logger = logging.getLogger(__name__)
-
-
-class OpenEOException(Exception):
-    pass
-
-
-class OpenEOAuthError(OpenEOException):
-    pass
-
-
-class EGIAuthError(OpenEOException):
-    pass
-
-
-class OscarNotAvailable(OpenEOException):
-    pass
-
-
-class OscarUrlError(OpenEOException):
-    pass
-
-
-class OscarServiceNotFound(OpenEOException):
-    pass
-
-
-class OscarServiceCreationError(OpenEOException):
-    pass
-
-
-class OscarServiceError(OpenEOException):
-    pass
-
-
-class MinioConnectionError(OpenEOException):
-    pass
-
-
-class MinioUploadError(OpenEOException):
-    pass
-
-
-class MinioDownloadError(OpenEOException):
-    pass
+logger.setLevel(logging.INFO)
+logger.handlers = [handler]
 
 
 def _get_refresh_token(
-    token_env_var: str,
+    token_env_var: Optional[str]= None,
+    local_refresh_token: Optional[str] = None
 ) -> str:
     """
     Get the access token from OpenEO to be used to auth OSCAR
@@ -77,14 +50,21 @@ def _get_refresh_token(
 
     :raises OpenEOAuthError: If the token environment variable is not found
     """
-
-    refresh_token = os.getenv(token_env_var)
-    if refresh_token is None:
-        raise OpenEOAuthError(
-            f"OpenEO auth token environment variable {token_env_var} not found"
-        )
-
-    return refresh_token
+    logger.info(f"Getting auth token...")
+    if local_refresh_token:
+        with open(local_refresh_token) as f:
+            token_data = json.loads(f.read())
+            logger.info(f"Using local refresh token from {local_refresh_token}")
+        refresh_token = token_data["https://aai.egi.eu/auth/realms/egi"]["openeo-platform-default-client"]["refresh_token"].strip()
+        return refresh_token
+    else:
+        logger.info(f"Using access token from environment variable {token_env_var}")
+        refresh_token = os.getenv(token_env_var)
+        if refresh_token is None:
+            raise OpenEOAuthError(
+                f"OpenEO auth token environment variable {token_env_var} not found"
+            )
+        return refresh_token
 
 
 def _get_access_token(refresh_token: str) -> str:
@@ -95,6 +75,7 @@ def _get_access_token(refresh_token: str) -> str:
     :return: The access token.
     :raises ValueError: If the token retrieval fails.
     """
+    logger.info(f"Getting access token from a local refresh token...")
     url = "https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token"
     data = {
         "grant_type": "refresh_token",
@@ -107,7 +88,10 @@ def _get_access_token(refresh_token: str) -> str:
         response = requests.post(url, data=data, timeout=10)
         response.raise_for_status()
         access_token = response.json()
-        return access_token["access_token"]
+        access_token = access_token["access_token"]
+        if access_token is not None:
+            logger.info(f"Access token retrieved successfully")
+        return access_token
     except requests.exceptions.RequestException as e:
         raise EGIAuthError(f"Failed to retrieve access token: {e}")
 
@@ -126,8 +110,9 @@ def _check_oscar_connection(
     :raises OscarNotAvailable: If the OSCAR connection is not available
     :raises OscarUrlError: If the OSCAR endpoint is not provided
     """
-    if oscar_endpoint or auth_token is None:
-        raise OscarUrlError("OSCAR endpoint or auth token is not provided")
+    logger.info(f"Checking OSCAR connection {oscar_endpoint}")
+    #if oscar_endpoint or auth_token is None:
+        #raise OscarUrlError("OSCAR endpoint or auth token is not provided")
 
     options_basic_auth = {
         "cluster_id": "cluster_id",
@@ -148,33 +133,28 @@ def _check_oscar_connection(
 def _check_oscar_service(
     oscar_client: Client, service: str, service_config: Optional[dict] = None
 ) -> tuple:
-    """
-    Check if the OSCAR service is available, if not, create it
+    logger.info(f"Checking OSCAR service {service}")
 
-    :param oscar_client: OSCAR client
-    :param service: OSCAR service
-    :param service_config: OSCAR service config
-
-    :return: Tuple containing minio_info, input_info, and output_info
-
-    :raises OscarServiceNotFound: If the OSCAR service is not found
-    :raises OscarServiceCreationError: If the OSCAR service creation fails
-    """
     try:
         service_info = oscar_client.get_service(service)
+        logger.info(f"Service info: {service_info}")
         service_data = json.loads(service_info.text)
+
         minio_info = service_data["storage_providers"]["minio"]["default"]
         input_info = service_data["input"][0]
         output_info = service_data["output"][0]
 
-        if service_info.status_code == 200:
-            logger.info(f"OSCAR service {service} is available")
-            return minio_info, input_info, output_info
+        logger.info(f"OSCAR service {service} is available")
+        return minio_info, input_info, output_info
+
     except Exception as e:
-        logger.info(f"OSCAR service {service} is not available, creating...")
+        logger.info(f"OSCAR service {service} not found, attempting creation.")
+        if not service_config:
+            raise OscarServiceCreationError(f"Service config not provided for creation.")
+        
         try:
-            oscar_client.create_service(service_config)
-            logger.info(f"OSCAR service {service} created")
+            creation = oscar_client.create_service(service_config)
+            logger.info(f"Service creation response: {creation}")
 
             service_info = oscar_client.get_service(service)
             service_data = json.loads(service_info.text)
@@ -182,12 +162,11 @@ def _check_oscar_service(
             input_info = service_data["input"][0]
             output_info = service_data["output"][0]
 
+            logger.info(f"OSCAR service {service} successfully created")
             return minio_info, input_info, output_info
-        except Exception as e:
-            raise OscarServiceCreationError(
-                f"OSCAR service {service} creation failed: {e}"
-            )
 
+        except Exception as e2:
+            raise OscarServiceCreationError(f"OSCAR service {service} creation failed: {e2}")
 
 def _connect_minio(minio_info) -> Minio:
     """
@@ -314,6 +293,7 @@ def run_oscar(
     output: str,
     input_file: Optional[str] = None,
     service_config: Optional[dict] = None,
+    local_refresh_token: Optional[str] = None,
 ) -> str:
     """
     Run the OSCAR service
@@ -336,32 +316,30 @@ def run_oscar(
     :raises MinioDownloadError: If the MinIO download fails
     """
 
-    # OpenEO EGI token stuff
+    #TODO: Make minio/s3 optional
 
-    refresh_token = _get_refresh_token(token_env_var)
-    auth_token = _get_access_token(refresh_token)
+    logger.info("OSCAR process started")
 
-    oscar_client = _check_oscar_connection(oscar_endpoint, auth_token)
+    refresh_token = _get_refresh_token(token_env_var, local_refresh_token)
+    access_token = _get_access_token(refresh_token)
+    
+    oscar_client = _check_oscar_connection(oscar_endpoint, access_token)
 
-    # Checks if the service is available, if not, creates it
-    # and gets the minio info, input info and output info
     minio_info, input_info, output_info = _check_oscar_service(
         oscar_client, service, service_config
     )
-
+    
     minio_client = _connect_minio(minio_info)
 
-    # Optional if we want to upload an input file
-    random_file_name = _upload_file_minio(minio_client, input_info, input_file)
+    if input_file is not None:
+        random_file_name = _upload_file_minio(minio_client, input_info, input_file)
+    else:
+        pass
 
-    # Executes the OSCAR service
     response = _run_oscar_service(
-        oscar_client, oscar_endpoint, service, auth_token, output
+        oscar_client, oscar_endpoint, service, access_token, output
     )
 
-    # Waits and returns the result
-    # Need to check the actual formatting though
-    # We will only need the S3 link
     output_file = _wait_and_download_output(
         _connect_minio(minio_info), output_info, output
     )
