@@ -95,7 +95,7 @@ def load_stac(
     stac_type = _validate_stac(url)
 
     # TODO: load_stac should have a parameter to enable scale and offset?
-    
+
     if isinstance(bands, str):
         bands = [bands]
 
@@ -103,9 +103,9 @@ def load_stac(
         # If query parameters are passed, try to get the parent Catalog if possible/exists, to use the /search endpoint
         if spatial_extent or temporal_extent or bands or properties:
             catalog_url, collection_id = _search_for_parent_catalog(url)
-            
+
             # Check if we are connecting to Microsoft Planetary Computer, where we need to sign the connection
-            
+
             modifier = pc.sign_inplace if "planetarycomputer" in catalog_url else None
             catalog = pystac_client.Client.open(catalog_url, modifier=modifier)
             query_params = {"collections": [collection_id]}
@@ -289,7 +289,7 @@ def load_stac(
             if dtype is not None:
                 kwargs["nodata"] = np.dtype(dtype).type(kwargs["nodata"])
         # TODO: the dimension names (like "bands") should come from the STAC metadata and not hardcoded
-        # Note: unfortunately, converting the dataset to a dataarray, casts all the data types to the same    
+        # Note: unfortunately, converting the dataset to a dataarray, casts all the data types to the same
 
         if bands is not None:
             stack = odc.stac.load(items, bands=bands, chunks={}, **kwargs).to_dataarray(
