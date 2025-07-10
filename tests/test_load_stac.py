@@ -18,7 +18,7 @@ def test_load_stac(bounding_box):
     assert len(output_cube[output_cube.openeo.band_dims[0]]) > 0
     assert len(output_cube[output_cube.openeo.temporal_dims[0]]) > 0
 
-    url = "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/S2_L2A_sample"
+    url = "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample"
     output_cube = load_stac(
         url=url,
         bands=["B04"],
