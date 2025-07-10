@@ -1,0 +1,10 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "t"
+    ],
+    "axis": "T",
+    "calendar": "proleptic_gregorian",
+    "long_name": "t",
+    "standard_name": "t",
+    "units": "days since 1990-01-01"
+}

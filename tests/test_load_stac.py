@@ -18,6 +18,18 @@ def test_load_stac(bounding_box):
     assert len(output_cube[output_cube.openeo.band_dims[0]]) > 0
     assert len(output_cube[output_cube.openeo.temporal_dims[0]]) > 0
 
+    url = "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/S2_L2A_sample"
+    output_cube = load_stac(
+        url=url,
+        bands=["B04"],
+    )
+
+    assert output_cube.openeo is not None
+    assert len(output_cube[output_cube.openeo.x_dim]) > 0
+    assert len(output_cube[output_cube.openeo.y_dim]) > 0
+    assert len(output_cube[output_cube.openeo.band_dims[0]]) > 0
+    assert len(output_cube[output_cube.openeo.temporal_dims[0]]) > 0
+
 
 def test_load_url():
     URL = "https://github.com/ValentinaHutter/polygons/raw/master/geoparquet/example%20file.geoparquet"
