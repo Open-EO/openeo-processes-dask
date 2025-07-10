@@ -1,8 +1,0 @@
-{
-    "_ARRAY_DIMENSIONS": [
-        "y"
-    ],
-    "long_name": "y coordinate of projection",
-    "standard_name": "projection_y_coordinate",
-    "units": "m"
-}
