@@ -1,262 +1,336 @@
 {
-    "type": "Collection",
-    "id": "s2_l2a_zarr_sample",
-    "stac_version": "1.0.0",
-    "description": "test zarr for openeo processes for load_stac",
-    "links": [
-        {
-            "rel": "items",
-            "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample/items",
-            "type": "application/json"
-        },
-        {
-            "rel": "parent",
-            "href": "https://stac.openeo.eurac.edu",
-            "type": "application/json"
-        },
-        {
-            "rel": "self",
-            "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample",
-            "type": "application/json"
-        },
-        {
-            "rel": "root",
-            "href": "https://stac.openeo.eurac.edu",
-            "type": "application/json"
-        }
-    ],
-    "keywords": [
-        "test",
-        "sample",
-        "zarr"
-    ],
-    "providers": [
-        {
-            "name": "Eurac Research - Institute for Earth Observation",
-            "url": "http://www.eurac.edu",
-            "roles": [
-                "processor"
-            ]
-        }
-    ],
-    "stac_extensions": [
-        "https://stac-extensions.github.io/projection/v1.1.0/schema.json"
-    ],
-    "extent": {
-        "spatial": {
-            "bbox": [
-                [
-                    11.28159648573161,
-                    46.52452138151352,
-                    11.282936964971952,
-                    46.52544662500779
-                ]
-            ]
-        },
-        "temporal": {
-            "interval": [
-                [
-                    "2022-06-02T00:00:00Z",
-                    "2022-06-30T00:00:00Z"
-                ]
-            ]
-        }
+  "id": "s2_l2a_zarr_sample",
+  "bbox": [
+    11.28159648573161,
+    46.52452138151352,
+    11.282936964971952,
+    46.52544662500779
+  ],
+  "type": "Feature",
+  "links": [
+    {
+      "rel": "collection",
+      "type": "application/json",
+      "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample"
     },
-    "license": "Apache-2.0",
-    "assets": {
-        "data": {
-            "href": "./tests/data/s2_l2a_zarr_sample.zarr",
-            "type": "application/vnd+zarr",
-            "epsg": 32632,
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [
-                    [
-                        [
-                            674990.0,
-                            5154860.0
-                        ],
-                        [
-                            675090.0,
-                            5154860.0
-                        ],
-                        [
-                            675090.0,
-                            5154960.0
-                        ],
-                        [
-                            674990.0,
-                            5154960.0
-                        ],
-                        [
-                            674990.0,
-                            5154860.0
-                        ]
-                    ]
-                ]
-            },
-            "bbox": [
-                674990.0,
-                5154860.0,
-                675090.0,
-                5154960.0
-            ],
-            "shape": [
-                10,
-                10
-            ],
-            "transform": [
-                10.0,
-                0.0,
-                674990.0,
-                0.0,
-                -10.0,
-                5154960.0,
-                0.0,
-                0.0,
-                1.0
-            ],
-            "projjson": {
-                "$schema": "https://proj.org/schemas/v0.7/projjson.schema.json",
-                "type": "ProjectedCRS",
-                "name": "WGS 84 / UTM zone 32N",
-                "base_crs": {
-                    "name": "WGS 84",
-                    "datum": {
-                        "type": "GeodeticReferenceFrame",
-                        "name": "World Geodetic System 1984",
-                        "ellipsoid": {
-                            "name": "WGS 84",
-                            "semi_major_axis": 6378137,
-                            "inverse_flattening": 298.257223563
-                        }
-                    },
-                    "coordinate_system": {
-                        "subtype": "ellipsoidal",
-                        "axis": [
-                            {
-                                "name": "Longitude",
-                                "abbreviation": "lon",
-                                "direction": "east",
-                                "unit": "degree"
-                            },
-                            {
-                                "name": "Latitude",
-                                "abbreviation": "lat",
-                                "direction": "north",
-                                "unit": "degree"
-                            }
-                        ]
-                    }
-                },
-                "conversion": {
-                    "name": "UTM zone 32N",
-                    "method": {
-                        "name": "Transverse Mercator",
-                        "id": {
-                            "authority": "EPSG",
-                            "code": 9807
-                        }
-                    },
-                    "parameters": [
-                        {
-                            "name": "Longitude of natural origin",
-                            "value": 9,
-                            "unit": "degree",
-                            "id": {
-                                "authority": "EPSG",
-                                "code": 8802
-                            }
-                        },
-                        {
-                            "name": "Latitude of natural origin",
-                            "value": 0,
-                            "unit": "degree",
-                            "id": {
-                                "authority": "EPSG",
-                                "code": 8801
-                            }
-                        },
-                        {
-                            "name": "Scale factor at natural origin",
-                            "value": 0.9996,
-                            "unit": "unity",
-                            "id": {
-                                "authority": "EPSG",
-                                "code": 8805
-                            }
-                        },
-                        {
-                            "name": "False easting",
-                            "value": 500000,
-                            "unit": {
-                                "type": "LinearUnit",
-                                "name": "m",
-                                "conversion_factor": 1
-                            },
-                            "id": {
-                                "authority": "EPSG",
-                                "code": 8806
-                            }
-                        },
-                        {
-                            "name": "False northing",
-                            "value": 0,
-                            "unit": {
-                                "type": "LinearUnit",
-                                "name": "m",
-                                "conversion_factor": 1
-                            },
-                            "id": {
-                                "authority": "EPSG",
-                                "code": 8807
-                            }
-                        }
-                    ]
-                },
-                "coordinate_system": {
-                    "subtype": "Cartesian",
-                    "axis": [
-                        {
-                            "name": "Easting",
-                            "abbreviation": "",
-                            "direction": "east",
-                            "unit": {
-                                "type": "LinearUnit",
-                                "name": "m",
-                                "conversion_factor": 1
-                            }
-                        },
-                        {
-                            "name": "Northing",
-                            "abbreviation": "",
-                            "direction": "north",
-                            "unit": {
-                                "type": "LinearUnit",
-                                "name": "m",
-                                "conversion_factor": 1
-                            }
-                        }
-                    ]
-                },
-                "id": {
-                    "authority": "EPSG",
-                    "code": 32632
-                }
-            },
-            "wkt2": "PROJCS[\"WGS 84 / UTM zone 32N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"central_meridian\",9],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"m\",1],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32632\"]]",
-            "xarray:open_kwargs": {
-                "chunks": {},
-                "engine": "zarr"
-            },
-            "xarray:storage_options": {
-                "client_kwargs": {
-                    "trust_env": true
-                }
-            },
-            "roles": [
-                "data"
-            ]
-        }
+    {
+      "rel": "parent",
+      "type": "application/json",
+      "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample"
+    },
+    {
+      "rel": "root",
+      "type": "application/json",
+      "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/"
+    },
+    {
+      "rel": "self",
+      "type": "application/geo+json",
+      "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample/items/s2_l2a_zarr_sample"
     }
+  ],
+  "assets": {
+    "data": {
+      "bbox": [
+        674990.0,
+        5154860.0,
+        675090.0,
+        5154960.0
+      ],
+      "epsg": 32632,
+      "href": "./tests/data/s2_l2a_zarr_sample.zarr",
+      "type": "application/vnd+zarr",
+      "wkt2": "PROJCS[\"WGS 84 / UTM zone 32N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"central_meridian\",9],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"m\",1],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32632\"]]",
+      "roles": [
+        "data"
+      ],
+      "shape": [
+        10,
+        10
+      ],
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              674990.0,
+              5154860.0
+            ],
+            [
+              675090.0,
+              5154860.0
+            ],
+            [
+              675090.0,
+              5154960.0
+            ],
+            [
+              674990.0,
+              5154960.0
+            ],
+            [
+              674990.0,
+              5154860.0
+            ]
+          ]
+        ]
+      },
+      "projjson": {
+        "id": {
+          "code": 32632,
+          "authority": "EPSG"
+        },
+        "name": "WGS 84 / UTM zone 32N",
+        "type": "ProjectedCRS",
+        "$schema": "https://proj.org/schemas/v0.7/projjson.schema.json",
+        "base_crs": {
+          "name": "WGS 84",
+          "datum": {
+            "name": "World Geodetic System 1984",
+            "type": "GeodeticReferenceFrame",
+            "ellipsoid": {
+              "name": "WGS 84",
+              "semi_major_axis": 6378137,
+              "inverse_flattening": 298.257223563
+            }
+          },
+          "coordinate_system": {
+            "axis": [
+              {
+                "name": "Longitude",
+                "unit": "degree",
+                "direction": "east",
+                "abbreviation": "lon"
+              },
+              {
+                "name": "Latitude",
+                "unit": "degree",
+                "direction": "north",
+                "abbreviation": "lat"
+              }
+            ],
+            "subtype": "ellipsoidal"
+          }
+        },
+        "conversion": {
+          "name": "UTM zone 32N",
+          "method": {
+            "id": {
+              "code": 9807,
+              "authority": "EPSG"
+            },
+            "name": "Transverse Mercator"
+          },
+          "parameters": [
+            {
+              "id": {
+                "code": 8802,
+                "authority": "EPSG"
+              },
+              "name": "Longitude of natural origin",
+              "unit": "degree",
+              "value": 9
+            },
+            {
+              "id": {
+                "code": 8801,
+                "authority": "EPSG"
+              },
+              "name": "Latitude of natural origin",
+              "unit": "degree",
+              "value": 0
+            },
+            {
+              "id": {
+                "code": 8805,
+                "authority": "EPSG"
+              },
+              "name": "Scale factor at natural origin",
+              "unit": "unity",
+              "value": 0.9996
+            },
+            {
+              "id": {
+                "code": 8806,
+                "authority": "EPSG"
+              },
+              "name": "False easting",
+              "unit": {
+                "name": "m",
+                "type": "LinearUnit",
+                "conversion_factor": 1
+              },
+              "value": 500000
+            },
+            {
+              "id": {
+                "code": 8807,
+                "authority": "EPSG"
+              },
+              "name": "False northing",
+              "unit": {
+                "name": "m",
+                "type": "LinearUnit",
+                "conversion_factor": 1
+              },
+              "value": 0
+            }
+          ]
+        },
+        "coordinate_system": {
+          "axis": [
+            {
+              "name": "Easting",
+              "unit": {
+                "name": "m",
+                "type": "LinearUnit",
+                "conversion_factor": 1
+              },
+              "direction": "east",
+              "abbreviation": ""
+            },
+            {
+              "name": "Northing",
+              "unit": {
+                "name": "m",
+                "type": "LinearUnit",
+                "conversion_factor": 1
+              },
+              "direction": "north",
+              "abbreviation": ""
+            }
+          ],
+          "subtype": "Cartesian"
+        }
+      },
+      "transform": [
+        10.0,
+        0.0,
+        674990.0,
+        0.0,
+        -10.0,
+        5154960.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "xarray:open_kwargs": {
+        "chunks": {},
+        "engine": "zarr"
+      },
+      "xarray:storage_options": {
+        "client_kwargs": {
+          "trust_env": true
+        }
+      }
+    }
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          11.28159648573161,
+          46.52452138151352
+        ],
+        [
+          11.282936964971952,
+          46.52452138151352
+        ],
+        [
+          11.282936964971952,
+          46.52544662500779
+        ],
+        [
+          11.28159648573161,
+          46.52544662500779
+        ],
+        [
+          11.28159648573161,
+          46.52452138151352
+        ]
+      ]
+    ]
+  },
+  "collection": "s2_l2a_zarr_sample",
+  "properties": {
+    "datetime": "2022-06-02T00:00:00Z",
+    "end_datetime": "2022-06-30T00:00:00Z",
+    "cube:variables": {
+      "B02": {
+        "type": "data",
+        "dimensions": [
+          "t",
+          "y",
+          "x"
+        ]
+      },
+      "B03": {
+        "type": "data",
+        "dimensions": [
+          "t",
+          "y",
+          "x"
+        ]
+      },
+      "B04": {
+        "type": "data",
+        "dimensions": [
+          "t",
+          "y",
+          "x"
+        ]
+      },
+      "B08": {
+        "type": "data",
+        "dimensions": [
+          "t",
+          "y",
+          "x"
+        ]
+      },
+      "SCL": {
+        "type": "data",
+        "dimensions": [
+          "t",
+          "y",
+          "x"
+        ]
+      }
+    },
+    "start_datetime": "2022-06-02T00:00:00Z",
+    "cube:dimensions": {
+      "t": {
+        "type": "temporal",
+        "extent": [
+          "2022-06-02T00:00:00.000000000",
+          "2022-06-30T00:00:00.000000000"
+        ]
+      },
+      "x": {
+        "axis": "x",
+        "type": "spatial",
+        "extent": [
+          674995.0,
+          675085.0
+        ],
+        "reference_system": 32632
+      },
+      "y": {
+        "axis": "y",
+        "type": "spatial",
+        "extent": [
+          5154865.0,
+          5154955.0
+        ],
+        "reference_system": 32632
+      }
+    }
+  },
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/projection/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/datacube/v2.2.0/schema.json"
+  ]
 }
