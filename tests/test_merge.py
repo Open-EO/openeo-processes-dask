@@ -175,6 +175,7 @@ def test_conflicting_coords(
 
     assert isinstance(merged_cube_1.data, dask.array.Array)
 
+
 def test_merge_float_coord_alignment(bounding_box, temporal_interval):
     shape = (10, 10, 5, 1)
     data = np.random.rand(*shape).astype(np.float32)
@@ -195,4 +196,3 @@ def test_merge_float_coord_alignment(bounding_box, temporal_interval):
 
     merged = merge_cubes(cube_a, cube_b)
     assert isinstance(merged, xr.DataArray)
-
