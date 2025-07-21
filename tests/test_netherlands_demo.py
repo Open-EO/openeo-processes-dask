@@ -17,7 +17,7 @@ from openeo_processes_dask.process_implementations.cubes.filter_bbox import filt
 
 def load_netherlands_data():
     """Load the Netherlands GeoJSON data."""
-    geojson_path = "Netherlands_polygon.geojson"
+    geojson_path = "data/Netherlands_polygon.geojson"
     if not os.path.exists(geojson_path):
         raise FileNotFoundError(f"GeoJSON file not found: {geojson_path}")
 
