@@ -174,3 +174,25 @@ def test_conflicting_coords(
     merged_cube_1 = merge_cubes(cube_1, cube_2)
 
     assert isinstance(merged_cube_1.data, dask.array.Array)
+
+
+def test_merge_float_coord_alignment(bounding_box, temporal_interval):
+    shape = (10, 10, 5, 1)
+    data = np.random.rand(*shape).astype(np.float32)
+
+    cube_a = create_fake_rastercube(
+        data=data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B04"],
+        backend="dask",
+    )
+
+    cube_b = cube_a.copy(deep=True)
+    cube_b = cube_b.assign_coords(
+        x=(cube_b["x"] + 1e-6),
+        y=(cube_b["y"] - 1e-6),
+    )
+
+    merged = merge_cubes(cube_a, cube_b)
+    assert isinstance(merged, xr.DataArray)
