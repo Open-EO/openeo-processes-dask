@@ -208,8 +208,14 @@ def load_stac(
             spatial_extent=spatial_extent,
             temporal_extent=temporal_extent,
             bands=bands,
-            resolution=properties["resolution"],
-            projection=properties["projection"],
+            **(
+                {
+                    "resolution": properties["resolution"],
+                    "projection": properties["projection"],
+                }
+                if properties and "resolution" in properties and "projection" in properties
+                else {}
+            ),
         )
 
     # Original implementation for non-EOPF STAC URLs
