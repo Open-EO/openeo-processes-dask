@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 from collections.abc import Iterator
+from datetime import datetime
 from pathlib import PurePosixPath
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import unquote, urljoin, urlparse
@@ -82,6 +83,102 @@ def _search_for_parent_catalog(url):
     return catalog_url, collection_id
 
 
+def _load_with_xcube_eopf(
+    data_id: str,
+    spatial_extent: Optional[BoundingBox] = None,
+    temporal_extent: Optional[TemporalInterval] = None,
+    bands: Optional[list[str]] = None,
+    resolution: Optional[float] = None,
+    projection: Optional[Union[int, str]] = None,
+) -> RasterCube:
+    """Load data using xcube-eopf package for EOPF STAC endpoints."""
+    try:
+        from xcube.core.store import new_data_store
+    except ImportError:
+        raise ImportError(
+            "xcube-eopf package is required for loading EOPF STAC data. "
+            "Please install it with: pip install xcube-eopf"
+        )
+
+    # Convert spatial extent to bbox
+    bbox = None
+    if spatial_extent is not None:
+        try:
+            spatial_extent_4326 = spatial_extent
+            if spatial_extent.crs is not None:
+                if not pyproj.crs.CRS(spatial_extent.crs).equals("EPSG:4326"):
+                    spatial_extent_4326 = _reproject_bbox(spatial_extent, "EPSG:4326")
+            bbox = [
+                spatial_extent_4326.west,
+                spatial_extent_4326.south,
+                spatial_extent_4326.east,
+                spatial_extent_4326.north,
+            ]
+        except Exception as e:
+            raise Exception(f"Unable to parse the provided spatial extent: {e}")
+
+    # Convert temporal extent to time_range
+    time_range = None
+    if temporal_extent is not None:
+        start_date = (
+            str(temporal_extent[0].to_numpy().astype("datetime64[D]"))
+            if temporal_extent[0] is not None
+            else None
+        )
+        end_date = (
+            str(temporal_extent[1].to_numpy().astype("datetime64[D]"))
+            if temporal_extent[1] is not None
+            else None
+        )
+        print(start_date, end_date)
+        time_range = [start_date, end_date]
+
+    # Set CRS
+    crs = projection if projection else "EPSG:4326"
+
+    # Convert resolution from degrees to meters if needed
+    spatial_res = 10 / 111320
+    if resolution is not None:
+        if crs == "EPSG:4326":
+            # Approximate conversion from degrees to meters at equator
+            spatial_res = resolution / 111320
+        else:
+            spatial_res = resolution
+
+    # Create store and open data
+    store = new_data_store("eopf-zarr")
+    ds = store.open_data(
+        data_id=data_id,
+        bbox=bbox,
+        time_range=time_range,
+        spatial_res=spatial_res,
+        crs=crs,
+        variables=bands,
+    )
+
+    # Convert to dataarray if it's a dataset
+    if isinstance(ds, xr.Dataset):
+        # Find the appropriate dimension name for bands
+        band_dim = None
+        for dim in ds.dims:
+            if dim.lower() in ["band", "bands", "variable", "variables"]:
+                band_dim = dim
+                break
+
+        if band_dim is None:
+            # If no band dimension found, try to create one
+            data_vars = list(ds.data_vars.keys())
+            if len(data_vars) > 1:
+                ds = ds.to_array(dim="bands")
+            else:
+                # Single variable, convert to dataarray
+                ds = ds[data_vars[0]]
+        else:
+            ds = ds.to_array(dim=band_dim)
+
+    return ds
+
+
 def load_stac(
     url: str,
     spatial_extent: Optional[BoundingBox] = None,
@@ -92,6 +189,26 @@ def load_stac(
     projection: Optional[Union[int, str]] = None,
     resampling: Optional[str] = None,
 ) -> RasterCube:
+    # Check if this is an EOPF STAC URL
+    if "stac.core.eopf.eodc.eu" in url:
+        logger.info(f"Detected EOPF STAC URL: {url}, using xcube-eopf backend")
+
+        # Extract data_id from URL
+        parsed_url = urlparse(url)
+        path_parts = PurePosixPath(unquote(parsed_url.path)).parts
+        data_id = path_parts[-1] if path_parts else "sentinel-2-l2a"  # default fallback
+
+        # Use xcube-eopf for loading
+        return _load_with_xcube_eopf(
+            data_id=data_id,
+            spatial_extent=spatial_extent,
+            temporal_extent=temporal_extent,
+            bands=bands,
+            resolution=resolution,
+            projection=projection,
+        )
+
+    # Original implementation for non-EOPF STAC URLs
     stac_type = _validate_stac(url)
 
     # TODO: load_stac should have a parameter to enable scale and offset?
