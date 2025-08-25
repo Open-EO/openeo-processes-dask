@@ -137,14 +137,16 @@ def _load_with_xcube_eopf(
     crs = projection if projection else "EPSG:4326"
 
     # Convert resolution from degrees to meters if needed
-    spatial_res = 10 / 111320
+    spatial_res = resolution if resolution else 10/111320
+    #spatial_res = None
+    '''
     if resolution is not None:
         if crs == "EPSG:4326":
             # Approximate conversion from degrees to meters at equator
-            spatial_res = resolution / 111320
+            spatial_res = resolution
         else:
             spatial_res = resolution
-
+    '''
     # Create store and open data
     store = new_data_store("eopf-zarr")
     ds = store.open_data(
@@ -198,14 +200,16 @@ def load_stac(
         path_parts = PurePosixPath(unquote(parsed_url.path)).parts
         data_id = path_parts[-1] if path_parts else "sentinel-2-l2a"  # default fallback
 
+        print(properties)
+
         # Use xcube-eopf for loading
         return _load_with_xcube_eopf(
             data_id=data_id,
             spatial_extent=spatial_extent,
             temporal_extent=temporal_extent,
             bands=bands,
-            resolution=resolution,
-            projection=projection,
+            resolution=properties["resolution"],
+            projection=properties["projection"],
         )
 
     # Original implementation for non-EOPF STAC URLs
