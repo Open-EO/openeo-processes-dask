@@ -130,7 +130,7 @@ def _load_with_xcube_eopf(
             if temporal_extent[1] is not None
             else None
         )
-        print(start_date, end_date)
+        #print(start_date, end_date)
         time_range = [start_date, end_date]
 
     # Set CRS
@@ -200,7 +200,7 @@ def load_stac(
         path_parts = PurePosixPath(unquote(parsed_url.path)).parts
         data_id = path_parts[-1] if path_parts else "sentinel-2-l2a"  # default fallback
 
-        print(properties)
+        #print(properties)
 
         # Use xcube-eopf for loading
         return _load_with_xcube_eopf(
