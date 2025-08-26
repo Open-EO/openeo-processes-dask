@@ -68,7 +68,6 @@ def apply_dimension(
     # This transpose (and back later) is needed because apply_ufunc automatically moves
     # input_core_dimensions to the last axes
     reordered_data = data.transpose(..., dimension)
-    print(list(data.dims))
 
     # Pass dimension metadata through context for UDF processes
     enhanced_context = dict(context) if context else {}
