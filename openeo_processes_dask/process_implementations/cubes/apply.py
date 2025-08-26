@@ -71,15 +71,19 @@ def apply_dimension(
 
     # Pass dimension metadata through context for UDF processes
     enhanced_context = dict(context) if context else {}
-    enhanced_context.update({
-        "_openeo_dimension_metadata": {
-            "current_dimension": dimension,
-            "all_dimensions": list(data.dims),
-            "data_shape": data.shape,
-            "dimension_coords": {dim: list(data.coords[dim].values) if dim in data.coords else None 
-                              for dim in data.dims}
+    enhanced_context.update(
+        {
+            "_openeo_dimension_metadata": {
+                "current_dimension": dimension,
+                "all_dimensions": list(data.dims),
+                "data_shape": data.shape,
+                "dimension_coords": {
+                    dim: list(data.coords[dim].values) if dim in data.coords else None
+                    for dim in data.dims
+                },
+            }
         }
-    })
+    )
 
     result = xr.apply_ufunc(
         process,
