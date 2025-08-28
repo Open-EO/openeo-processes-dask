@@ -100,22 +100,41 @@ def _load_with_xcube_eopf(
             "Please install it with: pip install xcube-eopf"
         )
 
+    from pyproj import CRS
+
     # Convert spatial extent to bbox
     bbox = None
     if spatial_extent is not None:
         try:
-            spatial_extent_4326 = spatial_extent
-            if spatial_extent.crs is not None:
-                if not pyproj.crs.CRS(spatial_extent.crs).equals("EPSG:4326"):
-                    spatial_extent_4326 = _reproject_bbox(spatial_extent, "EPSG:4326")
+            crs_obj = CRS(spatial_extent.crs) if spatial_extent.crs else CRS("EPSG:4326")
+            epsg = crs_obj.to_epsg()
+    
+            if epsg == 4326:
+                projection = "EPSG:4326"
+                resolution = 10 / 111320
+    
+            elif epsg and ((32601 <= epsg <= 32660) or (32701 <= epsg <= 32760)):
+                # Any UTM zone (north/south)
+                projection = f"EPSG:{epsg}"
+                resolution = 10
+    
+            else:
+                raise ValueError(
+                    f"Unsupported CRS: {crs_obj.to_string()} "
+                    "(only EPSG:4326 or UTM EPSG:32601–32660 / 32701–32760 are supported)"
+                )
+    
+            spatial_extent_used = spatial_extent
             bbox = [
-                spatial_extent_4326.west,
-                spatial_extent_4326.south,
-                spatial_extent_4326.east,
-                spatial_extent_4326.north,
+                spatial_extent_used.west,
+                spatial_extent_used.south,
+                spatial_extent_used.east,
+                spatial_extent_used.north,
             ]
+    
         except Exception as e:
             raise Exception(f"Unable to parse the provided spatial extent: {e}")
+
 
     # Convert temporal extent to time_range
     time_range = None
@@ -138,15 +157,7 @@ def _load_with_xcube_eopf(
 
     # Convert resolution from degrees to meters if needed
     spatial_res = resolution if resolution else 10/111320
-    #spatial_res = None
-    '''
-    if resolution is not None:
-        if crs == "EPSG:4326":
-            # Approximate conversion from degrees to meters at equator
-            spatial_res = resolution
-        else:
-            spatial_res = resolution
-    '''
+
     # Create store and open data
     store = new_data_store("eopf-zarr")
     ds = store.open_data(
@@ -208,14 +219,6 @@ def load_stac(
             spatial_extent=spatial_extent,
             temporal_extent=temporal_extent,
             bands=bands,
-            **(
-                {
-                    "resolution": properties["resolution"],
-                    "projection": properties["projection"],
-                }
-                if properties and "resolution" in properties and "projection" in properties
-                else {}
-            ),
         )
 
     # Original implementation for non-EOPF STAC URLs
