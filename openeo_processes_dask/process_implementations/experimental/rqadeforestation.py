@@ -1,21 +1,19 @@
-from typing import Optional
 import ctypes as ct
-import numpy as np
-import dask.array as da
-
-from numpy.typing import ArrayLike
-import rqadeforestation
-from rqadeforestation import rqatrend
-
 import os
+from typing import Optional
+
+import dask.array as da
+import numpy as np
+import rqadeforestation
+from numpy.typing import ArrayLike
+from rqadeforestation import rqatrend
 
 __all__ = ["rqa"]
 
 
 class MallocVector(ct.Structure):
-    _fields_ = [("pointer", ct.c_void_p),
-                ("length", ct.c_int64),
-                ("s1", ct.c_int64)]
+    _fields_ = [("pointer", ct.c_void_p), ("length", ct.c_int64), ("s1", ct.c_int64)]
+
 
 def mvptr(A):
     ptr = A.ctypes.data_as(ct.c_void_p)
@@ -35,6 +33,9 @@ def f(array: np.ndarray):
     return res
 
 
-def rqa(data, axis: Optional[int] = None,):
+def rqa(
+    data,
+    axis: Optional[int] = None,
+):
     res = da.apply_along_axis(f, axis=axis, arr=data, dtype=np.float64)
-    return da.array(np.array(res)) # rqatrend(data, 0.5, 10, 1)
+    return da.array(np.array(res))  # rqatrend(data, 0.5, 10, 1)
