@@ -18,6 +18,8 @@ from tests.mockdata import create_fake_rastercube
 def test_reduce_rqa(
     temporal_interval, bounding_box, random_raster_data, process_registry
 ):
+    import os
+
     from openeo_processes_dask.process_implementations.arrays import array_apply
     from openeo_processes_dask.process_implementations.cubes.apply import (
         apply_dimension,
@@ -25,6 +27,8 @@ def test_reduce_rqa(
     from openeo_processes_dask.process_implementations.experimental import (
         rqadeforestation,
     )
+
+    print(os.system("pwd"))
 
     input_cube = create_fake_rastercube(
         data=random_raster_data,
@@ -38,7 +42,7 @@ def test_reduce_rqa(
         process_registry["rqa"].implementation,
         data=ParameterReference(from_parameter="data"),
     )
-
+    print(os.system("pwd"))
     output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
 
     general_output_checks(
