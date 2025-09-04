@@ -1,5 +1,6 @@
 import ctypes as ct
 import os
+import sys
 from typing import Optional
 
 import dask.array as da
@@ -22,7 +23,10 @@ def mvptr(A):
 
 
 # download so file at https://github.com/EarthyScience/RQADeforestation.py/archive/refs/heads/main.zip
-lib = ct.CDLL("./.venv/lib/python3.11/site-packages/rqadeforestation/lib/rqatrend.so")
+version = sys.version[:4]
+lib = ct.CDLL(
+    f"./.venv/lib/python{version}/site-packages/rqadeforestation/lib/rqatrend.so"
+)
 lib.rqatrend.argtypes = (ct.POINTER(MallocVector), ct.c_double, ct.c_int64, ct.c_int64)
 lib.rqatrend.restype = ct.c_double
 
