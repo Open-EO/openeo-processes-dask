@@ -46,7 +46,7 @@ def _align_coordinates(
         max_diff = np.max(np.abs(coords1 - coords2))
         if max_diff < FLOAT_TOLERANCE:
             # Align cube2's coordinates to cube1's coordinates
-            cube2 = cube2.assign_coords({dim: cube1[dim]})
+            cube2[dim] = cube1[dim]
 
     return cube1, cube2
 
