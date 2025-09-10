@@ -73,6 +73,11 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev --all-extras
 
+      - name: Install PR #104 of openeo-pg-parser-networkx
+        run: |
+          poetry run pip install --upgrade --no-deps \
+            "git+https://github.com/Open-EO/openeo-pg-parser-networkx.git@refs/pull/104/head#egg=openeo-pg-parser-networkx"
+
       - name: Pre-commit hooks
         run: poetry run pre-commit run --all-files
 
