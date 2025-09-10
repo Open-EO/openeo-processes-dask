@@ -1,21 +1,3 @@
-name: xcube_openeo_xarray_pgparser-integration
-
-on:
-  push:
-    paths-ignore:
-      - 'docs/**'
-    branches:
-      - integration_tests_xcube
-  pull_request:
-    paths-ignore:
-      - 'docs/**'
-    branches:
-      - '**'
-  workflow_dispatch:
-
-env:
-  POETRY_VERSION: 1.5.1
-
 jobs:
   tests:
     name: ${{ matrix.os }} / ${{ matrix.python-version }}
@@ -26,7 +8,7 @@ jobs:
         python-version: ["3.10", "3.11", "3.12.11"]
         include:
           - os: Ubuntu
-            image: ubuntu-22.04
+            image: ubuntu-24.04   # ⬅️ switch runner to Noble (24.04)
       fail-fast: false
     defaults:
       run:
@@ -41,15 +23,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-
-      - name: Install system dependencies
+      - name: Install system GDAL 3.11.3 (UbuntuGIS)
         run: |
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable -y
           sudo apt-get update
+          # Install GDAL from the PPA (brings matching libgdal)
           sudo apt-get install -y libgdal-dev gdal-bin
           gdalinfo --version
+          # Show where libgdal comes from (should be /usr/lib/* from UbuntuGIS)
+          apt-cache policy libgdal-dev | sed -n '1,20p'
 
       - name: Get full Python version
         id: full-python-version
@@ -74,11 +58,11 @@ jobs:
       - name: Ensure cache is healthy
         if: steps.cache.outputs.cache-hit == 'true'
         run: |
-          # `timeout` is not available on macOS, so we define a custom function.
           [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
-          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
           timeout 10s poetry run pip --version || rm -rf .venv
 
+      # Important: make Poetry resolve GDAL against system libgdal=3.11
+      # If you explicitly pin GDAL in pyproject, set it to "==3.11.3".
       - name: Install dependencies
         run: poetry install --with dev --all-extras
 
@@ -90,9 +74,6 @@ jobs:
       - name: Pre-commit hooks
         run: poetry run pre-commit run --all-files
 
-      # - name: Run mypy
-      #   run: poetry run mypy
-
       - name: Run pytest
         run: poetry run pytest --cov=openeo_processes_dask --cov-report=xml
 
@@ -100,3 +81,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
+
