@@ -22,6 +22,8 @@ packages = [
     { include = "openeo_processes_dask" }
 ]
 
+## Temporarily Dis-abling the openeo-pg-parser-networkx as a dependency and also the implementations part as this PR is associated with PR104 of openeo-pg-parser-networkx --> https://github.com/Open-EO/openeo-pg-parser-networkx/pull/104
+
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
 geopandas = { version = ">=0.11.1,<1", optional = true }
@@ -32,7 +34,7 @@ rasterio = { version = "^1.3.4", optional = true }
 dask-geopandas = { version = "0.4.3", optional = true }
 xgboost = { version = ">=1.5.1,<2.1.4", optional = true }
 rioxarray = { version = ">=0.12.0,<1", optional = true }
-#openeo-pg-parser-networkx = { version = ">=2024.7", optional = true }
+#openeo-pg-parser-networkx = { version = ">=2024.7", optional = true } --> https://github.com/Open-EO/openeo-pg-parser-networkx/pull/104
 odc-geo = { version = ">=0.4.1,<1", optional = true }
 stac_validator = { version = ">=3.3.1", optional = true }
 odc-stac = { version = ">=0.3.9", optional = true }
@@ -50,6 +52,7 @@ zarr = "<=2.18.7"
 xcube-eopf = ">=0.2.0"
 
 
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
 ipykernel = "^6.15.1"
@@ -59,8 +62,10 @@ mapclassify = "^2.4.3"
 pre-commit = "^2.20.0"
 pytest-cov = "^4.0.0"
 
+
 [tool.poetry.extras]
-implementations = ["geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "odc-stac", "planetary_computer", "pystac_client", "stac_validator", "xvec", "joblib"]
+implementations = ["geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "odc-geo", "odc-stac", "planetary_computer", "pystac_client", "stac_validator", "xvec", "joblib"]
+#implementations = ["geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "odc-stac", "planetary_computer", "pystac_client", "stac_validator", "xvec", "joblib"]
 ml = ["xgboost"]
 
 [tool.pytest.ini_options]
