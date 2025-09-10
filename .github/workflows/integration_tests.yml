@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: 1.5.1
+  POETRY_VERSION: 2.1.4
 
 jobs:
   tests:
@@ -46,8 +46,7 @@ jobs:
         run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
 
       - name: Bootstrap poetry
-        run: |
-          curl -sL https://install.python-poetry.org | python - -y
+        run: curl -sSL https://install.python-poetry.org | python3 - -y --version $POETRY_VERSION
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
