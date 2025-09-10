@@ -305,17 +305,16 @@ def aggregate_spatial(
     if isinstance(geometries, gpd.GeoDataFrame):
         gdf = geometries
 
-    # Convert to the same CRS as the data
     gdf = gdf.to_crs(data.rio.crs)
 
-    # MOD HERE!
+    # Convert to list of geometries for better xvec handling
     geometries_list = list(gdf.geometry.values)
 
     positional_parameters = {"data": 0}
 
-    # Use the list of geometries directly
+    # Use the list of geometries directly, addressing potential issues with xvec's zonal_stats expecting list input
     vec_cube = data.xvec.zonal_stats(
-        geometries_list,  # MOD HERE!
+        geometries_list,  # Now passing list instead of numpy array
         x_coords=x_dim,
         y_coords=y_dim,
         method="iterate",
