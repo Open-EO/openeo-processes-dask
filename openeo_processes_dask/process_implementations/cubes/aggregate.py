@@ -272,6 +272,7 @@ def aggregate_spatial(
 
         response = urlopen(geometries)
         geometries = json.loads(response.read())
+
     if isinstance(geometries, dict):
         # Get crs from geometries
         if "features" in geometries:
@@ -304,16 +305,22 @@ def aggregate_spatial(
     if isinstance(geometries, gpd.GeoDataFrame):
         gdf = geometries
 
+    # Convert to the same CRS as the data
     gdf = gdf.to_crs(data.rio.crs)
-    geometries = gdf.geometry.values
+
+    # MOD HERE!
+    geometries_list = list(gdf.geometry.values)
 
     positional_parameters = {"data": 0}
+
+    # Use the list of geometries directly
     vec_cube = data.xvec.zonal_stats(
-        geometries,
+        geometries_list,  # MOD HERE!
         x_coords=x_dim,
         y_coords=y_dim,
         method="iterate",
         stats=reducer,
         positional_parameters=positional_parameters,
     )
+
     return vec_cube
