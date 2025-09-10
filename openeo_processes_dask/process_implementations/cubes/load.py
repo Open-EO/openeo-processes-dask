@@ -106,24 +106,26 @@ def _load_with_xcube_eopf(
     bbox = None
     if spatial_extent is not None:
         try:
-            crs_obj = CRS(spatial_extent.crs) if spatial_extent.crs else CRS("EPSG:4326")
+            crs_obj = (
+                CRS(spatial_extent.crs) if spatial_extent.crs else CRS("EPSG:4326")
+            )
             epsg = crs_obj.to_epsg()
-    
+
             if epsg == 4326:
                 projection = "EPSG:4326"
                 resolution = 10 / 111320
-    
+
             elif epsg and ((32601 <= epsg <= 32660) or (32701 <= epsg <= 32760)):
                 # Any UTM zone (north/south)
                 projection = f"EPSG:{epsg}"
                 resolution = 10
-    
+
             else:
                 raise ValueError(
                     f"Unsupported CRS: {crs_obj.to_string()} "
                     "(only EPSG:4326 or UTM EPSG:32601–32660 / 32701–32760 are supported)"
                 )
-    
+
             spatial_extent_used = spatial_extent
             bbox = [
                 spatial_extent_used.west,
@@ -131,10 +133,9 @@ def _load_with_xcube_eopf(
                 spatial_extent_used.east,
                 spatial_extent_used.north,
             ]
-    
+
         except Exception as e:
             raise Exception(f"Unable to parse the provided spatial extent: {e}")
-
 
     # Convert temporal extent to time_range
     time_range = None
@@ -149,14 +150,14 @@ def _load_with_xcube_eopf(
             if temporal_extent[1] is not None
             else None
         )
-        #print(start_date, end_date)
+        # print(start_date, end_date)
         time_range = [start_date, end_date]
 
     # Set CRS
     crs = projection if projection else "EPSG:4326"
 
     # Convert resolution from degrees to meters if needed
-    spatial_res = resolution if resolution else 10/111320
+    spatial_res = resolution if resolution else 10 / 111320
 
     # Create store and open data
     store = new_data_store("eopf-zarr")
@@ -211,7 +212,7 @@ def load_stac(
         path_parts = PurePosixPath(unquote(parsed_url.path)).parts
         data_id = path_parts[-1] if path_parts else "sentinel-2-l2a"  # default fallback
 
-        #print(properties)
+        # print(properties)
 
         # Use xcube-eopf for loading
         return _load_with_xcube_eopf(
