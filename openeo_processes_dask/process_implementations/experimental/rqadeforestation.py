@@ -31,15 +31,17 @@ lib.rqatrend.argtypes = (ct.POINTER(MallocVector), ct.c_double, ct.c_int64, ct.c
 lib.rqatrend.restype = ct.c_double
 
 
-def f(array: np.ndarray):
+def rqa_vector(array: np.ndarray, threshold=0.5:float) -> float:
     y_ptr = mvptr(array)
-    res = lib.rqatrend(y_ptr, 0.5, 10, 1)
+    res = lib.rqatrend(y_ptr, threshold, 10, 1)
     return res
 
 
-def rqa(
+def rqadeforestation(
     data,
+    threshold: float,
     axis: Optional[int] = None,
 ):
-    res = da.apply_along_axis(f, axis=axis, arr=data, dtype=np.float64)
+    # allow reducer without UDF
+    res = da.apply_along_axis(rqa_vector, axis=axis, arr=data, dtype=np.float64)
     return da.array(np.array(res))  # rqatrend(data, 0.5, 10, 1)
