@@ -1,3 +1,22 @@
+name: xcube_openeo_xarray_pgparser-integration
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+    branches:
+      - integration_tests_xcube
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+    branches:
+      - '**'
+  workflow_dispatch:
+
+env:
+  POETRY_VERSION: 1.5.1
+
+
 jobs:
   tests:
     name: ${{ matrix.os }} / ${{ matrix.python-version }}
