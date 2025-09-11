@@ -31,7 +31,7 @@ lib.rqatrend.argtypes = (ct.POINTER(MallocVector), ct.c_double, ct.c_int64, ct.c
 lib.rqatrend.restype = ct.c_double
 
 
-def rqa_vector(array: np.ndarray, threshold=0.5:float) -> float:
+def rqa_vector(array: np.ndarray, threshold: float = 0.5) -> float:
     y_ptr = mvptr(array)
     res = lib.rqatrend(y_ptr, threshold, 10, 1)
     return res
