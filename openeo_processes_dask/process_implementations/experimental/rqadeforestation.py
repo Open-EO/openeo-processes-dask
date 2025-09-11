@@ -43,5 +43,7 @@ def rqadeforestation(
     axis: Optional[int] = None,
 ):
     # allow reducer without UDF
-    res = da.apply_along_axis(rqa_vector, axis=axis, arr=data, dtype=np.float64)
-    return da.array(np.array(res))  # rqatrend(data, 0.5, 10, 1)
+    res = da.apply_along_axis(
+        rqa_vector, axis=axis, arr=data, dtype=np.float64, threshold=threshold
+    )
+    return da.array(np.array(res))
