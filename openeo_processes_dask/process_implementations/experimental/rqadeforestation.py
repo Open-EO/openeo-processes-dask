@@ -2,7 +2,7 @@ import dask.array as da
 from typing import Optional
 from rqadeforestation import rqatrend
 
-__all__ = ["rqa"]
+__all__ = ["rqadeforestation"]
 
 
 def rqadeforestation(

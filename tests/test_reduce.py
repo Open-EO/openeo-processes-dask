@@ -39,8 +39,9 @@ def test_reduce_rqa(
     )
 
     _process = partial(
-        process_registry["rqa"].implementation,
+        process_registry["rqadeforestation"].implementation,
         data=ParameterReference(from_parameter="data"),
+        threshold=0.5,
     )
     print(os.system("pwd"))
     output_cube = reduce_dimension(data=input_cube, reducer=_process, dimension="t")
