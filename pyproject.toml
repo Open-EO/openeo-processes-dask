@@ -47,7 +47,6 @@ openeo = ">=0.36.0"
 numpy = { version = "<2.0.0", optional = false }
 pystac = { version = "<1.12.0", optional = false }
 zarr = "<=2.18.7"
-rqadeforestation = {git = "https://github.com/EarthyScience/RQADeforestation.py#v1.0"}
 
 
 [tool.poetry.group.dev.dependencies]
