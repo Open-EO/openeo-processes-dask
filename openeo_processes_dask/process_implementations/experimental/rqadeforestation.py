@@ -1,5 +1,6 @@
-import dask.array as da
 from typing import Optional
+
+import dask.array as da
 from rqadeforestation import rqatrend
 
 __all__ = ["rqadeforestation"]
