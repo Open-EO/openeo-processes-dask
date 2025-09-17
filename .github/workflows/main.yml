@@ -85,12 +85,8 @@ jobs:
       - name: Install dependencies
         run: |
           # Install GDAL bindings matching system version
-          poetry run pip install "gdal==$(gdal-config --version)"
-          # Install dependencies with GDAL constraint
-          poetry install --with dev --all-extras --no-root
-
-          # Now install the package itself, respecting the already installed GDAL
-          poetry install --only-root
+          echo "gdal==$(gdal-config --version)" > constraints.txt
+          poetry install --with dev --all-extras --constraint constraints.txt
 
       - name: Pre-commit hooks
         run: poetry run pre-commit run --all-files
