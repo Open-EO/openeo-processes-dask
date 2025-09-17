@@ -84,9 +84,9 @@ jobs:
       # If you explicitly pin GDAL in pyproject, set it to "==3.11.3".
       - name: Install dependencies
         run: |
-          poetry install --with dev --all-extras
           # Install GDAL bindings matching system version
           poetry run pip install "gdal==$(gdal-config --version)"
+          poetry install --with dev --all-extras
 
       - name: Pre-commit hooks
         run: poetry run pre-commit run --all-files
