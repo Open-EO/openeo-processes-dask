@@ -37,16 +37,16 @@ jobs:
           submodules: recursive
 
       # Set up micromamba (conda) and create the env from conda-forge
-      - name: Set up micromamba (conda)
+      - name: Set up micromamba
         uses: mamba-org/setup-micromamba@v1
         with:
-          micromamba-version: "1.5.8"
+          micromamba-version: latest
           environment-name: testenv
           create-args: >-
             python=${{ matrix.python-version }}
             gdal=3.11.4
-          channels: conda-forge
-          channel-priority: strict
+            -c conda-forge  # Moved channels to create-args
+            --strict-channel-priority  # Moved channel priority to create-args
           init-shell: bash
           cache-environment: true
           cache-downloads: true
