@@ -22,8 +22,6 @@ packages = [
     { include = "openeo_processes_dask" }
 ]
 
-## Temporarily Dis-abling the openeo-pg-parser-networkx as a dependency and also the implementations part as this PR is associated with PR104 of openeo-pg-parser-networkx --> https://github.com/Open-EO/openeo-pg-parser-networkx/pull/104
-
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
 gdal = { version = "3.11.3", optional = true }
@@ -36,7 +34,7 @@ dask-geopandas = { version = "0.4.3", optional = true }
 xgboost = { version = ">=1.5.1,<2.1.4", optional = true }
 rioxarray = { version = ">=0.12.0,<1", optional = true }
 openeo-pg-parser-networkx = { version = ">=2025.9", optional = true }
-rqadeforestation = { version = ">=0.1", optional = true }
+rqadeforestation = ">=0.1"
 odc-geo = { version = ">=0.4.1,<1", optional = true }
 stac_validator = { version = ">=3.3.1", optional = true }
 odc-stac = { version = ">=0.3.9", optional = true }
