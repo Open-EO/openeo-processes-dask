@@ -8,7 +8,7 @@ __all__ = ["rqadeforestation"]
 
 def rqadeforestation(
     data,
-    threshold: float,
+    threshold: Optional[float] = 0.5,
     axis: Optional[int] = None,
 ):
     # directly call dask, no need to use UDF
