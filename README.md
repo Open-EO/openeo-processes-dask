@@ -14,6 +14,18 @@
 
 If you already have GDAL installed on your system (or in a conda/micromamba env), always install the matching Python bindings first, then this package:
 
+#### Installation
+
+Install this project via pip:
+
+```bash
+pip install "gdal==$(gdal-config --version)" openeo-processes-dask
+```
+
+Note that by default this only installs the JSON process specs.
+In order to install the actual implementations, add the `implementations` extra:
+
+
 ```bash
 pip install "gdal==$(gdal-config --version)" openeo-processes-dask[implementations]
 ````
