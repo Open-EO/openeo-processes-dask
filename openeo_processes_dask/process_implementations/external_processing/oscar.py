@@ -258,7 +258,6 @@ class OscarRunner:
                 logger.info("No service configuration provided, skipping update.")
                 return
 
-    # Load YAML config
             if service_config_path.startswith("http://") or service_config_path.startswith("https://"):
                 logger.info(f"Fetching service configuration from URL: {service_config_path}")
                 response = requests.get(service_config_path)
@@ -269,21 +268,17 @@ class OscarRunner:
                 with open(service_config_path, "r") as f:
                     config = yaml.safe_load(f)
 
-            # Find the environment section (adapt this if your YAML structure changes)
             env = config['functions']['oscar'][0]['cluster_id'].setdefault('environment', {})
             variables = env.setdefault('variables', {})
 
-            # Update with context
             if self.context:
                 variables.update(self.context)
 
-            # Inject input_stac_url if provided
             logger.info(f"Checking if input_stac_url is provided and updateing... {input_stac_url}")
             if input_stac_url:
                 variables['INPUT_STAC'] = input_stac_url
                 logger.info(f"Updated environment variables for {service_name}: {variables}")
 
-            # Write updated YAML to a temp file
             with tempfile.NamedTemporaryFile('w', delete=False, suffix='.yaml') as tmp:
                 yaml.safe_dump(config, tmp)
                 tmp_path = tmp.name
@@ -341,26 +336,24 @@ class OscarRunner:
             f"Timeout: No logs available for job '{latest_job_id}' after {timeout} seconds."
         )
 
+    #TODO: figure out ways to make this better within the openEO ecosystem
+    #NOTE:This is inconsistent, ugly, and breaks easily
     def parse_logs_stac(self, logs: str) -> str:
         logger.info("Parsing logs for STAC URL")
         if not logs:
             logger.error("Logs are empty, cannot parse STAC URL")
-            return "https://stac.intertwin.fedcloud.eu/collections/8db57c23-4013-45d3-a2f5-a73abf64adc4_WFLOW_FORCINGS_STATICMAPS"
-        
+            exit(1)
         for line in logs.splitlines():
-            if "STAC OUTPUT URL:" in line:
-                return "https://stac.intertwin.fedcloud.eu/collections/8db57c23-4013-45d3-a2f5-a73abf64adc4_WFLOW_FORCINGS_STATICMAPS"
-        
-            # If no line matched, return a default value
-        logger.warning("No STAC OUTPUT URL found in logs, returning default.")
-        return "https://stac.intertwin.fedcloud.eu/collections/8db57c23-4013-45d3-a2f5-a73abf64adc4_WFLOW_FORCINGS_STATICMAPS"
-        #             return line.split("STAC OUTPUT URL:", 1)[1].strip()
-        #     raise ValueError("STAC collection URL not found in logs")
-        # except Exception as e:
-        #     logger.error(f"Failed to parse logs for STAC URL: {e}")
-        #     raise OscarServiceError(f"Failed to parse logs for STAC URL: {e}")
+            if "STAC OUTPUT URL" in line:
+                parts = line.split("STAC OUTPUT URL:")
+                if len(parts) > 1:
+                    stac_url = parts[1].strip()
+                    logger.info(f"Found STAC OUTPUT URL: {stac_url}")
+                    return stac_url
+                else:
+                    logger.warning("STAC OUTPUT URL line found but no URL present.")
+  
 
-    
     def run_oscar_service(self) -> str:
         """
         Authenticate, connect, update config with context and input_stac_url, submit job, and return STAC URL.
@@ -375,7 +368,17 @@ class OscarRunner:
     
         if not service_info:
             logger.info(f"Service '{self.service}' not found, creating...")
-            self.oscar_create_service(self.oscar_client, self.service, self.service_config)
+            try:
+                self.oscar_create_service(self.oscar_client, self.service, self.service_config)
+            except OscarServiceCreationError as e:
+                logger.error(f"Service creation failed: {e}")
+                raise  # Stop here if creation fails
+
+            # Double-check service now exists
+            service_info = self.oscar_check_service(self.oscar_client, self.service)
+            if not service_info:
+                raise OscarServiceCreationError(f"Service '{self.service}' could not be created or is not available after creation.")
+
         else:
             logger.info(f"Service '{self.service}' already exists.")
     
