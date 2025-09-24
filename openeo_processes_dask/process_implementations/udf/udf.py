@@ -44,12 +44,6 @@ def run_udf(
         ValueError: If runtime is not supported
         UdfExecutionError: If UDF execution fails
     """
-    # Handle both dask arrays and xarray DataArrays
-    if isinstance(data, xr.DataArray):
-        # Pass the xarray directly to preserve dimensions
-        result = native_run_udf(data, udf, runtime, context)
-    else:
-        # Convert dask array to xarray (dimensions will be generic)
-        result = native_run_udf(data, udf, runtime, context)
-
+    # Use native implementation that handles both da.Array and xr.DataArray
+    result = native_run_udf(data, udf, runtime, context)
     return result
