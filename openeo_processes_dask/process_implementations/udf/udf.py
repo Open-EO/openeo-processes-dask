@@ -5,7 +5,7 @@ This module replaces the previous openeo-python-client dependency
 with a native implementation that preserves dimension names (fixes Issue #330).
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 import dask.array as da
 import xarray as xr
@@ -19,7 +19,10 @@ __all__ = ["run_udf"]
 
 
 def run_udf(
-    data: da.Array, udf: str, runtime: str, context: Optional[dict] = None
+    data: Union[da.Array, xr.DataArray],
+    udf: str,
+    runtime: str,
+    context: Optional[dict] = None,
 ) -> RasterCube:
     """
     Execute UDF code on the provided data.
@@ -29,7 +32,7 @@ def run_udf(
     (e.g., 'dim_0', 'dim_1', 'dim_2').
 
     Args:
-        data: Input dask array data
+        data: Input data (dask array or xarray DataArray)
         udf: UDF code string containing apply_datacube or apply_hypercube function
         runtime: Runtime environment ("Python" supported)
         context: Optional context dictionary passed to UDF
@@ -41,6 +44,12 @@ def run_udf(
         ValueError: If runtime is not supported
         UdfExecutionError: If UDF execution fails
     """
-    # Use native implementation (no openeo-python-client dependency!)
-    result = native_run_udf(data, udf, runtime, context)
+    # Handle both dask arrays and xarray DataArrays
+    if isinstance(data, xr.DataArray):
+        # Pass the xarray directly to preserve dimensions
+        result = native_run_udf(data, udf, runtime, context)
+    else:
+        # Convert dask array to xarray (dimensions will be generic)
+        result = native_run_udf(data, udf, runtime, context)
+
     return result

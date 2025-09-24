@@ -6,7 +6,7 @@ Fixes Issue #330 by removing dependency on openeo-python-client and preserving d
 import logging
 import sys
 import types
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Union
 
 import dask.array as da
 import xarray as xr
@@ -47,13 +47,17 @@ class NativeUdfProcessor:
             return None
 
     def run_udf(
-        self, data: da.Array, udf: str, runtime: str, context: Optional[dict] = None
+        self,
+        data: Union[da.Array, xr.DataArray],
+        udf: str,
+        runtime: str,
+        context: Optional[dict] = None,
     ) -> xr.DataArray:
         """
         Execute UDF directly on xarray data, preserving dimension names.
 
         Args:
-            data: Input dask array
+            data: Input data (dask array or xarray DataArray)
             udf: UDF code string
             runtime: Runtime (currently only "Python" supported)
             context: Optional context dictionary
@@ -70,26 +74,33 @@ class NativeUdfProcessor:
 
         _log.info("Executing UDF with native processor (Issue #330 fix)")
 
-        # Convert to xarray - dimensions preserved!
-        # Note: When creating from dask array, we need to explicitly set dimension names
-        xr_data = xr.DataArray(data)
+        # Handle both dask arrays and xarray DataArrays
+        if isinstance(data, xr.DataArray):
+            # Issue #330 fix: xarray input preserves dimensions automatically!
+            xr_data = data
+            _log.info(f"Using xarray input with dimensions: {list(xr_data.dims)}")
+        else:
+            # Convert dask array to xarray - dimensions will be generic
+            xr_data = xr.DataArray(data)
 
-        # Issue #330 fix: If dimensions are generic, try to infer semantic names
-        if all(str(dim).startswith("dim_") for dim in xr_data.dims):
-            # Common dimension patterns for geospatial data
-            ndim = len(xr_data.dims)
-            if ndim == 3:
-                # Assume time, y, x for 3D data (most common case)
-                xr_data = xr_data.rename({"dim_0": "time", "dim_1": "y", "dim_2": "x"})
-            elif ndim == 4:
-                # Assume time, band, y, x for 4D data
-                xr_data = xr_data.rename(
-                    {"dim_0": "time", "dim_1": "band", "dim_2": "y", "dim_3": "x"}
+            # Issue #330 fix: If dimensions are generic, try to infer semantic names
+            if all(str(dim).startswith("dim_") for dim in xr_data.dims):
+                # Common dimension patterns for geospatial data
+                ndim = len(xr_data.dims)
+                if ndim == 3:
+                    # Assume time, y, x for 3D data (most common case)
+                    xr_data = xr_data.rename(
+                        {"dim_0": "time", "dim_1": "y", "dim_2": "x"}
+                    )
+                elif ndim == 4:
+                    # Assume time, band, y, x for 4D data
+                    xr_data = xr_data.rename(
+                        {"dim_0": "time", "dim_1": "band", "dim_2": "y", "dim_3": "x"}
+                    )
+                # For other dimensions, keep as-is but log the issue
+                _log.warning(
+                    f"Unusual number of dimensions ({ndim}), keeping generic names: {list(xr_data.dims)}"
                 )
-            # For other dimensions, keep as-is but log the issue
-            _log.warning(
-                f"Generic dimensions detected for {ndim}D data: {list(xr_data.dims)}"
-            )
 
         _log.debug(f"Input dimensions: {list(xr_data.dims)}")
 
@@ -220,7 +231,10 @@ _processor = NativeUdfProcessor()
 
 
 def run_udf(
-    data: da.Array, udf: str, runtime: str, context: Optional[dict] = None
+    data: Union[da.Array, xr.DataArray],
+    udf: str,
+    runtime: str,
+    context: Optional[dict] = None,
 ) -> xr.DataArray:
     """
     Drop-in replacement for the current run_udf function.
@@ -229,12 +243,12 @@ def run_udf(
     No longer depends on openeo-python-client.
 
     Args:
-        data: Input dask array
+        data: Input data (dask array or xarray DataArray)
         udf: UDF code string
         runtime: Runtime ("Python" only)
         context: Optional context dictionary
 
     Returns:
-        xr.DataArray with preserved semantic dimension names
+        xr.DataArray with preserved dimensions
     """
     return _processor.run_udf(data, udf, runtime, context)
