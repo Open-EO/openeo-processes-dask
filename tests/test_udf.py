@@ -38,12 +38,16 @@ def apply_datacube(cube: xr.DataArray, context: dict) -> xr.DataArray:
 
     # Test Issue #330 fix: verify semantic dimensions are preserved
     output_dims = list(output_cube.dims)
-    generic_dims = [d for d in output_dims if str(d).startswith('dim_')]
-    assert not generic_dims, f"Issue #330 regression: found generic dimensions {generic_dims}"
-    
+    generic_dims = [d for d in output_dims if str(d).startswith("dim_")]
+    assert (
+        not generic_dims
+    ), f"Issue #330 regression: found generic dimensions {generic_dims}"
+
     # Should have meaningful dimension names for 4D data
-    expected_semantic_dims = ['time', 'band', 'y', 'x']
-    assert output_dims == expected_semantic_dims, f"Expected {expected_semantic_dims}, got {output_dims}"
+    expected_semantic_dims = ["time", "band", "y", "x"]
+    assert (
+        output_dims == expected_semantic_dims
+    ), f"Expected {expected_semantic_dims}, got {output_dims}"
 
 
 @pytest.mark.parametrize("size", [(3, 4, 5)])
@@ -70,6 +74,6 @@ def apply_datacube(cube: xr.DataArray, context: dict) -> xr.DataArray:
 """
 
     output_cube = run_udf(data=input_cube, udf=udf, runtime="Python")
-    
+
     # Verify dimensions are semantic
-    assert list(output_cube.dims) == ['time', 'y', 'x']
+    assert list(output_cube.dims) == ["time", "y", "x"]
