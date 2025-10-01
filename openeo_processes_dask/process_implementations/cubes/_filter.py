@@ -117,8 +117,8 @@ def filter_labels(
     labels = np.array(data[dimension].values)
     if not context:
         context = {}
-    positional_parameters = {"x": 0}
-    named_parameters = {"x": labels, "context": context}
+    positional_parameters = {"x": 0, "value": 0}
+    named_parameters = {"x": labels, "value": labels, "context": context}
     filter_condition = np.vectorize(condition)
     filtered_labels = filter_condition(
         labels,

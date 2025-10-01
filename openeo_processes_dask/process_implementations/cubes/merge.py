@@ -13,10 +13,42 @@ __all__ = ["merge_cubes"]
 NEW_DIM_NAME = "__cubes__"
 NEW_DIM_COORDS = ["cube1", "cube2"]
 
+FLOAT_TOLERANCE = 1e-6  # Tolerance for considering float coordinates equal
+
 
 from collections import namedtuple
 
 Overlap = namedtuple("Overlap", ["only_in_cube1", "only_in_cube2", "in_both"])
+
+
+def _align_coordinates(
+    cube1: RasterCube, cube2: RasterCube
+) -> tuple[RasterCube, RasterCube]:
+    """Align coordinates between two cubes if they're very close numerically."""
+    shared_dims = set(cube1.dims).intersection(set(cube2.dims))
+
+    for dim in shared_dims:
+        coords1 = cube1[dim].values
+        coords2 = cube2[dim].values
+
+        # Only proceed if both coordinate arrays are float types
+        if not (
+            np.issubdtype(coords1.dtype, np.floating)
+            and np.issubdtype(coords2.dtype, np.floating)
+        ):
+            continue
+
+        # Check if shapes match
+        if coords1.shape != coords2.shape:
+            continue
+
+        # Check if maximum difference is within tolerance
+        max_diff = np.max(np.abs(coords1 - coords2))
+        if max_diff < FLOAT_TOLERANCE:
+            # Align cube2's coordinates to cube1's coordinates
+            cube2[dim] = cube1[dim]
+
+    return cube1, cube2
 
 
 def merge_cubes(
@@ -31,6 +63,9 @@ def merge_cubes(
         raise Exception(
             f"Provided cubes have incompatible types. cube1: {type(cube1)}, cube2: {type(cube2)}"
         )
+
+    # Align coordinates if they're very close numerically
+    cube1, cube2 = _align_coordinates(cube1, cube2)
 
     # Key: dimension name
     # Value: (labels in cube1 not in cube2, labels in cube2 not in cube1)
