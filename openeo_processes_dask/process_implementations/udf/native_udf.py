@@ -188,8 +188,8 @@ class NativeUdfProcessor:
 
         # Optional post-processing to align with common hillshade outputs
         # (clip to 0-255, round to integer, cast to uint8). This only runs
-        # when the caller/udf allows it via context key 'native_postprocess'
-        if context.get("native_postprocess", True):
+        # when explicitly enabled via context key 'native_postprocess'
+        if context.get("native_postprocess", False):
             try:
                 _log.debug("Applying native post-processing to UDF output")
                 vals = result.values.astype(float)
