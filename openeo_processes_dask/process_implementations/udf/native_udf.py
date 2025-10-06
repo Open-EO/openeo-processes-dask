@@ -9,6 +9,7 @@ import types
 from typing import Any, Callable, Dict, Optional, Union
 
 import dask.array as da
+import numpy as np
 import xarray as xr
 
 _log = logging.getLogger(__name__)
@@ -118,6 +119,55 @@ class NativeUdfProcessor:
         """Execute UDF code directly without client dependencies."""
 
         # Compile UDF code safely
+        # Attempt to infer spatial resolution from coordinates and provide defaults
+        try:
+            res = None
+            dx = dy = None
+            if "x" in datacube.coords and len(datacube.coords["x"]) > 1:
+                xs = np.asarray(datacube.coords["x"])
+                dx = float(np.median(np.abs(np.diff(xs))))
+            if "y" in datacube.coords and len(datacube.coords["y"]) > 1:
+                ys = np.asarray(datacube.coords["y"])
+                dy = float(np.median(np.abs(np.diff(ys))))
+            if dx is not None and dy is not None:
+                res = float(np.mean([abs(dx), abs(dy)]))
+            elif dx is not None:
+                res = abs(dx)
+            elif dy is not None:
+                res = abs(dy)
+            if res is not None:
+                context.setdefault("resolution", res)
+                _log.info(f"Inferred resolution={res} from coordinates")
+        except Exception:
+            _log.debug("Could not infer resolution from coords", exc_info=True)
+
+        # Try to provide a sensible nodata/default background value
+        try:
+            nod = None
+            if isinstance(datacube, xr.DataArray):
+                # prefer explicit numeric nodata attributes
+                if isinstance(datacube.attrs, dict):
+                    nod_cand = datacube.attrs.get("nodata")
+                    if nod_cand is not None and not (
+                        isinstance(nod_cand, float) and np.isnan(nod_cand)
+                    ):
+                        nod = nod_cand
+                # try encoding fill value if present and numeric
+                enc = getattr(datacube, "encoding", {})
+                if nod is None and isinstance(enc, dict):
+                    fill = enc.get("_FillValue")
+                    if fill is not None and not (
+                        isinstance(fill, float) and np.isnan(fill)
+                    ):
+                        nod = fill
+            # final fallback
+            if nod is None or (isinstance(nod, float) and np.isnan(nod)):
+                nod = 255
+            context.setdefault("nodataval", nod)
+            _log.info(f"Using nodataval={nod} for UDF execution")
+        except Exception:
+            _log.debug("Could not infer nodata", exc_info=True)
+
         udf_namespace = self._compile_udf_code(udf_code)
 
         # Find the UDF function
@@ -135,6 +185,23 @@ class NativeUdfProcessor:
             raise UdfExecutionError(
                 f"UDF must return xarray.DataArray, got {type(result)}"
             )
+
+        # Optional post-processing to align with common hillshade outputs
+        # (clip to 0-255, round to integer, cast to uint8). This only runs
+        # when the caller/udf allows it via context key 'native_postprocess'
+        if context.get("native_postprocess", True):
+            try:
+                _log.debug("Applying native post-processing to UDF output")
+                vals = result.values.astype(float)
+                vals = np.clip(vals, 0, 255)
+                vals = np.rint(vals).astype(np.uint8)
+                # Preserve coords and dims
+                result = xr.DataArray(
+                    vals, coords=result.coords, dims=result.dims, name=result.name
+                )
+                _log.info("Native post-processing applied: rounded to uint8 0-255")
+            except Exception:
+                _log.debug("Native post-processing failed", exc_info=True)
 
         return result
 
