@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openeo-processes-dask"
-version = "2025.9.5"
+version = "2025.10.1"
 description = "Python implementations of many OpenEO processes, dask-friendly by default."
 authors = ["Lukas Weidenholzer <lukas.weidenholzer@eodc.eu>", "Sean Hoyal <sean.hoyal@eodc.eu>", "Valentina Hutter <valentina.hutter@eodc.eu>"]
 maintainers = ["EODC Staff <support@eodc.eu>"]
@@ -32,7 +32,7 @@ rasterio = { version = "^1.3.4", optional = true }
 dask-geopandas = { version = "0.4.3", optional = true }
 xgboost = { version = ">=1.5.1,<2.1.4", optional = true }
 rioxarray = { version = ">=0.12.0,<1", optional = true }
-openeo-pg-parser-networkx = { version = ">=2025.9", optional = true }
+openeo-pg-parser-networkx = { version = ">=2025.10", optional = true }
 rqadeforestation = ">=0.1"
 odc-geo = { version = ">=0.4.1,<1", optional = true }
 stac_validator = { version = ">=3.3.1", optional = true }
