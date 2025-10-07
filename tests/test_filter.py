@@ -174,3 +174,42 @@ def test_filter_bbox(
 
     with pytest.raises(DimensionNotAvailable):
         filter_bbox(data=output_cube_cube_no_x_y, extent=bounding_box_small)
+
+
+def test_filter_bbox_vectorcube():
+    """Test filter_bbox with VectorCube (GeoDataFrame)"""
+    import geopandas as gpd
+    from openeo_pg_parser_networkx.pg_schema import BoundingBox
+    from shapely.geometry import Point
+
+    # Create a sample VectorCube with points
+    points = [
+        Point(10.47, 46.15),  # Inside bbox
+        Point(10.49, 46.17),  # Inside bbox
+        Point(10.46, 46.11),  # Outside bbox (west of bbox)
+        Point(10.51, 46.19),  # Outside bbox (east of bbox)
+        Point(10.48, 46.10),  # Outside bbox (south of bbox)
+    ]
+
+    gdf = gpd.GeoDataFrame(
+        {
+            "id": [1, 2, 3, 4, 5],
+            "name": ["Point_A", "Point_B", "Point_C", "Point_D", "Point_E"],
+            "geometry": points,
+        },
+        crs="EPSG:4326",
+    )
+
+    # Define a bounding box that should filter to 2 points
+    bbox = BoundingBox(
+        west=10.47, east=10.50, south=46.12, north=46.18, crs="EPSG:4326"
+    )
+
+    # Apply filter_bbox
+    filtered_gdf = filter_bbox(data=gdf, extent=bbox)
+
+    # Verify results
+    assert isinstance(filtered_gdf, gpd.GeoDataFrame)
+    assert len(filtered_gdf) == 2  # Only 2 points should be inside
+    assert set(filtered_gdf["id"]) == {1, 2}  # Points A and B
+    assert filtered_gdf.crs == gdf.crs  # CRS should be preserved
