@@ -10,7 +10,7 @@
       "msi"
     ],
     "eo:cloud_cover": 31.735489,
-    "proj:epsg": 32632,
+    "proj:code": "EPSG:32632",
     "mgrs:utm_zone": 32,
     "mgrs:latitude_band": "T",
     "mgrs:grid_square": "PS",
