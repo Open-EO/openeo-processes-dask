@@ -1,0 +1,16 @@
+functions:
+  oscar:
+  - cluster_id:
+      name: hydroform-hydromt
+      cpu: '1.0'
+      memory: 2Gi
+      image: potato55/hydromt-test:new #change to -test if broken
+      script: configs/oscar_hydromt_script.sh # Path to the script from where the script is run
+      log_level: CRITICAL   # To avoid supervisor logs in response
+      vo: dev.intertwin.eu
+      environment:
+        secrets:
+          AWS_ACCESS_KEY_ID: ""
+          AWS_SECRET_ACCESS_KEY: ""
+          NEW_TEST_SECRET: ""
+          NEW_TEST_SECRET_2: ""

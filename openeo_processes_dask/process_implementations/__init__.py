@@ -10,6 +10,7 @@ from .logic import *
 from .math import *
 from .text import *
 from .udf import *
+from .external_processing import *
 
 try:
     from .ml import *

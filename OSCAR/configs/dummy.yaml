@@ -1,0 +1,15 @@
+functions:
+  oscar:
+  - cluster_id:
+      name: openeo-dummy
+      cpu: '1.0'
+      memory: 2Gi
+      image: potato55/dummy-container:latest #change to -test if broken
+      script: configs/dummy.sh # Path to the script from where the script is run
+      log_level: CRITICAL   # To avoid supervisor logs in response
+      vo: dev.intertwin.eu
+      environment:
+        variables:
+          DUMMY_INPUT1: "dummy_value"
+          DUMMY_INPUT2: "another_value"
+          INPUT_STAC: "https://example.com/dummy-stac.json"
