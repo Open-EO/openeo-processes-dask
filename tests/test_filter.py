@@ -213,3 +213,47 @@ def test_filter_bbox_vectorcube():
     assert len(filtered_gdf) == 2  # Only 2 points should be inside
     assert set(filtered_gdf["id"]) == {1, 2}  # Points A and B
     assert filtered_gdf.crs == gdf.crs  # CRS should be preserved
+
+
+def test_filter_bbox_vectorcube_crs_reprojection():
+    """Test filter_bbox with VectorCube using different CRS (tests _reproject_bbox)"""
+    import geopandas as gpd
+    from openeo_pg_parser_networkx.pg_schema import BoundingBox
+    from shapely.geometry import Point
+
+    # Create a VectorCube in UTM Zone 32N (EPSG:32632) - covering northern Italy
+    # Coordinates are in meters (UTM)
+    points_utm = [
+        Point(630000, 5100000),  # lon=10.680142, lat=46.041224 - Inside bbox
+        Point(635000, 5105000),  # lon=10.746151, lat=46.085236 - Inside bbox
+        Point(625000, 5095000),  # lon=10.614238, lat=45.997172 - Outside bbox (south)
+        Point(
+            640000, 5110000
+        ),  # lon=10.812265, lat=46.129208 - Outside bbox (east and north)
+    ]
+
+    gdf_utm = gpd.GeoDataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "name": ["Point_A", "Point_B", "Point_C", "Point_D"],
+            "geometry": points_utm,
+        },
+        crs="EPSG:32632",  # UTM Zone 32N
+    )
+
+    # Define bounding box in WGS84 (EPSG:4326) - degrees
+    # This bbox should cover points 1 and 2 when reprojected
+    bbox_wgs84 = BoundingBox(
+        west=10.65, east=10.76, south=46.02, north=46.10, crs="EPSG:4326"
+    )
+
+    # Apply filter_bbox - should trigger CRS reprojection
+    filtered_gdf = filter_bbox(data=gdf_utm, extent=bbox_wgs84)
+
+    # Verify results
+    assert isinstance(filtered_gdf, gpd.GeoDataFrame)
+    assert filtered_gdf.crs == gdf_utm.crs  # CRS should remain UTM
+    # Should have exactly 2 points (points 1 and 2)
+    assert len(filtered_gdf) == 2
+    assert set(filtered_gdf["id"].values) == {1, 2}
+    assert set(filtered_gdf["name"].values) == {"Point_A", "Point_B"}
