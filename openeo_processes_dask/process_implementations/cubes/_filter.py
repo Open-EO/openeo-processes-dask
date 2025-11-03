@@ -262,19 +262,25 @@ def filter_bbox(
             reprojected_extent.north,
         )
 
+        # xarray.Dataset with geometry variable - check first before GeoDataFrame
+        if isinstance(data, xr.Dataset) and "geometry" in data:
+            import geopandas as gpd
+
+            # Convert DataArray to GeoSeries for spatial operations
+            geom_series = gpd.GeoSeries(data["geometry"].to_series())
+            # Use intersects() for consistent spatial filtering behavior
+            mask_series = geom_series.intersects(bbox_geom) & (~geom_series.is_empty)
+            # Use boolean indexing to filter (works better with geometry dtype than where)
+            dim_name = data["geometry"].dims[0]
+            return data.isel({dim_name: mask_series.values})
+
         # GeoDataFrame or Dask GeoDataFrame
-        if hasattr(data, "geometry"):
+        elif hasattr(data, "geometry"):
             # Use intersects() instead of within() to include geometries touching the boundary
             filtered = data[
                 data.geometry.intersects(bbox_geom) & (~data.geometry.is_empty)
             ]
             return filtered
-
-        # xarray.Dataset with geometry variable
-        elif isinstance(data, xr.Dataset) and "geometry" in data:
-            # Use intersects() for consistent spatial filtering behavior
-            mask = data["geometry"].intersects(bbox_geom) & (~data["geometry"].is_empty)
-            return data.where(mask, drop=True)
         else:
             raise TypeError("Unsupported VectorCube type for filter_bbox")
 

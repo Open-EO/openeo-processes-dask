@@ -257,3 +257,53 @@ def test_filter_bbox_vectorcube_crs_reprojection():
     assert len(filtered_gdf) == 2
     assert set(filtered_gdf["id"].values) == {1, 2}
     assert set(filtered_gdf["name"].values) == {"Point_A", "Point_B"}
+
+
+def test_filter_bbox_vectorcube_xarray_dataset():
+    """Test filter_bbox with VectorCube as xarray.Dataset with geometry variable"""
+    import geopandas as gpd
+    import xarray as xr
+    from openeo_pg_parser_networkx.pg_schema import BoundingBox
+    from shapely.geometry import Point
+
+    # Create sample geometries
+    points = [
+        Point(10.47, 46.15),  # Inside bbox
+        Point(10.49, 46.17),  # Inside bbox
+        Point(10.46, 46.11),  # Outside bbox (west)
+        Point(10.51, 46.19),  # Outside bbox (east)
+        Point(10.48, 46.10),  # Outside bbox (south)
+    ]
+
+    # Create a GeoSeries with geometries
+    geoms = gpd.GeoSeries(points, crs="EPSG:4326")
+
+    # Create an xarray.Dataset with geometry variable (VectorCube format)
+    dataset = xr.Dataset(
+        {
+            "geometry": xr.DataArray(geoms, dims=["features"]),
+            "id": xr.DataArray([1, 2, 3, 4, 5], dims=["features"]),
+            "name": xr.DataArray(
+                ["Point_A", "Point_B", "Point_C", "Point_D", "Point_E"],
+                dims=["features"],
+            ),
+        }
+    )
+    # Add CRS as attribute (standard way for xarray Datasets)
+    dataset.attrs["crs"] = "EPSG:4326"
+
+    # Define a bounding box that should filter to 2 points
+    bbox = BoundingBox(
+        west=10.47, east=10.50, south=46.12, north=46.18, crs="EPSG:4326"
+    )
+
+    # Apply filter_bbox
+    filtered_dataset = filter_bbox(data=dataset, extent=bbox)
+
+    # Verify results
+    assert isinstance(filtered_dataset, xr.Dataset)
+    assert "geometry" in filtered_dataset
+    # Should have exactly 2 features (points A and B)
+    assert len(filtered_dataset.features) == 2
+    assert set(filtered_dataset["id"].values) == {1, 2}
+    assert set(filtered_dataset["name"].values) == {"Point_A", "Point_B"}
