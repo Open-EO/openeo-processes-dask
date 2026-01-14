@@ -6,30 +6,30 @@
 import json
 import logging
 import os
+import tempfile
 import time
 import uuid
-import tempfile
-import yaml
 from typing import Optional
 
-from openeo_processes_dask.process_implementations.exceptions import (
-    OpenEOAuthError,
-    OscarNotAvailable,
-    OscarUrlError,
-    OscarServiceNotFound,
-    OscarServiceCreationError,
-    OscarServiceError,
-    MinioConnectionError,
-    MinioUploadError,
-    MinioDownloadError,
-    EGIAuthError,
-)
-
 import oscar_python._utils as utils
-import requests
 import pystac
+import requests
+import yaml
 from minio import Minio
 from oscar_python.client import Client
+
+from openeo_processes_dask.process_implementations.exceptions import (
+    EGIAuthError,
+    MinioConnectionError,
+    MinioDownloadError,
+    MinioUploadError,
+    OpenEOAuthError,
+    OscarNotAvailable,
+    OscarServiceCreationError,
+    OscarServiceError,
+    OscarServiceNotFound,
+    OscarUrlError,
+)
 
 __all__ = ["run_oscar"]
 
@@ -42,8 +42,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.handlers = [handler]
 
+
 class OscarRunner:
-    def __init__ (
+    def __init__(
         self,
         oscar_endpoint: str,
         service: str,
@@ -77,7 +78,7 @@ class OscarRunner:
 
     def __repr__(self):
         return f"OscarRunner(oscar_endpoint={self.oscar_endpoint}, service={self.service}, service_config={self.service_config})"
-    
+
     def validate_input(self, stac_input_url: str) -> None:
         """
         Validate the input STAC URL using pystac
@@ -93,9 +94,9 @@ class OscarRunner:
             raise ValueError(f"Invalid input STAC URL: {stac_input_url}") from e
 
     def oscar_authenticate(
-        self, 
+        self,
         token_env_var: Optional[str] = None,
-        local_refresh_token: Optional[str] = None
+        local_refresh_token: Optional[str] = None,
     ) -> str:
         """
         Authenticate with OSCAR
@@ -125,7 +126,9 @@ class OscarRunner:
                 with open(local_refresh_token) as f:
                     token_data = json.loads(f.read())
                 logger.info(f"Using local refresh token from {local_refresh_token}")
-                refresh_token = token_data["https://aai.egi.eu/auth/realms/egi"]["openeo-platform-default-client"]["refresh_token"].strip()
+                refresh_token = token_data["https://aai.egi.eu/auth/realms/egi"][
+                    "openeo-platform-default-client"
+                ]["refresh_token"].strip()
                 logger.info("Getting access token from a local refresh token...")
                 url = "https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token"
                 data = {
@@ -145,7 +148,9 @@ class OscarRunner:
             except Exception as e:
                 logger.error(f"Error reading local refresh token: {e}")
 
-        raise OpenEOAuthError("No OpenEO access token found in environment variable or local file.")
+        raise OpenEOAuthError(
+            "No OpenEO access token found in environment variable or local file."
+        )
 
     def oscar_check_connection(self, oscar_endpoint: str, auth_token: str) -> Client:
         """
@@ -163,7 +168,7 @@ class OscarRunner:
         """
         if not oscar_endpoint:
             raise OscarUrlError("OSCAR endpoint is not provided")
-        
+
         logger.info(f"Checking OSCAR connection to {oscar_endpoint}...")
 
         options_basic_auth = {
@@ -179,7 +184,7 @@ class OscarRunner:
         except Exception as e:
             raise OscarNotAvailable(f"OSCAR is not available for {oscar_endpoint}: {e}")
         return oscar_client
-    
+
     def oscar_check_service(
         self, oscar_client: Client, service_name: str
     ) -> requests.Response | None:
@@ -206,12 +211,9 @@ class OscarRunner:
                 return service_info
         except Exception as e:
             logger.error(f"Error checking OSCAR service '{service_name}': {e}")
-        
+
     def oscar_create_service(
-        self,
-        oscar_client: Client,
-        service_name: str,
-        service_config: dict
+        self, oscar_client: Client, service_name: str, service_config: dict
     ) -> requests.Response | None:
         """
         Create a new OSCAR service. Service config can be provided as a local path
@@ -232,67 +234,97 @@ class OscarRunner:
             return None
 
         try:
-            logger.info(f"Creating OSCAR service '{service_name}' with provided configuration.")
+            logger.info(
+                f"Creating OSCAR service '{service_name}' with provided configuration."
+            )
             response = oscar_client.create_service(service_config)
             if response.status_code == 201:
                 logger.info(f"OSCAR service '{service_name}' created successfully.")
                 return response
             else:
-                logger.error(f"Failed to create OSCAR service '{service_name}': {response.text}")
-                raise OscarServiceCreationError(f"Failed to create OSCAR service '{service_name}': {response.text}")
+                logger.error(
+                    f"Failed to create OSCAR service '{service_name}': {response.text}"
+                )
+                raise OscarServiceCreationError(
+                    f"Failed to create OSCAR service '{service_name}': {response.text}"
+                )
         except Exception as e:
-            raise OscarServiceCreationError(f"Failed to create OSCAR service '{service_name}': {e}")
+            raise OscarServiceCreationError(
+                f"Failed to create OSCAR service '{service_name}': {e}"
+            )
 
     def oscar_update_service_config(
-            self,
-            oscar_client: Client,
-            service_name: str,
-            service_config_path: str,
-            input_stac_url: Optional[str] = None
-        ) -> None:
-            """
-            Update the OSCAR service configuration YAML with environment variables from context
-            and optionally the input_stac_url, then update the service.
-            """
-            if not service_config_path:
-                logger.info("No service configuration provided, skipping update.")
-                return
+        self,
+        oscar_client: Client,
+        service_name: str,
+        service_config_path: str,
+        input_stac_url: Optional[str] = None,
+    ) -> None:
+        """
+        Update the OSCAR service configuration YAML with environment variables from context
+        and optionally the input_stac_url, then update the service.
+        """
+        if not service_config_path:
+            logger.info("No service configuration provided, skipping update.")
+            return
 
-            if service_config_path.startswith("http://") or service_config_path.startswith("https://"):
-                logger.info(f"Fetching service configuration from URL: {service_config_path}")
-                response = requests.get(service_config_path)
-                response.raise_for_status()
-                config = yaml.safe_load(response.text)
-            else:
-                logger.info(f"Reading service configuration from local file: {service_config_path}")
-                with open(service_config_path, "r") as f:
-                    config = yaml.safe_load(f)
+        if service_config_path.startswith("http://") or service_config_path.startswith(
+            "https://"
+        ):
+            logger.info(
+                f"Fetching service configuration from URL: {service_config_path}"
+            )
+            response = requests.get(service_config_path)
+            response.raise_for_status()
+            config = yaml.safe_load(response.text)
+        else:
+            logger.info(
+                f"Reading service configuration from local file: {service_config_path}"
+            )
+            with open(service_config_path) as f:
+                config = yaml.safe_load(f)
 
-            env = config['functions']['oscar'][0]['cluster_id'].setdefault('environment', {})
-            variables = env.setdefault('variables', {})
+        env = config["functions"]["oscar"][0]["cluster_id"].setdefault(
+            "environment", {}
+        )
+        variables = env.setdefault("variables", {})
 
-            if self.context:
-                variables.update(self.context)
+        if self.context:
+            variables.update(self.context)
 
-            logger.info(f"Checking if input_stac_url is provided and updateing... {input_stac_url}")
-            if input_stac_url:
-                variables['INPUT_STAC'] = input_stac_url
-                logger.info(f"Updated environment variables for {service_name}: {variables}")
+        logger.info(
+            f"Checking if input_stac_url is provided and updateing... {input_stac_url}"
+        )
+        if input_stac_url:
+            variables["INPUT_STAC"] = input_stac_url
+            logger.info(
+                f"Updated environment variables for {service_name}: {variables}"
+            )
 
-            with tempfile.NamedTemporaryFile('w', delete=False, suffix='.yaml') as tmp:
-                yaml.safe_dump(config, tmp)
-                tmp_path = tmp.name
+        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".yaml") as tmp:
+            yaml.safe_dump(config, tmp)
+            tmp_path = tmp.name
 
-            with open(tmp_path) as f:
-                logger.info(f"YAML written for {service_name}:\n{f.read()}")
+        with open(tmp_path) as f:
+            logger.info(f"YAML written for {service_name}:\n{f.read()}")
 
-            try:
-                oscar_client.update_service(service_name, tmp_path)
-                logger.info(f"OSCAR service '{service_name}' updated with new environment variables.")
-            except Exception as e:
-                raise OscarServiceCreationError(f"Failed to update OSCAR service '{service_name}': {e}")
-    
-    def get_job_logs(self, oscar_client: Client, service_name: str, poll_interval: int = 120, timeout: int = 3600) -> str:
+        try:
+            oscar_client.update_service(service_name, tmp_path)
+            logger.info(
+                f"OSCAR service '{service_name}' updated with new environment variables."
+            )
+        except Exception as e:
+            raise OscarServiceCreationError(
+                f"Failed to update OSCAR service '{service_name}': {e}"
+            )
+
+    def get_job_logs(
+        self,
+        oscar_client: Client,
+        service_name: str,
+        poll_interval: int = 120,
+        timeout: int = 3600,
+    ) -> str:
         """
         Poll the OSCAR service for job logs until the logs are returned or timeout occurs.
         """
@@ -336,8 +368,8 @@ class OscarRunner:
             f"Timeout: No logs available for job '{latest_job_id}' after {timeout} seconds."
         )
 
-    #TODO: figure out ways to make this better within the openEO ecosystem
-    #NOTE:This is inconsistent, ugly, and breaks easily
+    # TODO: figure out ways to make this better within the openEO ecosystem
+    # NOTE:This is inconsistent, ugly, and breaks easily
     def parse_logs_stac(self, logs: str) -> str:
         logger.info("Parsing logs for STAC URL")
         if not logs:
@@ -352,24 +384,24 @@ class OscarRunner:
                     return stac_url
                 else:
                     logger.warning("STAC OUTPUT URL line found but no URL present.")
-  
 
     def run_oscar_service(self) -> str:
         """
         Authenticate, connect, update config with context and input_stac_url, submit job, and return STAC URL.
         """
         auth_token = self.oscar_authenticate(
-            token_env_var=self.auth_token,
-            local_refresh_token=self.local_refresh_token
+            token_env_var=self.auth_token, local_refresh_token=self.local_refresh_token
         )
-    
+
         self.oscar_client = self.oscar_check_connection(self.oscar_endpoint, auth_token)
         service_info = self.oscar_check_service(self.oscar_client, self.service)
-    
+
         if not service_info:
             logger.info(f"Service '{self.service}' not found, creating...")
             try:
-                self.oscar_create_service(self.oscar_client, self.service, self.service_config)
+                self.oscar_create_service(
+                    self.oscar_client, self.service, self.service_config
+                )
             except OscarServiceCreationError as e:
                 logger.error(f"Service creation failed: {e}")
                 raise  # Stop here if creation fails
@@ -377,22 +409,24 @@ class OscarRunner:
             # Double-check service now exists
             service_info = self.oscar_check_service(self.oscar_client, self.service)
             if not service_info:
-                raise OscarServiceCreationError(f"Service '{self.service}' could not be created or is not available after creation.")
+                raise OscarServiceCreationError(
+                    f"Service '{self.service}' could not be created or is not available after creation."
+                )
 
         else:
             logger.info(f"Service '{self.service}' already exists.")
-    
+
         # Always update service config with context and input_stac_url
         if isinstance(self.service_config, str):
             self.oscar_update_service_config(
                 self.oscar_client,
                 self.service,
                 self.service_config,
-                input_stac_url=self.input_stac_url
+                input_stac_url=self.input_stac_url,
             )
-    
+
         logger.info(f"OSCAR service '{self.service}' is ready.")
-    
+
         try:
             data = self.data if self.data is not None else {}
             json_data = json.dumps(data).encode("utf-8")
@@ -406,13 +440,15 @@ class OscarRunner:
                     data=json_data,
                     timeout=1500,
                 )
-                logger.info(f"Job submitted to OSCAR service '{self.service}'. Status: {getattr(response, 'status_code', None)}")
+                logger.info(
+                    f"Job submitted to OSCAR service '{self.service}'. Status: {getattr(response, 'status_code', None)}"
+                )
             else:
                 raise ValueError("Either token or user/password must be provided")
         except requests.exceptions.RequestException as e:
             logger.error(f"OSCAR service {self.service} job submission failed: {e}")
             raise OscarServiceError(f"OSCAR service {self.service} failed: {e}")
-        
+
         # listen for logs
         try:
             logs = self.get_job_logs(self.oscar_client, self.service)
@@ -421,8 +457,11 @@ class OscarRunner:
             logger.info(f"Parsed STAC collection URL: {result}")
             return result
         except OscarServiceError as e:
-            logger.error(f"Failed to retrieve job logs for service '{self.service}': {e}")
+            logger.error(
+                f"Failed to retrieve job logs for service '{self.service}': {e}"
+            )
             raise
+
     # def run_oscar_service(self) -> str:
     #     """
     #     Authenticate, connect, and ensure the OSCAR service is ready.
@@ -468,7 +507,7 @@ class OscarRunner:
     #     except requests.exceptions.RequestException as e:
     #         logger.error(f"OSCAR service {self.service} job submission failed: {e}")
     #         raise OscarServiceError(f"OSCAR service {self.service} failed: {e}")
-        
+
     #     # listen for logs
     #     try:
     #         logs = self.get_job_logs(self.oscar_client, self.service)
@@ -479,6 +518,7 @@ class OscarRunner:
     #     except OscarServiceError as e:
     #         logger.error(f"Failed to retrieve job logs for service '{self.service}': {e}")
     #         raise
+
 
 def run_oscar(
     oscar_endpoint: str,
@@ -494,7 +534,7 @@ def run_oscar(
     context: Optional[dict] = None,
 ) -> str:
     """
-    Main entry point for running OSCAR service setup.
+    Main entry point for running OSCAR service.
     Returns the STAC URL after job completion.
     """
     runner = OscarRunner(
@@ -511,6 +551,7 @@ def run_oscar(
         context=context,
     )
     return runner.run_oscar_service()
+
 
 # def run_oscar(
 #     oscar_endpoint: str,
