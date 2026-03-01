@@ -40,7 +40,7 @@ __all__ = [
 
 
 def filter_temporal(
-    data: RasterCube, extent: TemporalInterval, dimension: str = None
+    data: RasterCube, extent: TemporalInterval, dimension: Optional[str] = None
 ) -> RasterCube:
     temporal_dims = data.openeo.temporal_dims
 
@@ -130,7 +130,7 @@ def filter_labels(
     return data
 
 
-def filter_bands(data: RasterCube, bands: list[str] = None) -> RasterCube:
+def filter_bands(data: RasterCube, bands: Optional[list[str]] = None) -> RasterCube:
     if bands is None:
         raise BandFilterParameterMissing(
             "The process `filter_bands` requires the parameters `bands` to be set."

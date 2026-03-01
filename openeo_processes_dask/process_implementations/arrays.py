@@ -530,7 +530,7 @@ def rearrange(
     data: ArrayLike,
     order: ArrayLike,
     axis: Optional[int] = None,
-    source_transposed_axis: int = None,
+    source_transposed_axis: Optional[int] = None,
 ):
     if len(data) == 0:
         return data

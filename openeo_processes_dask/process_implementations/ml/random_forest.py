@@ -25,7 +25,7 @@ def fit_regr_random_forest(
     num_trees: int = 100,
     max_variables: Optional[Union[int, str]] = None,
     predictors_vars: Optional[list[str]] = None,
-    target_var: str = None,
+    target_var: Optional[str] = None,
     **kwargs,
 ) -> Booster:
     import xgboost as xgb
@@ -124,7 +124,7 @@ def predict_random_forest(
     data: RasterCube,
     model: Booster,
     axis: int = -1,
-    context: dict = None,
+    context: Optional[dict] = None,
 ) -> RasterCube:
     import xgboost as xgb
 
