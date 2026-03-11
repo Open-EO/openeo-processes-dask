@@ -1,0 +1,142 @@
+{
+    "id": "run_cwl",
+    "summary": "Run a CWL workflow",
+    "description": "Executes a Common Workflow Language (CWL) workflow or CommandLineTool.\n\nThe CWL document can be provided as an inline YAML/JSON string or as a URL pointing to a remote CWL file. The workflow is validated before execution. Inputs are passed as a flat key-value mapping corresponding to the CWL input parameters.\n\nOn the backend, validated CWL is executed through Calrissian on Kubernetes. Outputs are collected and exposed as standard openEO job results.\n\nThis is an MVP process. Only CWL v1.0\u20131.2 CommandLineTool and simple single-step Workflow documents are supported. Nested workflows, ScatterFeatureRequirements, and advanced CWL features are not guaranteed to work.",
+    "categories": [
+        "cubes",
+        "import"
+    ],
+    "experimental": true,
+    "parameters": [
+        {
+            "name": "cwl",
+            "description": "The CWL document to execute. Either an inline CWL string (YAML or JSON) or a URL pointing to a remote `.cwl` file (must be reachable from the backend).",
+            "schema": [
+                {
+                    "title": "Inline CWL",
+                    "description": "A CWL document provided as an inline YAML or JSON string.",
+                    "type": "string"
+                },
+                {
+                    "title": "Remote CWL URL",
+                    "description": "A URL pointing to a CWL file.",
+                    "type": "string",
+                    "format": "uri",
+                    "subtype": "uri",
+                    "pattern": "^https?://"
+                }
+            ]
+        },
+        {
+            "name": "inputs",
+            "description": "A flat key-value mapping of CWL input parameter names to their values. Keys must match the input IDs declared in the CWL document. Values can be strings, numbers, booleans, or objects (e.g. File references with `class: File` and `path` or `location`).",
+            "schema": {
+                "type": "object",
+                "title": "CWL Inputs",
+                "additionalProperties": {
+                    "description": "Any CWL-compatible input value."
+                }
+            }
+        },
+        {
+            "name": "options",
+            "description": "Optional execution flags.\n\n- `validate_only` (boolean, default `false`): If `true`, the CWL document is validated but not executed. The process returns immediately after validation.\n- `max_ram` (string, optional): Maximum RAM for concurrent CWL steps, e.g. `\"8G\"`. Defaults to backend configuration.\n- `max_cores` (integer, optional): Maximum CPU cores for concurrent CWL steps. Defaults to backend configuration.",
+            "schema": [
+                {
+                    "type": "object",
+                    "title": "Execution options",
+                    "properties": {
+                        "validate_only": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "If true, validate the CWL document without executing it."
+                        },
+                        "max_ram": {
+                            "type": "string",
+                            "description": "Maximum RAM for concurrent CWL steps (e.g. '8G')."
+                        },
+                        "max_cores": {
+                            "type": "integer",
+                            "description": "Maximum CPU cores for concurrent CWL steps."
+                        }
+                    }
+                },
+                {
+                    "title": "No options",
+                    "description": "Use default execution settings.",
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "optional": true
+        }
+    ],
+    "returns": {
+        "description": "The CWL workflow output files, exposed as openEO job results. For `validate_only` mode, returns a validation status object.",
+        "schema": [
+            {
+                "type": "object",
+                "subtype": "datacube"
+            },
+            {
+                "type": "object",
+                "description": "Validation result when validate_only is true.",
+                "properties": {
+                    "valid": {
+                        "type": "boolean"
+                    },
+                    "errors": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "exceptions": {
+        "CwlInvalidDocument": {
+            "message": "The provided CWL document is not valid."
+        },
+        "CwlExecutionFailed": {
+            "message": "The CWL workflow execution failed."
+        },
+        "CwlInputMismatch": {
+            "message": "The provided inputs do not match the CWL document's declared input parameters."
+        }
+    },
+    "examples": [
+        {
+            "title": "Run a simple CWL CommandLineTool from URL",
+            "arguments": {
+                "cwl": "https://raw.githubusercontent.com/common-workflow-language/common-workflow-language/main/v1.0/v1.0/echo-tool.cwl",
+                "inputs": {
+                    "message": "Hello from openEO"
+                }
+            }
+        },
+        {
+            "title": "Validate a CWL document without running it",
+            "arguments": {
+                "cwl": "https://example.com/workflow.cwl",
+                "inputs": {},
+                "options": {
+                    "validate_only": true
+                }
+            }
+        }
+    ],
+    "links": [
+        {
+            "href": "https://www.commonwl.org/",
+            "rel": "about",
+            "title": "Common Workflow Language specification"
+        },
+        {
+            "href": "https://github.com/Duke-GCB/calrissian",
+            "rel": "about",
+            "title": "Calrissian: CWL runner for Kubernetes"
+        }
+    ]
+}
