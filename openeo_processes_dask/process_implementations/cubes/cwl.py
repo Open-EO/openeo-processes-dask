@@ -30,6 +30,7 @@ def _resolve_cwl(cwl: str, work_dir: Path) -> Path:
     """
     if _is_url(cwl):
         import urllib.request
+
         cwl_path = work_dir / "workflow.cwl"
         urllib.request.urlretrieve(cwl, str(cwl_path))
         logger.info(f"Downloaded CWL from {cwl} to {cwl_path}")
@@ -136,9 +137,7 @@ def run_cwl(
         try:
             cwl_path = _resolve_cwl(cwl, work_dir)
         except Exception as e:
-            raise CwlInvalidDocument(
-                f"Failed to resolve CWL document: {e}"
-            )
+            raise CwlInvalidDocument(f"Failed to resolve CWL document: {e}")
 
         # Validate CWL
         validation = _validate_cwl(cwl_path)
