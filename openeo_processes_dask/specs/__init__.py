@@ -7,7 +7,10 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 json_path = Path(__file__).parent / "openeo-processes"
+custom_json_path = Path(__file__).parent / "custom-processes"
 process_json_paths = [pg_path for pg_path in (json_path).glob("*.json")]
+if custom_json_path.exists():
+    process_json_paths.extend(custom_json_path.glob("*.json"))
 
 # Go through all the jsons in the top-level of the specs folder and add them to be importable from here
 # E.g. from openeo_processes_dask.specs import *

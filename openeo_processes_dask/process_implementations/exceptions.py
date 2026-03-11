@@ -112,3 +112,15 @@ class MinMaxSwapped(OpenEOException):
 
 class UnitMismatch(OpenEOException):
     pass
+
+
+class CwlInvalidDocument(OpenEOException):
+    pass
+
+
+class CwlExecutionFailed(OpenEOException):
+    pass
+
+
+class CwlInputMismatch(OpenEOException):
+    pass
