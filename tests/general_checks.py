@@ -1,5 +1,5 @@
 # Checks here are inspired by makepath/xarray-spatial/tests/general_checks.py
-from typing import List
+from typing import List, Optional
 
 import dask.array as da
 import numpy as np
@@ -13,7 +13,7 @@ def general_output_checks(
     expected_results=None,
     verify_crs: bool = False,
     verify_attrs: bool = False,
-    expected_dims: list = None,
+    expected_dims: Optional[list] = None,
     rtol=1e-06,
 ):
     assert isinstance(output_cube.data, type(input_cube.data))
