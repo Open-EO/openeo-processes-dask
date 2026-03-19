@@ -1,26 +1,49 @@
-from typing import Optional
+"""
+Native UDF implementation for openeo-processes-dask.
+
+This module replaces the previous openeo-python-client dependency
+with a native implementation that preserves dimension names (fixes Issue #330).
+"""
+
+from typing import Optional, Union
 
 import dask.array as da
 import xarray as xr
-from openeo.udf import UdfData
-from openeo.udf.run_code import run_udf_code
-from openeo.udf.xarraydatacube import XarrayDataCube
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
+from openeo_processes_dask.process_implementations.udf.native_udf import (
+    run_udf as native_run_udf,
+)
 
 __all__ = ["run_udf"]
 
 
 def run_udf(
-    data: da.Array, udf: str, runtime: str, context: Optional[dict] = None
+    data: Union[da.Array, xr.DataArray],
+    udf: str,
+    runtime: str,
+    context: Optional[dict] = None,
 ) -> RasterCube:
-    data = XarrayDataCube(xr.DataArray(data))
-    data = UdfData(datacube_list=[data], user_context=context)
-    result = run_udf_code(code=udf, data=data)
-    cubes = result.get_datacube_list()
-    if len(cubes) != 1:
-        raise ValueError(
-            f"The provided UDF should return one datacube, but got: {result}"
-        )
-    result_array: xr.DataArray = cubes[0].array
-    return result_array
+    """
+    Execute UDF code on the provided data.
+
+    This implementation fixes Issue #330 by preserving semantic dimension names
+    (e.g., 'time', 'x', 'y') instead of converting them to generic names
+    (e.g., 'dim_0', 'dim_1', 'dim_2').
+
+    Args:
+        data: Input data (dask array or xarray DataArray)
+        udf: UDF code string containing apply_datacube or apply_hypercube function
+        runtime: Runtime environment ("Python" supported)
+        context: Optional context dictionary passed to UDF
+
+    Returns:
+        RasterCube with preserved dimension names
+
+    Raises:
+        ValueError: If runtime is not supported
+        UdfExecutionError: If UDF execution fails
+    """
+    # Use native implementation that handles both da.Array and xr.DataArray
+    result = native_run_udf(data, udf, runtime, context)
+    return result
