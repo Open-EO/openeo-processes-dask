@@ -26,7 +26,7 @@ __all__ = [
 
 
 def is_infinite(x: ArrayLike):
-    if np.issubsctype(get_scalar_type(x), np.number):
+    if np.issubdtype(get_scalar_type(x), np.number):
         return np.isinf(x)
     else:
         return False
@@ -56,24 +56,24 @@ def eq(
     x_dtype = get_scalar_type(x)
     y_dtype = get_scalar_type(y)
 
-    if np.issubsctype(x_dtype, np.number) and np.issubsctype(y_dtype, np.number):
+    if np.issubdtype(x_dtype, np.number) and np.issubdtype(y_dtype, np.number):
         if delta:
             ar_eq = np.isclose(x, y, atol=delta)
         else:
             ar_eq = x == y
 
-    elif np.issubsctype(x_dtype, np.bool_) and np.issubsctype(y_dtype, np.bool_):
+    elif np.issubdtype(x_dtype, np.bool_) and np.issubdtype(y_dtype, np.bool_):
         ar_eq = x == y
 
-    elif np.issubsctype(x_dtype, np.flexible) and np.issubsctype(y_dtype, np.flexible):
+    elif np.issubdtype(x_dtype, np.flexible) and np.issubdtype(y_dtype, np.flexible):
         if not case_sensitive:
-            if np.issubsctype(get_scalar_type(x), np.character):
+            if np.issubdtype(get_scalar_type(x), np.character):
                 x = np.char.lower(x)
-            if np.issubsctype(get_scalar_type(y), np.character):
+            if np.issubdtype(get_scalar_type(y), np.character):
                 y = np.char.lower(y)
         ar_eq = x == y
 
-    elif np.issubsctype(x_dtype, np.flexible) and np.issubsctype(y_dtype, np.flexible):
+    elif np.issubdtype(x_dtype, np.flexible) and np.issubdtype(y_dtype, np.flexible):
         ar_eq = x == y
     else:
         return False
