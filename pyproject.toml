@@ -49,6 +49,8 @@ numpy = { version = "<2.0.0", optional = false }
 pystac = { version = "<1.12.0", optional = false }
 zarr = "<=2.18.7"
 xcube-eopf = ">=0.2.0"
+oscar-python = "1.3.1"
+minio = "^7.2.15"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -64,6 +66,7 @@ pytest-cov = "^4.0.0"
 [tool.poetry.extras]
 implementations = ["geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "odc-stac", "planetary_computer", "pystac_client", "stac_validator", "xvec", "joblib"]
 ml = ["xgboost"]
+oscar = ["oscar-python", "minio"]
 
 [tool.pytest.ini_options]
 testpaths = [
