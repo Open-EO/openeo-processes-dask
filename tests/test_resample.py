@@ -14,7 +14,7 @@ from openeo_processes_dask.process_implementations.cubes.resample import (
     resample_spatial,
 )
 from tests.general_checks import general_output_checks
-from tests.mockdata import create_fake_rastercube
+from tests.mockdata import create_fake_curvilinear_rastercube, create_fake_rastercube
 
 
 @pytest.mark.parametrize(
@@ -197,3 +197,58 @@ def test_aggregate_temporal_period(
         resample_cube_temporal(
             data=input_cube, target=target_cube, dimension="time", valid_within=None
         )
+
+
+@pytest.mark.parametrize("size", [(30, 30, 5, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_resample_spatial_geocode_requires_resolution(
+    temporal_interval, bounding_box, random_raster_data
+):
+    pytest.importorskip("xcube_resampling")
+    input_cube = create_fake_curvilinear_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+    with pytest.raises(Exception):
+        resample_spatial(data=input_cube, method="geocode")
+
+
+@pytest.mark.parametrize("size", [(30, 30, 5, 4)])
+@pytest.mark.parametrize("dtype", [np.float32])
+def test_resample_spatial_geocode_curvilinear_explicit_grid(
+    temporal_interval,
+    bounding_box,
+    random_raster_data,
+):
+    """Ensure explicit projection + resolution path works for method='geocode'."""
+    pytest.importorskip("xcube_resampling")
+
+    input_cube = create_fake_curvilinear_rastercube(
+        data=random_raster_data,
+        spatial_extent=bounding_box,
+        temporal_extent=temporal_interval,
+        bands=["B02", "B03", "B04", "B08"],
+        backend="dask",
+    )
+
+    # Provide explicit grid params (EPSG:4326 in degrees).
+    output_cube = resample_spatial(
+        data=input_cube,
+        projection="EPSG:4326",
+        resolution=0.001,
+        method="geocode",
+    )
+
+    dx = np.diff(output_cube["x"].values)
+    dy = np.diff(output_cube["y"].values)
+
+    assert output_cube.odc.spatial_dims == ("y", "x")
+    assert output_cube["x"].ndim == 1
+    assert output_cube["y"].ndim == 1
+    assert np.all(dx != 0)
+    assert np.all(dy != 0)
+    assert np.all(dx > 0) or np.all(dx < 0)
+    assert np.all(dy > 0) or np.all(dy < 0)
