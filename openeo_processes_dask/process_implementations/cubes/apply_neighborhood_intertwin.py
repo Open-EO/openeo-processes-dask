@@ -16,6 +16,9 @@ def apply_neighborhood_intertwin(
     overlap: Optional[dict[int]] = None,
     context: Optional[dict] = None,
 ) -> RasterCube:
+    for dim, dim_size in zip(data.dims, data.shape):
+        if dim_size == 0:
+            raise ValueError(f"Data has a zero-size dimension: {dim}")
     positional_parameters = {"data": 0}
     named_parameters = {"context": context}
 

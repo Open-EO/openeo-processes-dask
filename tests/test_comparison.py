@@ -185,7 +185,7 @@ def test_eq_mask():
     data = np.array([[10, 10], [10, 0]])
     data = da.from_array(data)
     m = eq(data, 10)
-    assert (m == data / 10).all()
+    assert (m == data / 10).all().compute()  # add .compute()
 
 
 @pytest.mark.parametrize(

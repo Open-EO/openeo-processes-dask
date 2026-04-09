@@ -196,12 +196,9 @@ def resample_cube_temporal(data, target, dimension=None, valid_within=None):
     for d in target[dimension].values:
         difference = np.abs(d - data[dimension].values)
         nearest = np.argwhere(difference == np.min(difference))
-        # The rare case of ties is resolved by choosing the earlier timestamps. (index 0)
-        if np.shape(nearest) == (2, 1):
-            nearest = nearest[0]
-        if np.shape(nearest) == (1, 2):
-            nearest = nearest[:, 0]
-        index.append(int(nearest))
+        # Flatten to handle all shapes consistently
+        nearest = nearest.flatten()
+        index.append(int(nearest[0]))  # always take first (earliest timestamp)
     times_at_target_time = data[dimension].values[index]
     new_data = data.loc[{dimension: times_at_target_time}]
     filter_values = new_data[dimension].values

@@ -28,7 +28,12 @@ def fit_regr_random_forest(
     target_var: str = None,
     **kwargs,
 ) -> Booster:
-    import xgboost as xgb
+    try:
+        from xgboost import dask as dxgb
+    except ImportError as e:
+        raise ImportError(
+            "xgboost[dask] is required for fit_regr_random_forest."
+        ) from e
 
     def load_geometries(geometries):
         if isinstance(geometries, str):
@@ -114,8 +119,8 @@ def fit_regr_random_forest(
     y = drop_col(target, target_var)
 
     client = dask.distributed.default_client()
-    dtrain = xgb.dask.DaskDMatrix(client, X, y)
-    output = xgb.dask.train(client, params, dtrain, num_boost_round=1)
+    dtrain = dxgb.DaskDMatrix(client, X, y)
+    output = dxgb.train(client, params, dtrain, num_boost_round=1)
 
     return output["booster"]
 
@@ -126,7 +131,12 @@ def predict_random_forest(
     axis: int = -1,
     context: dict = None,
 ) -> RasterCube:
-    import xgboost as xgb
+    try:
+        from xgboost import dask as dxgb
+    except ImportError as e:
+        raise ImportError(
+            "xgboost[dask] is required for predict_random_forest."
+        ) from e
 
     if not model:
         if isinstance(context, dict) and "model" in context:
@@ -142,7 +152,7 @@ def predict_random_forest(
 
     # Run prediction
     client = dask.distributed.default_client()
-    preds_flat = xgb.dask.inplace_predict(client, model, X)
+    preds_flat = dxgb.inplace_predict(client, model, X)
 
     output_shape = list(data.shape)
     output_shape[axis] = 1
