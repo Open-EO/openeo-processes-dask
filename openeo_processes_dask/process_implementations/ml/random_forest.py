@@ -134,9 +134,7 @@ def predict_random_forest(
     try:
         from xgboost import dask as dxgb
     except ImportError as e:
-        raise ImportError(
-            "xgboost[dask] is required for predict_random_forest."
-        ) from e
+        raise ImportError("xgboost[dask] is required for predict_random_forest.") from e
 
     if not model:
         if isinstance(context, dict) and "model" in context:

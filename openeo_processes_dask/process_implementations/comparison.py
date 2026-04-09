@@ -77,9 +77,9 @@ def eq(
         ar_eq = x == y
     else:
         # Types are incompatible, return False (but preserve array shape)
-        if hasattr(x, 'shape'):
+        if hasattr(x, "shape"):
             return np.zeros_like(x, dtype=bool)
-        elif hasattr(y, 'shape'):
+        elif hasattr(y, "shape"):
             return np.zeros_like(y, dtype=bool)
         return False
 
