@@ -15,6 +15,7 @@ on:
 
 env:
   POETRY_VERSION: 2.3.3
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # fixes the Node.js 20 warning
 
 jobs:
   tests:

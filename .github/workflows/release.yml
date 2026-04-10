@@ -7,6 +7,7 @@ on:
 
 env:
   POETRY_VERSION: 2.3.3
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   release:
@@ -31,11 +32,17 @@ jobs:
           channel-priority: strict
           environment-file: .github/ci-environment.yml
           use-mamba: true
+          conda-remove-defaults: true
 
       - name: Install GDAL via conda-forge
         run: |
           mamba install -y gdal
           conda clean --all -f -y
+
+      - name: Verify GDAL
+        run: |
+          gdalinfo --version
+          python -c "from osgeo import gdal; print('GDAL Python:', gdal.__version__)"
 
       - name: Install Poetry
         run: |
