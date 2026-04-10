@@ -36,7 +36,7 @@ jobs:
         with:
           submodules: recursive
 
-      # --- Conda env with GDAL from conda-forge (cached) ---
+      # --- Conda env with GDAL from conda-forge ---
       - name: Set up Miniforge + Python ${{ matrix.python-version }}
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -48,35 +48,30 @@ jobs:
           environment-file: .github/ci-environment.yml
           use-mamba: true
 
-      # Cache the conda env + package cache
-      - name: Cache conda environment
+      # Cache downloaded conda tarballs (NOT the resolved environment)
+      - name: Cache conda package downloads
         uses: actions/cache@v5
-        id: conda-cache
         with:
-          path: |
-            ~/conda_pkgs_dir
-            ${{ env.CONDA }}/envs/ci
-          key: conda-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('.github/ci-environment.yml') }}
+          path: ~/conda_pkgs_dir
+          key: conda-pkgs-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('.github/ci-environment.yml') }}
           restore-keys: |
-            conda-${{ runner.os }}-py${{ matrix.python-version }}-
+            conda-pkgs-${{ runner.os }}-py${{ matrix.python-version }}-
 
-      # Point mamba/conda downloads at the cached pkg dir
       - name: Configure conda pkg cache directory
         run: conda config --add pkgs_dirs ~/conda_pkgs_dir
 
-      # Only run install if cache missed
+      # Always do a full solve + install — never skip, so dependency breakage is caught
       - name: Install GDAL via conda-forge
-        if: steps.conda-cache.outputs.cache-hit != 'true'
         run: |
           mamba install -y gdal
-          conda clean --all -f -y   # shrink cache size
+          conda clean --all -f -y
 
       - name: Verify GDAL
         run: |
           gdalinfo --version
           python -c "from osgeo import gdal; print('GDAL Python:', gdal.__version__)"
 
-      # --- Poetry (cached separately) ---
+      # --- Poetry ---
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 - -y --version $POETRY_VERSION
@@ -85,16 +80,12 @@ jobs:
       - name: Configure Poetry to use conda env
         run: poetry config virtualenvs.create false
 
-      - name: Get Poetry lock hash
-        id: poetry-lock
-        run: echo "hash=${{ hashFiles('**/poetry.lock') }}" >> $GITHUB_OUTPUT
-
-      - name: Cache Poetry/pip packages
+      # Cache downloaded pip wheels (NOT installed packages)
+      - name: Cache pip downloads
         uses: actions/cache@v5
-        id: pip-cache
         with:
           path: ~/.cache/pip
-          key: pip-${{ runner.os }}-py${{ matrix.python-version }}-${{ steps.poetry-lock.outputs.hash }}
+          key: pip-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             pip-${{ runner.os }}-py${{ matrix.python-version }}-
 
