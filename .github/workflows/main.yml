@@ -30,64 +30,82 @@ jobs:
       fail-fast: false
     defaults:
       run:
-        shell: bash
+        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v5
         with:
           submodules: recursive
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+      # --- Conda env with GDAL from conda-forge (cached) ---
+      - name: Set up Miniforge + Python ${{ matrix.python-version }}
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          miniforge-version: latest
           python-version: ${{ matrix.python-version }}
+          activate-environment: ci
+          channels: conda-forge
+          channel-priority: strict
+          environment-file: ci-environment.yml
+          use-mamba: true
 
-      - name: Install system GDAL 3.11.3 (UbuntuGIS)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable -y
-          sudo apt-get update
-          sudo apt-get install -y libgdal-dev gdal-bin
-          gdalinfo --version
-          apt-cache policy libgdal-dev | sed -n '1,20p'
-
-      - name: Get full Python version
-        id: full-python-version
-        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
-
-      - name: Bootstrap poetry
-        run: curl -sSL https://install.python-poetry.org | python3 - -y --version $POETRY_VERSION
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
-
-      - name: Set up cache
+      # Cache the conda env + package cache
+      - name: Cache conda environment
         uses: actions/cache@v5
-        id: cache
+        id: conda-cache
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+          path: |
+            ~/conda_pkgs_dir
+            ${{ env.CONDA }}/envs/ci
+          key: conda-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('ci-environment.yml') }}
+          restore-keys: |
+            conda-${{ runner.os }}-py${{ matrix.python-version }}-
 
-      - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+      # Point mamba/conda downloads at the cached pkg dir
+      - name: Configure conda pkg cache directory
+        run: conda config --add pkgs_dirs ~/conda_pkgs_dir
+
+      # Only run install if cache missed
+      - name: Install GDAL via conda-forge
+        if: steps.conda-cache.outputs.cache-hit != 'true'
         run: |
-          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
-          timeout 10s poetry run pip --version || rm -rf .venv
+          mamba install -y gdal
+          conda clean --all -f -y   # shrink cache size
+
+      - name: Verify GDAL
+        run: |
+          gdalinfo --version
+          python -c "from osgeo import gdal; print('GDAL Python:', gdal.__version__)"
+
+      # --- Poetry (cached separately) ---
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - -y --version $POETRY_VERSION
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry to use conda env
+        run: poetry config virtualenvs.create false
+
+      - name: Get Poetry lock hash
+        id: poetry-lock
+        run: echo "hash=${{ hashFiles('**/poetry.lock') }}" >> $GITHUB_OUTPUT
+
+      - name: Cache Poetry/pip packages
+        uses: actions/cache@v5
+        id: pip-cache
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-py${{ matrix.python-version }}-${{ steps.poetry-lock.outputs.hash }}
+          restore-keys: |
+            pip-${{ runner.os }}-py${{ matrix.python-version }}-
 
       - name: Install dependencies
-        run: |
-          ver="$(gdal-config --version)"
-          poetry add "gdal==${ver}"
-          poetry install --with dev --all-extras
+        run: poetry install --with dev --all-extras
 
       - name: Pre-commit hooks
-        run: poetry run pre-commit run --all-files
+        run: pre-commit run --all-files
 
       - name: Run pytest
-        run: poetry run pytest --cov=openeo_processes_dask --cov-report=xml
+        run: pytest --cov=openeo_processes_dask --cov-report=xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v6

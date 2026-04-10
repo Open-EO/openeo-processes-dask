@@ -5,7 +5,7 @@ default_language_version:
 
 repos:
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
+    rev: v3.21.2 # upgrading to 3.21.2 from 3.10.1 to accomodate py3.14 in test_matrix
     hooks:
       - id: pyupgrade
         args:
