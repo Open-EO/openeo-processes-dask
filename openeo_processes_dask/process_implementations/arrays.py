@@ -440,17 +440,20 @@ def array_interpolate_linear(data: ArrayLike, axis=None, dim_labels=None):
             x = np.arange(len(data))
 
     def interp(data):
-        if isinstance(data, da.Array):
-            data = data.compute()
+        # Always work on a concrete numpy array. This function is called:
+        # - directly (numpy/list input)
+        # - via np.apply_along_axis (axis path, already computed)
+        # - via da.map_blocks (1D dask path, one chunk at a time)
+        data = np.asarray(data)
         valid = np.isfinite(data)
-        if (valid == 1).all():
+        if valid.all():
             return data
         if len(x[valid]) < 2:
             return data
+        data = data.copy()  # avoid mutating the caller's array
         data[~valid] = np.interp(
             x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
         )
-
         return data
 
     if axis:
@@ -459,12 +462,15 @@ def array_interpolate_linear(data: ArrayLike, axis=None, dim_labels=None):
                 raise Exception(
                     f"Cannot load data of shape: {data.shape} into memory. "
                 )
-            # currently, there seems to be no way around loading the values,
-            # apply_along_axis cannot handle dask arrays
+            # np.apply_along_axis cannot handle dask arrays
             data = data.compute()
         data = np.apply_along_axis(interp, axis=axis, arr=data)
     else:
-        data = interp(data)
+        if isinstance(data, da.Array):
+            # Preserve laziness: process one chunk at a time
+            data = da.map_blocks(interp, data, dtype=data.dtype)
+        else:
+            data = interp(data)
     if return_label:
         return array_create_labeled(data=data, labels=dim_labels)
     return data
