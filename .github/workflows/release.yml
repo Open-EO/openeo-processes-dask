@@ -12,6 +12,9 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -22,15 +25,12 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
-          python-version: "3.12"
+          python-version: "3.13"
           activate-environment: release
           channels: conda-forge
           channel-priority: strict
           environment-file: .github/ci-environment.yml
           use-mamba: true
-        defaults:
-          run:
-            shell: bash -l {0}
 
       - name: Install GDAL via conda-forge
         run: |
@@ -60,7 +60,3 @@ jobs:
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: poetry publish
-
-    defaults:
-      run:
-        shell: bash -l {0}
