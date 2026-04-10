@@ -45,7 +45,7 @@ jobs:
           activate-environment: ci
           channels: conda-forge
           channel-priority: strict
-          environment-file: ci-environment.yml
+          environment-file: .github/ci-environment.yml
           use-mamba: true
 
       # Cache the conda env + package cache
@@ -56,7 +56,7 @@ jobs:
           path: |
             ~/conda_pkgs_dir
             ${{ env.CONDA }}/envs/ci
-          key: conda-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('ci-environment.yml') }}
+          key: conda-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('.github/ci-environment.yml') }}
           restore-keys: |
             conda-${{ runner.os }}-py${{ matrix.python-version }}-
 
