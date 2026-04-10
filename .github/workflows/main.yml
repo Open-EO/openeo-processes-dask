@@ -48,6 +48,7 @@ jobs:
           channel-priority: strict
           environment-file: .github/ci-environment.yml
           use-mamba: true
+          conda-remove-defaults: true
 
       # Cache downloaded conda tarballs (NOT the resolved environment)
       - name: Cache conda package downloads
