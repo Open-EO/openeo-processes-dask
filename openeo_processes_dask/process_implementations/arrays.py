@@ -292,51 +292,38 @@ def array_find(
     axis: Optional[int] = None,
 ) -> np.number:
     labels, data = get_labels(data, axis)
-    is_dask = isinstance(data, da.Array)
 
     if reverse:
         data = np.flip(data, axis=axis)
 
-    idxs = (data == value).argmax(axis=axis)
+    eq = data == value
+    idxs = eq.argmax(axis=axis)
+    mask = ~np.array(eq.any(axis=axis))
 
-    found_any = (data == value).any(axis=axis)
-    if is_dask:
-        found_any = found_any.astype(bool)
-    else:
-        found_any = np.array(found_any, dtype=bool)
-
-    # openEO tests expect these sentinels for "not found"
-    not_found_value = 99999 if isinstance(value, str) else 999999
-
-    # np.nan never compares equal with ==, so treat it as not found here
+    # Fix: np.isnan crashes on strings, None, lists, etc.
     try:
-        value_is_nan = not isinstance(value, str) and np.isnan(value)
-    except TypeError:
-        value_is_nan = False
-
-    if value_is_nan:
-        found_any = False if axis is None else np.zeros_like(found_any, dtype=bool)
+        if not isinstance(value, str) and np.isnan(value):
+            mask = True
+    except (TypeError, ValueError):
+        pass
 
     if reverse:
-        if axis is None:
-            size = data.size
-        else:
-            size = data.shape[axis]
+        size = data.size if axis is None else data.shape[axis]
         idxs = size - 1 - idxs
 
-    if is_dask:
-        idxs = da.atleast_1d(idxs)
-        found_any = da.atleast_1d(found_any)
-        return da.where(found_any, idxs, not_found_value)
+    if isinstance(idxs, da.Array):
+        idxs = idxs.compute_chunk_sizes()
+        masked_idxs = da.ma.masked_array(idxs, mask=mask)
+        filled_idxs = da.ma.filled(masked_idxs)
+        return da.atleast_1d(filled_idxs)
 
-    idxs = np.atleast_1d(np.array(idxs))
-    found_any = np.atleast_1d(np.array(found_any, dtype=bool))
-    result = np.where(found_any, idxs, not_found_value)
+    masked_idxs = np.ma.masked_array(idxs, mask=mask)
+    filled_idxs = np.ma.filled(masked_idxs)
+    filled_idxs = np.atleast_1d(filled_idxs)
 
-    # keep previous scalar-like behavior for numpy/list callers
-    if axis is None and result.size == 1:
-        return result[0]
-    return result
+    if axis is None and filled_idxs.size == 1:
+        return filled_idxs[0]
+    return filled_idxs
 
 
 def array_find_label(data: ArrayLike, label: Union[str, int, float], dim_labels=None):

@@ -258,7 +258,7 @@ def test_array_contains_object_dtype():
         ([1, 0, 3, 0, 2], 0, 3, None, True),
         ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [999999, 1, 0, 999999], 0, True),
         ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [2, 1], 1, True),
-        (["A", "B", "C"], "b", 99999, None, False),
+        (["A", "B", "C"], "b", 999999, None, False),
     ],
 )
 def test_array_find(data, value, expected, axis, reverse):
