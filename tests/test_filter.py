@@ -29,7 +29,7 @@ def test_filter_temporal(temporal_interval, bounding_box, random_raster_data):
         backend="dask",
     )
 
-    temporal_interval_part = TemporalInterval.parse_obj(
+    temporal_interval_part = TemporalInterval.model_validate(
         ["2018-05-15T00:00:00", "2018-06-01T00:00:00"]
     )
     output_cube = filter_temporal(data=input_cube, extent=temporal_interval_part)
@@ -57,7 +57,9 @@ def test_filter_temporal(temporal_interval, bounding_box, random_raster_data):
             extent=["2018-05-31T23:59:59", "2018-05-15T00:00:00"],
         )
 
-    temporal_interval_open = TemporalInterval.parse_obj([None, "2018-05-03T00:00:00"])
+    temporal_interval_open = TemporalInterval.model_validate(
+        [None, "2018-05-03T00:00:00"]
+    )
     output_cube = filter_temporal(data=input_cube, extent=temporal_interval_open)
 
     xr.testing.assert_equal(
