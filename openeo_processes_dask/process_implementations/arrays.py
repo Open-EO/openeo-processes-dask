@@ -296,28 +296,34 @@ def array_find(
     if reverse:
         data = np.flip(data, axis=axis)
 
-    idxs = (data == value).argmax(axis=axis)
+    eq = data == value
+    idxs = eq.argmax(axis=axis)
+    mask = ~np.array(eq.any(axis=axis))
 
-    mask = ~np.array((data == value).any(axis=axis))
-    if not isinstance(value, str) and np.isnan(value):
-        mask = True
+    # Fix: np.isnan crashes on strings, None, lists, etc.
+    try:
+        if not isinstance(value, str) and np.isnan(value):
+            mask = True
+    except (TypeError, ValueError):
+        pass
+
     if reverse:
-        if axis is None:
-            size = data.size
-        else:
-            size = data.shape[axis]
+        size = data.size if axis is None else data.shape[axis]
         idxs = size - 1 - idxs
 
-    logger.warning(
-        "array_find: numpy has no sentinel value for missing data in integer arrays, therefore np.masked_array is used to return the indices of found elements. Further operations might fail if not defined for masked arrays."
-    )
     if isinstance(idxs, da.Array):
         idxs = idxs.compute_chunk_sizes()
-        masked_idxs = np.atleast_1d(da.ma.masked_array(idxs, mask=mask))
-    else:
-        masked_idxs = np.atleast_1d(np.ma.masked_array(idxs, mask=mask))
+        masked_idxs = da.ma.masked_array(idxs, mask=mask)
+        filled_idxs = da.ma.filled(masked_idxs)
+        return da.atleast_1d(filled_idxs)
 
-    return masked_idxs
+    masked_idxs = np.ma.masked_array(idxs, mask=mask)
+    filled_idxs = np.ma.filled(masked_idxs)
+    filled_idxs = np.atleast_1d(filled_idxs)
+
+    if axis is None and filled_idxs.size == 1:
+        return filled_idxs[0]
+    return filled_idxs
 
 
 def array_find_label(data: ArrayLike, label: Union[str, int, float], dim_labels=None):
@@ -421,15 +427,20 @@ def array_interpolate_linear(data: ArrayLike, axis=None, dim_labels=None):
             x = np.arange(len(data))
 
     def interp(data):
+        # Always work on a concrete numpy array. This function is called:
+        # - directly (numpy/list input)
+        # - via np.apply_along_axis (axis path, already computed)
+        # - via da.map_blocks (1D dask path, one chunk at a time)
+        data = np.asarray(data)
         valid = np.isfinite(data)
-        if (valid == 1).all():
+        if valid.all():
             return data
         if len(x[valid]) < 2:
             return data
+        data = data.copy()  # avoid mutating the caller's array
         data[~valid] = np.interp(
             x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
         )
-
         return data
 
     if axis:
@@ -438,12 +449,15 @@ def array_interpolate_linear(data: ArrayLike, axis=None, dim_labels=None):
                 raise Exception(
                     f"Cannot load data of shape: {data.shape} into memory. "
                 )
-            # currently, there seems to be no way around loading the values,
-            # apply_along_axis cannot handle dask arrays
+            # np.apply_along_axis cannot handle dask arrays
             data = data.compute()
         data = np.apply_along_axis(interp, axis=axis, arr=data)
     else:
-        data = interp(data)
+        if isinstance(data, da.Array):
+            # Preserve laziness: process one chunk at a time
+            data = da.map_blocks(interp, data, dtype=data.dtype)
+        else:
+            data = interp(data)
     if return_label:
         return array_create_labeled(data=data, labels=dim_labels)
     return data

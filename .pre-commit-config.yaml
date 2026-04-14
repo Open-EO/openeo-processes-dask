@@ -1,38 +1,39 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 default_language_version:
-    python: python3
+  python: python3
+
 repos:
--   repo: https://github.com/asottile/pyupgrade
-    rev: v3.10.1
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.21.2 # upgrading to 3.21.2 from 3.10.1 to accomodate py3.14 in test_matrix
     hooks:
       - id: pyupgrade
         args:
           - --keep-runtime-typing
           - --py39-plus
 
--   repo: https://github.com/python-poetry/poetry
+  - repo: https://github.com/python-poetry/poetry
     rev: 1.5.1
     hooks:
       - id: poetry-check
 
--   repo: https://github.com/pycqa/isort
+  - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
         name: isort (python)
         args: ["--profile", "black"]
 
--   repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
 
--   repo: https://github.com/psf/black
+  - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:
-    -   id: black
+      - id: black
         exclude: ^specs/openeo-processes/
