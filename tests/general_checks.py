@@ -22,7 +22,7 @@ def general_output_checks(
     assert output_cube.openeo is not None
 
     if verify_crs:
-        assert input_cube.rio.crs == output_cube.rio.crs
+        assert input_cube.odc.crs == output_cube.odc.crs
 
     if verify_attrs:
         assert input_cube.attrs == output_cube.attrs

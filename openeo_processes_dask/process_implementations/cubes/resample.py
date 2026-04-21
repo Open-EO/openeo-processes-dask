@@ -3,7 +3,6 @@ from typing import Optional, Union
 
 import numpy as np
 import odc.geo.xr
-import rioxarray  # needs to be imported to set .rio accessor on xarray objects.
 import xarray as xr
 from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
@@ -82,7 +81,7 @@ def resample_spatial(
     data_cp = data.transpose(..., data.openeo.y_dim, data.openeo.x_dim)
 
     if projection is None:
-        projection = data_cp.rio.crs
+        projection = data_cp.odc.crs
 
     try:
         projection = CRS.from_user_input(projection)
@@ -106,7 +105,7 @@ def resample_spatial(
 
     reprojected = reprojected.transpose(*dim_order)
 
-    reprojected.attrs["crs"] = data_cp.rio.crs
+    reprojected.attrs["crs"] = data_cp.odc.crs
 
     return reprojected
 
@@ -158,7 +157,7 @@ def resample_cube_spatial(
         target_reordered.odc.geobox, resampling=method
     )
 
-    resampled_data.rio.write_crs(target_reordered.rio.crs, inplace=True)
+    resampled_data = odc.geo.xr.assign_crs(resampled_data, crs=target_reordered.odc.crs)
 
     try:
         # odc.reproject renames the coordinates according to the geobox, this undoes that.

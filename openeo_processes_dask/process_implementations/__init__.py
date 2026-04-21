@@ -23,6 +23,4 @@ try:
 except ImportError as e:
     logger.warning("Did not load experimental processes.")
 
-import rioxarray as rio  # Required for the .rio accessor on xarrays.
-
 import openeo_processes_dask.process_implementations.cubes._xr_interop

@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 
 import numpy as np
+import odc.geo.xr
 import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike
@@ -89,7 +90,7 @@ def fit_curve(
     )
 
     fit_result.attrs = data.attrs
-    fit_result = fit_result.rio.write_crs(rechunked_data.rio.crs)
+    fit_result = odc.geo.xr.assign_crs(fit_result, crs=rechunked_data.odc.crs)
     if bands_required and not "bands" in fit_result.dims:
         fit_result = fit_result.assign_coords(**{"bands": bands_required})
         fit_result = fit_result.expand_dims(dim="bands")

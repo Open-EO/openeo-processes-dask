@@ -79,13 +79,13 @@ def test_resample_spatial(
     )
 
     assert output_cube.odc.spatial_dims == ("y", "x")
-    assert output_cube.rio.crs == CRS.from_user_input(output_crs)
+    assert output_cube.odc.crs == CRS.from_user_input(output_crs)
 
     if output_crs != "4326":
         assert resolution_from_affine(output_cube.odc.geobox.affine).x == output_res
         assert resolution_from_affine(output_cube.odc.geobox.affine).y == -output_res
 
-    if output_cube.rio.crs.is_geographic:
+    if output_cube.odc.crs.geographic:
         assert min(output_cube.x) >= -180
         assert max(output_cube.x) <= 180
 

@@ -1,4 +1,4 @@
-# OpenEO Processes Dask
+# OpenEO Processes Dask Slim
 
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 ![PyPI - Status](https://img.shields.io/pypi/status/openeo-processes-dask)
@@ -10,56 +10,18 @@
 
 ## Installation
 
-### Recommended installation (with system GDAL)
-
-If you already have GDAL installed on your system (or in a conda/micromamba env), always install the matching Python bindings first, then this package:
-
-#### Installation
-
 Install this project via pip:
 
 ```bash
-pip install "gdal==$(gdal-config --version)" openeo-processes-dask
+pip install openeo-processes-dask
 ```
 
 Note that by default this only installs the JSON process specs.
 In order to install the actual implementations, add the `implementations` extra:
 
-
 ```bash
-pip install "gdal==$(gdal-config --version)" openeo-processes-dask[implementations]
-````
-
-This ensures that the Python bindings link against your system GDAL libraries and avoids pip pulling a mismatched GDAL wheel.
-
----
-
-### Installing GDAL if you don’t have it yet
-
-**System packages (Ubuntu/Debian):**
-
-```bash
-sudo apt-get install gdal-bin libgdal-dev python3-gdal
-pip install "gdal==$(gdal-config --version)" openeo-processes-dask[implementations]
-```
-
-**Conda (recommended for most users):**
-
-```bash
-conda create -n openeo_processes_dask -c conda-forge python=3.12 gdal
-conda activate openeo_processes_dask
 pip install openeo-processes-dask[implementations]
 ```
-
-**Micromamba (lightweight alternative to conda):**
-
-```bash
-micromamba create -n openeo_processes_dask -c conda-forge python=3.12 gdal
-micromamba activate openeo_processes_dask
-pip install openeo-processes-dask[implementations]
-```
-
----
 
 ### Extra build variants
 
@@ -76,10 +38,6 @@ A subset of process implementations with heavy or unstable dependencies are hidd
   pip install openeo-processes-dask[experimental]
   ```
 
-⚠️ **Note on GDAL:**
-Some extras (e.g. `implementations`, `ml`, `experimental`) may trigger installation of packages that depend on GDAL.
-To avoid version conflicts, make sure you have installed GDAL first (via conda/micromamba or system packages) and then install the extras as shown above.
-
 ---
 
 ## Development environment
@@ -95,16 +53,6 @@ git clone --recurse-submodules git@github.com:Open-EO/openeo-processes-dask.git
 To setup the python venv and install this project into it run:
 
 ```bash
-poetry install --all-extras
-```
-
-⚠️ **Note on GDAL for development:**
-When using `poetry install --all-extras`, Poetry will attempt to install GDAL via pip, which may pull the latest GDAL wheels and cause conflicts with system libraries.
-It is strongly recommended to create a conda/micromamba environment with GDAL preinstalled before running `poetry install`. For example:
-
-```bash
-conda create -n openeo_processes_dask_dev -c conda-forge python=3.12 gdal
-conda activate openeo_processes_dask_dev
 poetry install --all-extras
 ```
 

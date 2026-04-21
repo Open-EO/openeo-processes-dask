@@ -393,8 +393,9 @@ def load_stac(
         stack = xr.combine_by_coords(
             datasets, join="exact", combine_attrs="drop_conflicts"
         )
-        if not stack.rio.crs:
-            stack.rio.write_crs(reference_system, inplace=True)
+        if not stack.odc.crs:
+            import odc.geo.xr
+            stack = odc.geo.xr.assign_crs(stack, crs=reference_system)
         stack = stack.to_dataarray(dim="bands")
     else:
         # If at least one band has the nodata field set, we have to apply it at loading time

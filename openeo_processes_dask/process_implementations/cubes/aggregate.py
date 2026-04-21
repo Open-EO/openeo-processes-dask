@@ -7,7 +7,6 @@ import dask.array as da
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import rasterio
 import shapely
 import xarray as xr
 import xvec
@@ -305,7 +304,7 @@ def aggregate_spatial(
     if isinstance(geometries, gpd.GeoDataFrame):
         gdf = geometries
 
-    gdf = gdf.to_crs(data.rio.crs)
+    gdf = gdf.to_crs(data.odc.crs)
 
     # Convert to list of geometries for better xvec handling
     geometries_list = list(gdf.geometry.values)
