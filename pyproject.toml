@@ -46,8 +46,6 @@ openeo = ">=0.36.0"
 numpy = { version = "<2.0.0", optional = false }
 pystac = { version = "<1.12.0", optional = false }
 zarr = "<=2.18.7"
-xcube-eopf = ">=0.2.0"
-
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
