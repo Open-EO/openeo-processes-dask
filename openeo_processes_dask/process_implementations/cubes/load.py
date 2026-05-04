@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import time
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import PurePosixPath
@@ -12,9 +13,13 @@ import odc.stac
 import planetary_computer as pc
 import pyproj
 import pystac_client
+import requests
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
+from pystac_client.stac_api_io import StacApiIO
+from requests.adapters import HTTPAdapter
 from stac_validator import stac_validator
+from urllib3.util.retry import Retry
 
 from openeo_processes_dask.process_implementations.cubes._filter import (
     _reproject_bbox,
@@ -38,6 +43,30 @@ from openeo_processes_dask.process_implementations.exceptions import (
 __all__ = ["load_stac"]
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_RASTER_MEDIA_TYPES = {
+    "image/tiff",
+    "image/tif",
+    "image/vnd.stac.geotiff",
+    "image/geotiff",
+    "image/jp2",
+    "image/png",
+    "image/jpeg",
+    "application/x-hdf",
+    "application/x-hdf5",
+    "application/x-netcdf",
+    "application/netcdf",
+    "application/vnd+zarr",
+}
+
+BAND_ASSET_ROLES = {
+    "data",
+    "data-mask",
+    "snow-ice",
+    "land-water",
+    "water-mask",
+    "visual",
+}
 
 
 def _validate_stac_and_get_type(url):
@@ -194,6 +223,110 @@ def _spatial_extent_to_bbox(spatial_extent):
         raise Exception(f"Unable to parse the provided spatial extent: {e}")
 
 
+def _is_supported_raster_media_type(media_type: str) -> bool:
+    """Check if media type is a supported raster format."""
+    if not media_type:
+        return True  # Unknown media type - assume supported
+
+    media_type_lower = media_type.lower()
+    return any(
+        media_type_lower.startswith(supported)
+        for supported in SUPPORTED_RASTER_MEDIA_TYPES
+    )
+
+
+def _is_band_asset(asset) -> bool:
+    """
+    Check if asset contains band/raster data that should be loaded.
+    Returns False for metadata, thumbnails, documentation, etc.
+    """
+    if asset.media_type and not _is_supported_raster_media_type(asset.media_type):
+        logger.debug(
+            f"Skipping asset '{getattr(asset, 'title', 'unknown')}' with unsupported media type: {asset.media_type}"
+        )
+        return False
+
+    if asset.roles:
+        if not asset.roles:
+            logger.warning(f"Asset has empty roles list: {asset.href}")
+        elif BAND_ASSET_ROLES.intersection(asset.roles):
+            return True
+        else:
+            logger.debug(
+                f"Skipping asset '{getattr(asset, 'title', 'unknown')}' without band role. Roles: {asset.roles}"
+            )
+            return False
+
+    has_band_metadata = (
+        "eo:bands" in asset.extra_fields
+        or "bands" in asset.extra_fields
+        or "raster:bands" in asset.extra_fields
+    )
+
+    if not has_band_metadata:
+        logger.debug(
+            f"Asset '{getattr(asset, 'title', 'unknown')}' has no band metadata or recognized roles, skipping"
+        )
+
+    return has_band_metadata
+
+
+def _get_band_assets_from_items(items, requested_bands=None):
+    """
+    Filter items to get only assets that contain band/raster data.
+
+    Args:
+        items: List of STAC items
+        requested_bands: Optional list of band names to filter by
+
+    Returns:
+        Dict mapping asset_key to asset for all band assets
+    """
+    band_assets = {}
+    skipped_count = 0
+
+    for item in items:
+        for asset_key, asset in item.assets.items():
+            if not _is_band_asset(asset):
+                skipped_count += 1
+                continue
+
+            if requested_bands:
+                asset_bands = _get_asset_band_names(asset)
+                if not set(asset_bands).intersection(requested_bands):
+                    logger.debug(
+                        f"Skipping asset '{asset_key}' - doesn't contain requested bands"
+                    )
+                    continue
+
+            band_assets[asset_key] = asset
+
+    logger.info(
+        f"Asset validation: {len(band_assets)} band assets found, {skipped_count} non-band assets skipped"
+    )
+    return band_assets
+
+
+def _get_asset_band_names(asset) -> list[str]:
+    """Extract band names from asset metadata."""
+    if "eo:bands" in asset.extra_fields:
+        return [
+            b.get("name", b.get("common_name", ""))
+            for b in asset.extra_fields["eo:bands"]
+            if b.get("name") or b.get("common_name")
+        ]
+
+    if "bands" in asset.extra_fields:
+        return [b.get("name", "") for b in asset.extra_fields["bands"] if b.get("name")]
+
+    if "raster:bands" in asset.extra_fields:
+        raster_bands = asset.extra_fields["raster:bands"]
+        if isinstance(raster_bands, list) and raster_bands:
+            return []
+
+    return []
+
+
 def _temporal_extent_to_range(temporal_extent):
     """Convert temporal extent to time range strings."""
     if temporal_extent is None:
@@ -213,26 +346,36 @@ def _temporal_extent_to_range(temporal_extent):
     return [start_date, end_date]
 
 
-def _extract_asset_metadata(items):
+def _extract_asset_metadata(items, requested_bands=None):
     """Extract scale, offset, and other metadata from STAC assets."""
     if not items:
         return {}, False, False, False
 
-    available_assets = {tuple(i.assets.keys()) for i in items}
-    if len(available_assets) > 1:
-        raise OpenEOException(
-            f"The resulting STAC Items contain two separate set of assets: {available_assets}. We can't load them at the same time."
-        )
+    band_assets_dict = _get_band_assets_from_items(items, requested_bands)
 
-    available_assets = [x for t in available_assets for x in t]
+    if not band_assets_dict:
+        logger.warning("No valid band assets found in items after validation")
+        return {}, False, False, False
+
+    available_assets = set(band_assets_dict.keys())
+
+    all_item_assets = [set(item.assets.keys()) for item in items]
+    if len(set(tuple(sorted(s)) for s in all_item_assets)) > 1:
+        logger.warning(
+            f"Items contain different asset sets. Using intersection of available band assets."
+        )
 
     asset_scale_offset = {}
     zarr_assets = False
     use_xarray_open_kwargs = False
     use_xarray_storage_options = False
 
-    for asset in available_assets:
-        asset_dict = items[0].assets[asset].to_dict()
+    for asset_key in available_assets:
+        asset = items[0].assets.get(asset_key)
+        if not asset:
+            continue
+
+        asset_dict = asset.to_dict()
         asset_scale = 1
         asset_offset = 0
         asset_nodata = None
@@ -255,7 +398,7 @@ def _extract_asset_metadata(items):
         if "xarray:storage_options" in asset_dict:
             use_xarray_storage_options = True
 
-        asset_scale_offset[asset] = {
+        asset_scale_offset[asset_key] = {
             "scale": asset_scale,
             "offset": asset_offset,
             "nodata": asset_nodata,
@@ -460,9 +603,48 @@ def _process_stac_collection(
     url, spatial_extent, temporal_extent, bands, properties, catalog_url, collection_id
 ):
     """Process STAC collection with filters."""
-    # Check if we are connecting to Microsoft Planetary Computer
+
+    retry_strategy = Retry(
+        total=7,
+        backoff_factor=2,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=[
+            "HEAD",
+            "GET",
+            "POST",
+            "OPTIONS",
+        ],
+    )
+
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+
+    session = requests.Session()
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+
+    class RetryStacIO(StacApiIO):
+        def __init__(self, session, timeout=60):
+            super().__init__()
+            self.session = session
+            self.timeout = timeout
+
+        def read_text(self, source, *args, **kwargs):
+            """Read text with retry logic"""
+            response = self.session.get(source, timeout=self.timeout)
+            response.raise_for_status()
+            return response.text
+
+        def write_text(self, dest, txt, *args, **kwargs):
+            """Write text with retry logic"""
+            response = self.session.put(dest, data=txt, timeout=self.timeout)
+            response.raise_for_status()
+
+    stac_io = RetryStacIO(session, timeout=60)
+
     modifier = pc.sign_inplace if "planetarycomputer" in catalog_url else None
-    catalog = pystac_client.Client.open(catalog_url, modifier=modifier)
+
+    catalog = pystac_client.Client.open(catalog_url, modifier=modifier, stac_io=stac_io)
+
     query_params = {"collections": [collection_id]}
 
     if spatial_extent is not None:
@@ -497,7 +679,15 @@ def _process_stac_collection(
     if properties is not None:
         query_params["query"] = properties
 
-    items = catalog.search(**query_params).item_collection()
+    # This search call will now automatically retry on failures
+    logger.info(f"Searching STAC API: {catalog_url} with params: {query_params}")
+    try:
+        items = catalog.search(**query_params).item_collection()
+        logger.info(f"Found {len(items)} items from STAC API")
+    except Exception as e:
+        logger.error(f"STAC API search failed after retries: {e}")
+        raise
+
     return items
 
 
@@ -766,7 +956,7 @@ def load_stac(
         zarr_assets,
         use_xarray_open_kwargs,
         use_xarray_storage_options,
-    ) = _extract_asset_metadata(items)
+    ) = _extract_asset_metadata(items, requested_bands=bands)
 
     # Get item dictionary for additional metadata
     item_dict = items[0].to_dict() if items else {}
