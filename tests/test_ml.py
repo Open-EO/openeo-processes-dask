@@ -1,3 +1,4 @@
+import builtins
 from functools import partial
 
 import dask
@@ -15,6 +16,7 @@ from openeo_processes_dask.process_implementations.ml import (
     fit_curve,
     fit_regr_random_forest,
     predict_curve,
+    random_forest,
 )
 from tests.mockdata import create_fake_rastercube
 
@@ -47,6 +49,40 @@ def test_fit_regr_random_forest_inline_geojson(
     )
 
     assert isinstance(model, xgb.core.Booster)
+
+
+@pytest.mark.parametrize(
+    "func, args, message",
+    [
+        (
+            random_forest.fit_regr_random_forest,
+            (None, None),
+            "xgboost[dask] is required for fit_regr_random_forest.",
+        ),
+        (
+            random_forest.predict_random_forest,
+            (None, None),
+            "xgboost[dask] is required for predict_random_forest.",
+        ),
+    ],
+)
+def test_random_forest_missing_xgboost_dask_suppresses_import_context(
+    monkeypatch, func, args, message
+):
+    real_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "xgboost" and "dask" in fromlist:
+            raise ImportError("missing xgboost.dask")
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    with pytest.raises(ImportError) as exc:
+        func(*args)
+
+    assert str(exc.value) == message
+    assert exc.value.__suppress_context__ is True
 
 
 @pytest.mark.parametrize("size", [(6, 5, 4, 3)])

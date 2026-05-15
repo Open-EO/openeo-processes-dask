@@ -15,7 +15,6 @@ on:
 
 env:
   POETRY_VERSION: 2.3.3
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # fixes the Node.js 20 warning
 
 jobs:
   tests:
@@ -33,13 +32,13 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
 
       # --- Conda env with GDAL from conda-forge ---
       - name: Set up Miniforge + Python ${{ matrix.python-version }}
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           miniforge-version: latest
           python-version: ${{ matrix.python-version }}
