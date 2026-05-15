@@ -300,9 +300,10 @@ def array_find(
     idxs = eq.argmax(axis=axis)
     mask = ~np.array(eq.any(axis=axis))
 
-    # Fix: np.isnan crashes on strings, None, lists, etc.
+    # np.isnan is only defined for numeric-like values; non-numeric search
+    # values are not NaN and should keep the normal not-found mask.
     try:
-        if not isinstance(value, str) and np.isnan(value):
+        if bool(np.isnan(value)):
             mask = True
     except (TypeError, ValueError):
         pass
@@ -427,17 +428,12 @@ def array_interpolate_linear(data: ArrayLike, axis=None, dim_labels=None):
             x = np.arange(len(data))
 
     def interp(data):
-        # Always work on a concrete numpy array. This function is called:
-        # - directly (numpy/list input)
-        # - via np.apply_along_axis (axis path, already computed)
-        # - via da.map_blocks (1D dask path, one chunk at a time)
         data = np.asarray(data)
         valid = np.isfinite(data)
         if valid.all():
             return data
         if len(x[valid]) < 2:
             return data
-        data = data.copy()  # avoid mutating the caller's array
         data[~valid] = np.interp(
             x[~valid], x[valid], data[valid], left=np.nan, right=np.nan
         )
@@ -454,7 +450,9 @@ def array_interpolate_linear(data: ArrayLike, axis=None, dim_labels=None):
         data = np.apply_along_axis(interp, axis=axis, arr=data)
     else:
         if isinstance(data, da.Array):
-            # Preserve laziness: process one chunk at a time
+            # Interpolation needs the full 1D context. Rechunk to a single block
+            # to preserve the eager implementation's result while staying lazy.
+            data = data.rechunk(data.shape)
             data = da.map_blocks(interp, data, dtype=data.dtype)
         else:
             data = interp(data)

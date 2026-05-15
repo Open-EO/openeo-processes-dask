@@ -340,6 +340,15 @@ def test_array_interpolate_linear(data, expected):
     )
 
 
+def test_array_interpolate_linear_dask_multichunk_uses_global_context():
+    data = da.from_array(np.array([0.0, np.nan, np.nan, 3.0]), chunks=(2,))
+
+    result = array_interpolate_linear(data)
+
+    assert isinstance(result, da.Array)
+    np.testing.assert_allclose(result.compute(), [0.0, 1.0, 2.0, 3.0])
+
+
 @pytest.mark.parametrize(
     "data, expected, labels",
     [

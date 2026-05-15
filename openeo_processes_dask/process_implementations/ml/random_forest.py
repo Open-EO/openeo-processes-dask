@@ -30,10 +30,10 @@ def fit_regr_random_forest(
 ) -> Booster:
     try:
         from xgboost import dask as dxgb
-    except ImportError as e:
+    except ImportError:
         raise ImportError(
             "xgboost[dask] is required for fit_regr_random_forest."
-        ) from e
+        ) from None
 
     def load_geometries(geometries):
         if isinstance(geometries, str):
@@ -133,8 +133,10 @@ def predict_random_forest(
 ) -> RasterCube:
     try:
         from xgboost import dask as dxgb
-    except ImportError as e:
-        raise ImportError("xgboost[dask] is required for predict_random_forest.") from e
+    except ImportError:
+        raise ImportError(
+            "xgboost[dask] is required for predict_random_forest."
+        ) from None
 
     if not model:
         if isinstance(context, dict) and "model" in context:
