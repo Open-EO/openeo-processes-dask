@@ -65,10 +65,17 @@ def apply_dimension(
     positional_parameters = {"data": 0}
     named_parameters = {"context": context}
 
+    # Store original dimension names to preserve semantic dimensions (fixes Issue #330)
+    original_dims = list(data.dims)
+    original_coords = {dim: data.coords[dim] for dim in data.dims if dim in data.coords}
+
     # This transpose (and back later) is needed because apply_ufunc automatically moves
     # input_core_dimensions to the last axes
     reordered_data = data.transpose(..., dimension)
 
+    # ISSUE #330 FIX: Keep exclude_dims for functionality but restore semantic names after
+    # The exclude_dims parameter is needed for dimension changes, but causes generic names
+    # We'll restore semantic dimension names after apply_ufunc returns
     result = xr.apply_ufunc(
         process,
         reordered_data,
@@ -83,10 +90,50 @@ def apply_dimension(
             "source_transposed_axis": data.get_axis_num(dimension),
             "context": context,
         },
-        exclude_dims={dimension},
+        exclude_dims={
+            dimension
+        },  # Needed for dimension changes, but we fix names below
     )
 
-    reordered_result = result.transpose(*data.dims, ...)
+    # ISSUE #330 FIX: Restore semantic dimension names that were converted to generic names
+    # xarray's exclude_dims causes dimension names like 'time', 'x', 'y' to become 'dim_0', 'dim_1', 'dim_2'
+    # We restore the original semantic names here
+    if any(dim.startswith("dim_") for dim in result.dims):
+        # Build mapping from generic to semantic dimension names
+        dim_mapping = {}
+        generic_dims = [d for d in result.dims if d.startswith("dim_")]
+
+        # Map each generic dimension back to its semantic name
+        for generic_dim in generic_dims:
+            # Extract the dimension index from 'dim_0', 'dim_1', etc.
+            dim_idx = int(generic_dim.split("_")[1])
+            if dim_idx < len(original_dims):
+                semantic_name = original_dims[dim_idx]
+                # Only map if the semantic name isn't already in use
+                if semantic_name not in result.dims or semantic_name == generic_dim:
+                    dim_mapping[generic_dim] = semantic_name
+
+        if dim_mapping:
+            result = result.rename(dim_mapping)
+
+            # Restore original coordinates for renamed dimensions
+            for generic_dim, semantic_dim in dim_mapping.items():
+                if semantic_dim in original_coords and semantic_dim in result.dims:
+                    if semantic_dim not in result.coords or len(
+                        result.coords[semantic_dim]
+                    ) != len(original_coords[semantic_dim]):
+                        try:
+                            result = result.assign_coords(
+                                {semantic_dim: original_coords[semantic_dim]}
+                            )
+                        except (ValueError, KeyError):
+                            # Coordinate assignment might fail if dimensions changed, that's OK
+                            pass
+
+    # Restore original dimension order
+    reordered_result = result.transpose(
+        *[d for d in data.dims if d in result.dims], ...
+    )
 
     if dimension in reordered_result.dims:
         result_len = len(reordered_result[dimension])
