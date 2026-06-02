@@ -174,3 +174,136 @@ def test_filter_bbox(
 
     with pytest.raises(DimensionNotAvailable):
         filter_bbox(data=output_cube_cube_no_x_y, extent=bounding_box_small)
+
+
+def test_filter_bbox_vectorcube():
+    """Test filter_bbox with VectorCube (GeoDataFrame)"""
+    import geopandas as gpd
+    from openeo_pg_parser_networkx.pg_schema import BoundingBox
+    from shapely.geometry import Point
+
+    # Create a sample VectorCube with points
+    points = [
+        Point(10.47, 46.15),  # Inside bbox
+        Point(10.49, 46.17),  # Inside bbox
+        Point(10.46, 46.11),  # Outside bbox (west of bbox)
+        Point(10.51, 46.19),  # Outside bbox (east of bbox)
+        Point(10.48, 46.10),  # Outside bbox (south of bbox)
+    ]
+
+    gdf = gpd.GeoDataFrame(
+        {
+            "id": [1, 2, 3, 4, 5],
+            "name": ["Point_A", "Point_B", "Point_C", "Point_D", "Point_E"],
+            "geometry": points,
+        },
+        crs="EPSG:4326",
+    )
+
+    # Define a bounding box that should filter to 2 points
+    bbox = BoundingBox(
+        west=10.47, east=10.50, south=46.12, north=46.18, crs="EPSG:4326"
+    )
+
+    # Apply filter_bbox
+    filtered_gdf = filter_bbox(data=gdf, extent=bbox)
+
+    # Verify results
+    assert isinstance(filtered_gdf, gpd.GeoDataFrame)
+    assert len(filtered_gdf) == 2  # Only 2 points should be inside
+    assert set(filtered_gdf["id"]) == {1, 2}  # Points A and B
+    assert filtered_gdf.crs == gdf.crs  # CRS should be preserved
+
+
+def test_filter_bbox_vectorcube_crs_reprojection():
+    """Test filter_bbox with VectorCube using different CRS (tests _reproject_bbox)"""
+    import geopandas as gpd
+    from openeo_pg_parser_networkx.pg_schema import BoundingBox
+    from shapely.geometry import Point
+
+    # Create a VectorCube in UTM Zone 32N (EPSG:32632) - covering northern Italy
+    # Coordinates are in meters (UTM)
+    points_utm = [
+        Point(630000, 5100000),  # lon=10.680142, lat=46.041224 - Inside bbox
+        Point(635000, 5105000),  # lon=10.746151, lat=46.085236 - Inside bbox
+        Point(625000, 5095000),  # lon=10.614238, lat=45.997172 - Outside bbox (south)
+        Point(
+            640000, 5110000
+        ),  # lon=10.812265, lat=46.129208 - Outside bbox (east and north)
+    ]
+
+    gdf_utm = gpd.GeoDataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "name": ["Point_A", "Point_B", "Point_C", "Point_D"],
+            "geometry": points_utm,
+        },
+        crs="EPSG:32632",  # UTM Zone 32N
+    )
+
+    # Define bounding box in WGS84 (EPSG:4326) - degrees
+    # This bbox should cover points 1 and 2 when reprojected
+    bbox_wgs84 = BoundingBox(
+        west=10.65, east=10.76, south=46.02, north=46.10, crs="EPSG:4326"
+    )
+
+    # Apply filter_bbox - should trigger CRS reprojection
+    filtered_gdf = filter_bbox(data=gdf_utm, extent=bbox_wgs84)
+
+    # Verify results
+    assert isinstance(filtered_gdf, gpd.GeoDataFrame)
+    assert filtered_gdf.crs == gdf_utm.crs  # CRS should remain UTM
+    # Should have exactly 2 points (points 1 and 2)
+    assert len(filtered_gdf) == 2
+    assert set(filtered_gdf["id"].values) == {1, 2}
+    assert set(filtered_gdf["name"].values) == {"Point_A", "Point_B"}
+
+
+def test_filter_bbox_vectorcube_xarray_dataset():
+    """Test filter_bbox with VectorCube as xarray.Dataset with geometry variable"""
+    import geopandas as gpd
+    import xarray as xr
+    from openeo_pg_parser_networkx.pg_schema import BoundingBox
+    from shapely.geometry import Point
+
+    # Create sample geometries
+    points = [
+        Point(10.47, 46.15),  # Inside bbox
+        Point(10.49, 46.17),  # Inside bbox
+        Point(10.46, 46.11),  # Outside bbox (west)
+        Point(10.51, 46.19),  # Outside bbox (east)
+        Point(10.48, 46.10),  # Outside bbox (south)
+    ]
+
+    # Create a GeoSeries with geometries
+    geoms = gpd.GeoSeries(points, crs="EPSG:4326")
+
+    # Create an xarray.Dataset with geometry variable (VectorCube format)
+    dataset = xr.Dataset(
+        {
+            "geometry": xr.DataArray(geoms, dims=["features"]),
+            "id": xr.DataArray([1, 2, 3, 4, 5], dims=["features"]),
+            "name": xr.DataArray(
+                ["Point_A", "Point_B", "Point_C", "Point_D", "Point_E"],
+                dims=["features"],
+            ),
+        }
+    )
+    # Add CRS as attribute (standard way for xarray Datasets)
+    dataset.attrs["crs"] = "EPSG:4326"
+
+    # Define a bounding box that should filter to 2 points
+    bbox = BoundingBox(
+        west=10.47, east=10.50, south=46.12, north=46.18, crs="EPSG:4326"
+    )
+
+    # Apply filter_bbox
+    filtered_dataset = filter_bbox(data=dataset, extent=bbox)
+
+    # Verify results
+    assert isinstance(filtered_dataset, xr.Dataset)
+    assert "geometry" in filtered_dataset
+    # Should have exactly 2 features (points A and B)
+    assert len(filtered_dataset.features) == 2
+    assert set(filtered_dataset["id"].values) == {1, 2}
+    assert set(filtered_dataset["name"].values) == {"Point_A", "Point_B"}
