@@ -24,6 +24,7 @@ def test_reduce_rqa(
     from openeo_processes_dask.process_implementations.cubes.apply import (
         apply_dimension,
     )
+
     try:
         from openeo_processes_dask.process_implementations.experimental import (
             rqadeforestation,
