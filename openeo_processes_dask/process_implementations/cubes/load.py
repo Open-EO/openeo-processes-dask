@@ -2,10 +2,9 @@ import datetime
 import json
 import logging
 from collections.abc import Iterator
-from datetime import datetime
 from pathlib import PurePosixPath
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from urllib.parse import unquote, urljoin, urlparse
+from urllib.parse import unquote, urlparse
 
 import numpy as np
 import odc.stac
@@ -331,129 +330,7 @@ def _reorder_dimensions(stack, target_t, target_b, target_y, target_x):
     return stack
 
 
-def _load_with_xcube_eopf(
-    data_id: str,
-    spatial_extent: Optional[BoundingBox] = None,
-    temporal_extent: Optional[TemporalInterval] = None,
-    bands: Optional[list[str]] = None,
-    resolution: Optional[float] = None,
-    projection: Optional[Union[int, str]] = None,
-    dim_names: Optional[dict[str, str]] = None,
-) -> RasterCube:
-    """Load data using xcube-eopf package for EOPF STAC endpoints."""
-    try:
-        from xcube.core.store import new_data_store
-    except ImportError:
-        raise ImportError(
-            "xcube-eopf package is required for loading EOPF STAC data. "
-            "Please install it with: pip install xcube-eopf"
-        )
 
-    from pyproj import CRS
-
-    # Convert spatial extent
-    bbox, projection_used, resolution_used = _spatial_extent_to_bbox(spatial_extent)
-
-    # Convert temporal extent
-    time_range = _temporal_extent_to_range(temporal_extent)
-
-    # Set CRS
-    crs = (
-        projection
-        if projection
-        else (projection_used if projection_used else "EPSG:4326")
-    )
-
-    # Set resolution
-    spatial_res = (
-        resolution
-        if resolution
-        else (resolution_used if resolution_used else 10 / 111320)
-    )
-
-    # Create store and open data
-    store = new_data_store("eopf-zarr")
-    ds = store.open_data(
-        data_id=data_id,
-        bbox=bbox,
-        time_range=time_range,
-        spatial_res=spatial_res,
-        crs=crs,
-        variables=bands,
-    )
-
-    # Convert to dataarray if it's a dataset
-    if isinstance(ds, xr.Dataset):
-        # Find the appropriate dimension name for bands
-        band_dim = None
-        for dim in ds.dims:
-            if dim.lower() in ["band", "bands", "variable", "variables"]:
-                band_dim = dim
-                break
-
-        if band_dim is None:
-            # If no band dimension found, try to create one
-            data_vars = list(ds.data_vars.keys())
-            if len(data_vars) > 1:
-                ds = ds.to_array(dim="bands")
-            else:
-                # Single variable, convert to dataarray
-                ds = ds[data_vars[0]]
-        else:
-            ds = ds.to_array(dim=band_dim)
-
-    return ds
-
-
-def _process_eopf_cube(eopf_cube, target_x, target_y, target_t, target_b):
-    """Process and rename dimensions for EOPF cube output."""
-    rename_dict = {}
-
-    # Map spatial dimensions - EOPF often returns 'lon' and 'lat'
-    spatial_mapping = {
-        "lon": target_x,
-        "longitude": target_x,
-        "x": target_x,
-        "lat": target_y,
-        "latitude": target_y,
-        "y": target_y,
-    }
-
-    for dim in eopf_cube.dims:
-        dim_lower = dim.lower()
-        if dim_lower in spatial_mapping:
-            rename_dict[dim] = spatial_mapping[dim_lower]
-
-    # Map time dimension if present
-    time_mapping = {"time": target_t, "t": target_t, "date": target_t}
-
-    for dim in eopf_cube.dims:
-        dim_lower = dim.lower()
-        if dim_lower in time_mapping and target_t != dim:
-            rename_dict[dim] = target_t
-            break
-
-    # Map band dimension if present
-    band_mapping = {
-        "band": target_b,
-        "bands": target_b,
-        "variable": target_b,
-        "variables": target_b,
-    }
-
-    for dim in eopf_cube.dims:
-        dim_lower = dim.lower()
-        if dim_lower in band_mapping and target_b != dim:
-            rename_dict[dim] = target_b
-            break
-
-    if rename_dict:
-        eopf_cube = eopf_cube.rename(rename_dict)
-
-    # Reorder dimensions
-    eopf_cube = _reorder_dimensions(eopf_cube, target_t, target_b, target_y, target_x)
-
-    return eopf_cube
 
 
 def _process_stac_collection(
@@ -686,31 +563,6 @@ def load_stac(
     if bands and band_case_map:
         bands = _normalize_band_names(bands, band_case_map)
 
-    # Check if this is an EOPF STAC URL
-    if "stac.core.eopf.eodc.eu" in url:
-        logger.info(f"Detected EOPF STAC URL: {url}, using xcube-eopf backend")
-
-        # Extract data_id from URL
-        parsed_url = urlparse(url)
-        path_parts = PurePosixPath(unquote(parsed_url.path)).parts
-        data_id = path_parts[-1] if path_parts else "sentinel-2-l2a"  # default fallback
-
-        # Use xcube-eopf for loading
-        eopf_cube = _load_with_xcube_eopf(
-            data_id=data_id,
-            spatial_extent=spatial_extent,
-            temporal_extent=temporal_extent,
-            bands=bands,
-            dim_names=dim_names,
-        )
-
-        # Process and rename dimensions
-        eopf_cube = _process_eopf_cube(
-            eopf_cube, target_x, target_y, target_t, target_b
-        )
-        return eopf_cube
-
-    # Original implementation for non-EOPF STAC URLs
     # stac_type is already set from validator above
 
     # TODO: load_stac should have a parameter to enable scale and offset?
