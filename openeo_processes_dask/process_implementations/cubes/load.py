@@ -330,9 +330,6 @@ def _reorder_dimensions(stack, target_t, target_b, target_y, target_x):
     return stack
 
 
-
-
-
 def _process_stac_collection(
     url, spatial_extent, temporal_extent, bands, properties, catalog_url, collection_id
 ):
