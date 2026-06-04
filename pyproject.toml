@@ -51,7 +51,6 @@ openeo = ">=0.36.0"
 numpy = { version = ">=1.26.3,<3", optional = false }
 pystac = { version = ">=1.8.0", optional = false }
 zarr = "<=2.18.7"
-xcube-eopf = ">=0.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
