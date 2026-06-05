@@ -258,7 +258,7 @@ def test_array_contains_object_dtype():
         ([1, 0, 3, 0, 2], 0, 3, None, True),
         ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [999999, 1, 0, 999999], 0, True),
         ([[1, 0, 3, 2], [5, 3, 6, 8]], 3, [2, 1], 1, True),
-        (["A", "B", "C"], "b", 99999, None, False),
+        (["A", "B", "C"], "b", 999999, None, False),
     ],
 )
 def test_array_find(data, value, expected, axis, reverse):
@@ -338,6 +338,15 @@ def test_array_interpolate_linear(data, expected):
         expected,
         equal_nan=True,
     )
+
+
+def test_array_interpolate_linear_dask_multichunk_uses_global_context():
+    data = da.from_array(np.array([0.0, np.nan, np.nan, 3.0]), chunks=(2,))
+
+    result = array_interpolate_linear(data)
+
+    assert isinstance(result, da.Array)
+    np.testing.assert_allclose(result.compute(), [0.0, 1.0, 2.0, 3.0])
 
 
 @pytest.mark.parametrize(
@@ -648,3 +657,28 @@ def test_count(temporal_interval, bounding_box, random_raster_data, process_regi
     )
     assert output_cube.dims == ("x", "y", "t")
     xr.testing.assert_equal(output_cube, xr.zeros_like(output_cube))
+
+
+def _masked_fill_scalar():
+    return np.ma.array([0], mask=[True]).filled()[0]
+
+
+def test_array_find_non_numeric_string_not_found_returns_scalar_fill_value():
+    data = np.array(["a", "b", "c"], dtype=object)
+    result = array_find(data=data, value="z")
+    assert np.isscalar(result)
+    assert result == _masked_fill_scalar()
+
+
+def test_array_find_nan_value_returns_scalar_fill_value():
+    data = np.array([1.0, np.nan, 3.0])
+    result = array_find(data=data, value=np.nan)
+    assert np.isscalar(result)
+    assert result == _masked_fill_scalar()
+
+
+def test_array_find_axis_none_not_found_returns_scalar_fill_value():
+    data = np.array([1, 2, 3])
+    result = array_find(data=data, value=99, axis=None)
+    assert np.isscalar(result)
+    assert result == _masked_fill_scalar()
