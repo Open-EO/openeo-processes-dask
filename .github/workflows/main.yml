@@ -32,13 +32,13 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           submodules: recursive
 
       # --- Conda env with GDAL from conda-forge ---
       - name: Set up Miniforge + Python ${{ matrix.python-version }}
-        uses: conda-incubator/setup-miniconda@v4
+        uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5 # v4.0.1
         with:
           miniforge-version: latest
           python-version: ${{ matrix.python-version }}
@@ -51,7 +51,7 @@ jobs:
 
       # Cache downloaded conda tarballs (NOT the resolved environment)
       - name: Cache conda package downloads
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/conda_pkgs_dir
           key: conda-pkgs-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('.github/ci-environment.yml') }}
@@ -83,7 +83,7 @@ jobs:
 
       # Cache downloaded pip wheels (NOT installed packages)
       - name: Cache pip downloads
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.cache/pip
           key: pip-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -100,6 +100,6 @@ jobs:
         run: pytest --cov=openeo_processes_dask --cov-report=xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
           files: ./coverage.xml
