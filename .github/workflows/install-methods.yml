@@ -1,0 +1,62 @@
+name: Install Methods
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  conda-pip:
+    name: conda + pip
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          python-version: "3.12"
+          activate-environment: install-test
+          channels: conda-forge
+          channel-priority: strict
+          use-mamba: true
+          conda-remove-defaults: true
+      - run: mamba install -y gdal
+      - run: pip install .[implementations]
+      - run: python -c "import openeo_processes_dask; print('OK')"
+
+  micromamba-pip:
+    name: micromamba + pip
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          create-args: >-
+            python=3.12
+            gdal
+          channels: conda-forge
+          channel-priority: strict
+          conda-remove-defaults: true
+      - run: pip install .[implementations]
+      - run: python -c "import openeo_processes_dask; print('OK')"
+
+  system-pip:
+    name: system packages + pip
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - run: sudo apt-get update && sudo apt-get install -y gdal-bin libgdal-dev
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install "gdal==$(gdal-config --version)" .[implementations]
+      - run: python -c "import openeo_processes_dask; print('OK')"
