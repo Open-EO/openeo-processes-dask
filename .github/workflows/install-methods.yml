@@ -24,9 +24,8 @@ jobs:
           activate-environment: install-test
           channels: conda-forge
           channel-priority: strict
-          use-mamba: true
           conda-remove-defaults: true
-      - run: mamba install -y gdal
+      - run: conda install -y gdal
       - run: pip install .[implementations]
       - run: python -c "import openeo_processes_dask; print('OK')"
 
@@ -40,12 +39,8 @@ jobs:
       - uses: actions/checkout@v6
       - uses: mamba-org/setup-micromamba@v2
         with:
-          create-args: >-
-            python=3.12
-            gdal
-          channels: conda-forge
-          channel-priority: strict
-          conda-remove-defaults: true
+          environment-name: install-test
+          create-args: python=3.12 gdal
       - run: pip install .[implementations]
       - run: python -c "import openeo_processes_dask; print('OK')"
 
