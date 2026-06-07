@@ -32,7 +32,8 @@ pip install openeo-processes-dask[implementations]
 
 ### System packages (Ubuntu/Debian)
 
-If you already have GDAL system libraries, pin the pip `gdal` wheel to the matching version:
+If you already have GDAL system libraries, pin the pip `gdal` wheel to the matching version.
+Ubuntu 24.04 ships GDAL **3.8.4** — the minimum version required for system-level installation:
 
 ```bash
 sudo apt-get install gdal-bin libgdal-dev python3-gdal
@@ -61,7 +62,9 @@ A subset of process implementations with heavy or unstable dependencies are hidd
 The `implementations` extra depends on GDAL transitively via `rasterio`, `rioxarray`, `odc-stac`, and `geopandas`.
 Always install GDAL **first** (via conda-forge or system packages) before pip-installing extras.
 The `ml` (`xgboost`) and `deforestation` (`rqadeforestation`) extras do not directly depend on GDAL.
-This project requires **GDAL >=3.9** and is CI-tested against conda-forge GDAL on Python 3.10–3.13.
+This project requires **GDAL >=3.8.4** (the version shipped by Ubuntu 24.04) and is CI-tested against conda-forge GDAL on Python 3.10–3.13.
+
+**Version-ceiling policy:** Library dependencies in `pyproject.toml` declare only minimum versions (`>=X`). Any upper bounds (`<Y`) needed for CI go into `[tool.poetry.group.ci.dependencies]` (or the conda `ci-environment.yml` pin) so downstream consumers are never blocked. Install the `civersions` extra if your environment also needs the ceiling.
 
 ---
 
@@ -84,7 +87,7 @@ conda activate openeo_processes_dask_dev
 
 # 2. Install Poetry deps into the conda env
 poetry config virtualenvs.create false
-poetry install --all-extras
+poetry install --with dev,ci --all-extras
 
 # 3. Verify GDAL
 gdalinfo --version

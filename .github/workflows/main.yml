@@ -64,7 +64,7 @@ jobs:
       # Always do a full solve + install — never skip, so dependency breakage is caught
       - name: Install GDAL/Fiona via conda-forge
         run: |
-          mamba install -y gdal fiona
+          mamba install -y "gdal=3.13.0" fiona
           conda clean --all -f -y
 
       - name: Verify GDAL
@@ -91,7 +91,7 @@ jobs:
             pip-${{ runner.os }}-py${{ matrix.python-version }}-
 
       - name: Install dependencies
-        run: poetry install --with dev --all-extras
+        run: poetry install --with dev,ci --all-extras
 
       - name: Pre-commit hooks
         run: pre-commit run --all-files
