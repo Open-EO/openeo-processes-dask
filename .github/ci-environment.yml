@@ -3,4 +3,3 @@ channels:
   - conda-forge
 dependencies:
   - gdal=3.13.0
-  - fiona

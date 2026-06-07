@@ -33,9 +33,9 @@ jobs:
           use-mamba: true
           conda-remove-defaults: true
 
-      - name: Install GDAL/Fiona via conda-forge
+      - name: Install GDAL via conda-forge
         run: |
-          mamba install -y gdal fiona
+          mamba install -y "gdal=3.13.0"
           conda clean --all -f -y
 
       - name: Verify GDAL
