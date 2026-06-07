@@ -8,7 +8,9 @@ __all__ = [
 ]
 
 
-def text_begins(data: str, pattern: str, case_sensitive: Optional[bool] = True) -> str:
+def text_begins(
+    data: str, pattern: str, case_sensitive: Optional[bool] = True
+) -> Optional[str]:
     if data:
         if case_sensitive:
             return data.startswith(pattern)
@@ -20,7 +22,7 @@ def text_begins(data: str, pattern: str, case_sensitive: Optional[bool] = True) 
 
 def text_contains(
     data: str, pattern: str, case_sensitive: Optional[bool] = True
-) -> str:
+) -> Optional[str]:
     if data:
         if case_sensitive:
             return pattern in data
@@ -30,7 +32,9 @@ def text_contains(
         return None
 
 
-def text_ends(data: str, pattern: str, case_sensitive: Optional[bool] = True) -> str:
+def text_ends(
+    data: str, pattern: str, case_sensitive: Optional[bool] = True
+) -> Optional[str]:
     if data:
         if case_sensitive:
             return data.endswith(pattern)

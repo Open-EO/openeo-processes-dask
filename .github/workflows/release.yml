@@ -35,7 +35,7 @@ jobs:
 
       - name: Install GDAL/Fiona via conda-forge
         run: |
-          mamba install -y "gdal<3.13" fiona
+          mamba install -y gdal fiona
           conda clean --all -f -y
 
       - name: Verify GDAL

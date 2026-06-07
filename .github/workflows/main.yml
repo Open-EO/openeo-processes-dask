@@ -64,7 +64,7 @@ jobs:
       # Always do a full solve + install — never skip, so dependency breakage is caught
       - name: Install GDAL/Fiona via conda-forge
         run: |
-          mamba install -y "gdal<3.13" fiona
+          mamba install -y gdal fiona
           conda clean --all -f -y
 
       - name: Verify GDAL
