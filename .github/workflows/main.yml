@@ -91,7 +91,7 @@ jobs:
             pip-${{ runner.os }}-py${{ matrix.python-version }}-
 
       - name: Install dependencies
-        run: poetry install --with dev --all-extras
+        run: poetry install --with dev,ci --all-extras
 
       - name: Pre-commit hooks
         run: pre-commit run --all-files
