@@ -87,7 +87,7 @@ conda activate openeo_processes_dask_dev
 
 # 2. Install Poetry deps into the conda env
 poetry config virtualenvs.create false
-poetry install --all-extras
+poetry install --with dev,ci --all-extras
 
 # 3. Verify GDAL
 gdalinfo --version

@@ -3,7 +3,7 @@ import json
 import logging
 from collections.abc import Iterator
 from pathlib import PurePosixPath
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 from urllib.parse import unquote, urlparse
 
 import numpy as np
@@ -717,7 +717,7 @@ def load_stac(
     return stack
 
 
-def load_url(url: str, format: str, options={}):
+def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}):
     import geopandas as gpd
     import requests
 
