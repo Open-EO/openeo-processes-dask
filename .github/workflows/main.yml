@@ -20,6 +20,8 @@ jobs:
   tests:
     name: ${{ matrix.os }} / ${{ matrix.python-version }}
     runs-on: ${{ matrix.image }}
+    permissions:
+      id-token: write # Required for CodeCov OIDC login.
     strategy:
       matrix:
         os: [Ubuntu]
@@ -103,3 +105,6 @@ jobs:
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
           files: ./coverage.xml
+          disable_search: true
+          fail_ci_if_error: false
+          use_oidc: true
