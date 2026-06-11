@@ -38,6 +38,10 @@ openeo-pg-parser-networkx = { version = ">=2025.10", optional = true }
 rqadeforestation = { version = ">=0.1", optional = true }
 odc-geo = { version = ">=0.4.1,<1", optional = true }
 stac_validator = { version = ">=3.3.1", optional = true }
+# odc-stac depends on odc-loader, but it's odc-loader that needs to be
+# compatible with the zarr package, so depend on odc-loader to get the right
+# version constraint for the zarr package.
+odc-loader = { version = ">=0.5", extras = ["zarr"], optional = true }
 odc-stac = { version = ">=0.3.9", optional = true }
 pystac_client = { version = ">=0.6.1", optional = true }
 planetary_computer = { version = ">=0.5.1", optional = true }
@@ -49,13 +53,14 @@ pyarrow = ">=15.0.2"
 openeo = ">=0.36.0"
 numpy = { version = ">=1.26.3,<3", optional = false }
 pystac = { version = ">=1.12.0", optional = true }
-zarr = "<=2.18.7"
 
 
 [tool.poetry.group.ci.dependencies]
 # CI-only version ceilings: protect CI from upstream breakage without
 # imposing ceilings on downstream consumers. See README for policy.
 gdal = { version = "<3.13.1" }
+# Zarr v3 compatibility for test_load_stac.py::test_load_stac.
+xarray = { version = ">=2025.06.0" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=9.0.3"
@@ -69,7 +74,7 @@ pytest-cov = ">=7.0.0"
 
 [tool.poetry.extras]
 civersions = ["gdal"]
-implementations = ["gdal", "geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "odc-stac", "planetary_computer", "pystac_client", "pystac", "stac_validator", "xvec", "joblib"]
+implementations = ["gdal", "geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "odc-loader", "odc-stac", "planetary_computer", "pystac_client", "pystac", "stac_validator", "xvec", "joblib"]
 ml = ["xgboost"]
 deforestation = ["rqadeforestation"]
 
