@@ -231,12 +231,12 @@ def aggregate_temporal_period(
         applicable_temporal_dimension = temporal_dims[0]
 
     periods_to_frequency = {
-        "hour": "H",
+        "hour": "h",
         "day": "D",
         "week": "W",
-        "month": "M",
+        "month": "ME",
         "season": "QS-DEC",
-        "year": "AS",
+        "year": "YS",
     }
 
     if period in periods_to_frequency.keys():
