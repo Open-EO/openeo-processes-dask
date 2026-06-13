@@ -58,13 +58,13 @@ zarr = "<=2.18.7"
 gdal = { version = "<3.13.1" }
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
+pytest = ">=9.0.3"
 ipykernel = "^6.15.1"
 matplotlib = "^3.5.3"
 folium = ">=0.12.1,<1"
 mapclassify = "^2.4.3"
 pre-commit = "^2.20.0"
-pytest-cov = "^4.0.0"
+pytest-cov = ">=7.0.0"
 
 
 [tool.poetry.extras]
@@ -74,6 +74,7 @@ ml = ["xgboost"]
 deforestation = ["rqadeforestation"]
 
 [tool.pytest.ini_options]
+console_output_style = "times"
 testpaths = [
     "tests",
 ]
