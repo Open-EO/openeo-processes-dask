@@ -1,0 +1,5 @@
+name: ci
+channels:
+  - conda-forge
+dependencies:
+  - gdal=3.13.0

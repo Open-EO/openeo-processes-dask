@@ -1,2 +1,6 @@
 from .ddmc import *
-from .rqadeforestation import *
+
+try:
+    from .rqadeforestation import *
+except Exception:
+    pass

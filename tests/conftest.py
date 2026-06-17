@@ -53,7 +53,7 @@ def bounding_box(
         "north": north,
         "crs": crs,
     }
-    return BoundingBox.parse_obj(spatial_extent)
+    return BoundingBox.model_validate(spatial_extent)
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def bounding_box_small(
         "north": north,
         "crs": crs,
     }
-    return BoundingBox.parse_obj(spatial_extent)
+    return BoundingBox.model_validate(spatial_extent)
 
 
 @pytest.fixture
@@ -95,7 +95,7 @@ def polygon_geometry_small(
 
 @pytest.fixture
 def temporal_interval(interval=["2018-05-01", "2018-06-01"]) -> TemporalInterval:
-    return TemporalInterval.parse_obj(interval)
+    return TemporalInterval.model_validate(interval)
 
 
 @pytest.fixture

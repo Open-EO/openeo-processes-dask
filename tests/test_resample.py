@@ -161,14 +161,14 @@ def test_aggregate_temporal_period(
     input_cube = create_fake_rastercube(
         data=random_raster_data,
         spatial_extent=bounding_box,
-        temporal_extent=TemporalInterval.parse_obj(temporal_extent_1),
+        temporal_extent=TemporalInterval.model_validate(temporal_extent_1),
         bands=["B02", "B03", "B04", "B08"],
     )
 
     target_cube = create_fake_rastercube(
         data=random_raster_data,
         spatial_extent=bounding_box,
-        temporal_extent=TemporalInterval.parse_obj(temporal_extent_2),
+        temporal_extent=TemporalInterval.model_validate(temporal_extent_2),
         bands=["B02", "B03", "B04", "B08"],
     )
 
