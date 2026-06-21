@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import tempfile
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import PurePosixPath
@@ -329,7 +330,7 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
 
     response = requests.get(url)
     if not response.status_code < 400:
-        raise Exception(f"Provided url {url} unavailable. ")
+        raise Exception(f"Provided url {url} unavailable.")
 
     if "JSON" in format:
         url_json = response.json()
@@ -353,17 +354,20 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
 
         import geoparquet as gpq
 
-        file_name = url.split("/")[-1]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Use a fixed filename in tmpdir for download so we don't have to worry
+            # about trying to sanitize the URL.
+            file_name = os.path.join(tmpdir, "downloaded.parquet")
+            with open(file_name, "wb") as file:
+                file.write(response.content)
 
-        with open(file_name, "wb") as file:
-            file.write(response.content)
+            file_size = os.path.getsize(file_name)
+            if file_size > 0:
+                logger.info(
+                    f"File downloaded successfully. File size: {file_size} bytes"
+                )
 
-        file_size = os.path.getsize(file_name)
-        if file_size > 0:
-            logger.info(f"File downloaded successfully. File size: {file_size} bytes")
-
-        gdf = gpq.read_geoparquet(file_name)
-        os.system(f"rm -rf {file_name}")
+            gdf = gpq.read_geoparquet(file_name)
 
     elif format == "JSON":
         return url_json
