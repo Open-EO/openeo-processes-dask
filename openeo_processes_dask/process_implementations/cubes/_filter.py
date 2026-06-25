@@ -117,16 +117,21 @@ def filter_labels(
     labels = np.array(data[dimension].values)
     if not context:
         context = {}
-    positional_parameters = {"x": 0, "value": 0}
-    named_parameters = {"x": labels, "value": labels, "context": context}
-    filter_condition = np.vectorize(condition)
-    filtered_labels = filter_condition(
+    # The condition receives the whole label array (as "x"/"value") and returns
+    # a boolean mask over the labels. The previous implementation wrapped it in
+    # np.vectorize, which called the condition once per label and corrupted the
+    # array-valued result: only the first label was ever matched correctly, so
+    # selecting a non-first label (e.g. rcp==8.5 when labels are [4.5, 8.5])
+    # matched nothing and raised IndexError on `label[0]`. Call it once and keep
+    # every matching label instead.
+    filtered_labels = condition(
         labels,
-        positional_parameters=positional_parameters,
-        named_parameters=named_parameters,
+        positional_parameters={"x": 0, "value": 0},
+        named_parameters={"x": labels, "value": labels, "context": context},
     )
-    label = np.argwhere(filtered_labels)
-    data = data.isel(**{dimension: label[0]})
+    mask = np.asarray(filtered_labels).astype(bool)
+    selected = np.nonzero(mask)[0]
+    data = data.isel(**{dimension: selected})
     return data
 
 

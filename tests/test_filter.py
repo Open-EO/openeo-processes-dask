@@ -95,6 +95,31 @@ def test_filter_labels(
     assert len(output_cube["bands"]) == 1
 
 
+def test_filter_labels_numeric_non_first_label():
+    # Regression: the condition receives the whole label array and returns a
+    # boolean mask (as the openEO parser-built callback does). Selecting a
+    # non-first label (rcp==8.5 in [4.5, 8.5]) previously raised IndexError
+    # because filter_labels wrapped the condition in np.vectorize, which only
+    # matched the first label correctly. Each target must keep exactly its label.
+    data = xr.DataArray(
+        np.arange(2 * 3).reshape(2, 3),
+        dims=["rcp", "x"],
+        coords={"rcp": [4.5, 8.5], "x": [0, 1, 2]},
+    )
+
+    def make_condition(target):
+        def condition(*args, named_parameters=None, **kwargs):
+            return np.asarray(named_parameters["value"]) == target
+
+        return condition
+
+    for target in (4.5, 8.5):
+        out = filter_labels(
+            data=data, condition=make_condition(target), dimension="rcp"
+        )
+        assert list(out["rcp"].values) == [target]
+
+
 @pytest.mark.parametrize("size", [(1, 1, 1, 2)])
 @pytest.mark.parametrize("dtype", [np.uint8])
 def test_filter_bands(temporal_interval, bounding_box, random_raster_data):
