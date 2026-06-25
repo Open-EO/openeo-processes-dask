@@ -55,7 +55,9 @@ zarr = "<=2.18.7"
 [tool.poetry.group.ci.dependencies]
 # CI-only version ceilings: protect CI from upstream breakage without
 # imposing ceilings on downstream consumers. See README for policy.
-gdal = { version = "<3.13.1" }
+#
+# This GDAL version and the version in .github/ci-environment.yml need to agree.
+gdal = { version = "<3.13.2" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=9.0.3"
