@@ -4,7 +4,6 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
-import xvec
 from openeo_pg_parser_networkx.pg_schema import (
     ParameterReference,
     TemporalInterval,
@@ -13,7 +12,9 @@ from openeo_pg_parser_networkx.pg_schema import (
 
 from openeo_processes_dask.process_implementations.cubes.aggregate import *
 from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
-from openeo_processes_dask.process_implementations.math import mean
+
+# Required by test_aggregate_spatial().
+from openeo_processes_dask.process_implementations.math import mean  # noqa: F401
 from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
 from tests.mockdata import create_fake_rastercube
 

@@ -1,6 +1,5 @@
 import pathlib
 import shutil
-import tempfile
 from importlib.metadata import version as _pkg_version
 
 import numpy as np

@@ -1,17 +1,13 @@
-import datetime
 import json
 import logging
 import tempfile
-from collections.abc import Iterator
-from datetime import datetime
 from pathlib import PurePosixPath
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Literal, Optional, Union
 from urllib.parse import unquote, urlparse
 
 import numpy as np
 import odc.stac
 import planetary_computer as pc
-import pyproj
 import pystac
 import pystac_client
 import xarray as xr
@@ -21,16 +17,11 @@ from stac_validator import stac_validator
 
 from openeo_processes_dask.process_implementations.cubes._filter import (
     _reproject_bbox,
-    filter_bands,
     filter_bbox,
     filter_temporal,
 )
 from openeo_processes_dask.process_implementations.data_model import RasterCube
-from openeo_processes_dask.process_implementations.exceptions import (
-    NoDataAvailable,
-    OpenEOException,
-    TemporalExtentEmpty,
-)
+from openeo_processes_dask.process_implementations.exceptions import OpenEOException
 
 # "NoDataAvailable": {
 #     "message": "There is no data available for the given extents."
@@ -384,7 +375,8 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
     elif format == "JSON":
         return url_json
 
-    import xvec
+    # Required to get .xvec attribute on DataArray.
+    import xvec  # noqa: F401
 
     if not hasattr(gdf, "crs"):
         gdf = gdf.set_crs("epsg:4326")
