@@ -335,10 +335,11 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
     if not response.status_code < 400:
         raise Exception(f"Provided url {url} unavailable.")
 
-    if "JSON" in format:
-        url_json = response.json()
+    if format == "JSON":
+        return response.json()
 
     if format == "GeoJSON":
+        url_json = response.json()
         for feature in url_json.get("features", {}):
             if "properties" not in feature:
                 feature["properties"] = {}
@@ -352,7 +353,7 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
 
         gdf = gpd.GeoDataFrame.from_features(url_json, crs=crs)
 
-    elif "Parquet" in format:
+    elif format == "Parquet":
         import os
 
         import geoparquet as gpq
@@ -371,9 +372,6 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
                 )
 
             gdf = gpq.read_geoparquet(file_name)
-
-    elif format == "JSON":
-        return url_json
 
     # Required to get .xvec attribute on DataArray.
     import xvec  # noqa: F401
