@@ -16,6 +16,7 @@ import pystac
 import pystac_client
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
+from pyproj.crs import CRS
 from stac_validator import stac_validator
 
 from openeo_processes_dask.process_implementations.cubes._filter import (
@@ -131,7 +132,7 @@ def load_stac(
                 try:
                     spatial_extent_4326 = spatial_extent
                     if spatial_extent.crs is not None:
-                        if not pyproj.crs.CRS(spatial_extent.crs).equals("EPSG:4326"):
+                        if not CRS(spatial_extent.crs).equals("EPSG:4326"):
                             spatial_extent_4326 = _reproject_bbox(
                                 spatial_extent, "EPSG:4326"
                             )
