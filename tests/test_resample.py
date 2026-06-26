@@ -2,7 +2,6 @@ from functools import partial
 
 import numpy as np
 import pytest
-import xarray as xr
 from odc.geo.geobox import resolution_from_affine
 from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
 from pyproj.crs import CRS
