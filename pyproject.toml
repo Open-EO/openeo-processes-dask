@@ -1,6 +1,6 @@
 [project]
 name = "openeo-processes-dask"
-version = "2026.6.3"
+version = "2026.6.4"
 description = "Python implementations of many OpenEO processes, dask-friendly by default."
 authors = [
     {name = "Lukas Weidenholzer", email = "lukas.weidenholzer@eodc.eu"},
