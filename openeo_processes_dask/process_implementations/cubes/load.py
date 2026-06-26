@@ -68,6 +68,7 @@ def _search_for_parent_catalog(url):
     catalog_url = root_url
     url_parts = PurePosixPath(unquote(parsed_url.path)).parts
     collection_id = url_parts[-1]
+    asset_type = None
     for p in url_parts:
         if p != "/":
             catalog_url = catalog_url + "/" + p
