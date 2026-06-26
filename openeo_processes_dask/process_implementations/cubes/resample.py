@@ -5,8 +5,9 @@ import numpy as np
 import odc.geo.xr
 import rioxarray  # needs to be imported to set .rio accessor on xarray objects.
 import xarray as xr
-from odc.geo.geobox import resolution_from_affine
-from pyproj.crs import CRS, CRSError
+from odc.geo.math import resolution_from_affine
+from pyproj.crs import CRS
+from pyproj.exceptions import CRSError
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 from openeo_processes_dask.process_implementations.exceptions import (
