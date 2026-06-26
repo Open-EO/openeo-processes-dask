@@ -25,31 +25,34 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
+dask = {extras = ["array", "dataframe", "distributed"], version = ">=2023.4.0", optional = true}
+dask-geopandas = { version = ">=0.4.3", optional = true }
 gdal = { version = ">=3.8.4", optional = true }
 geopandas = { version = ">=0.11.1", optional = true }
-pandas = { version = ">=2.2.0", optional = true }
-xarray = { version = ">=2022.11.0", optional = true }
-dask = {extras = ["array", "dataframe", "distributed"], version = ">=2023.4.0", optional = true}
-rasterio = { version = "^1.3.4", optional = true }
-dask-geopandas = { version = ">=0.4.3", optional = true }
-xgboost = { version = ">=1.5.1", extras = ["dask"], optional = true }
-rioxarray = { version = ">=0.12.0,<1", optional = true }
-openeo-pg-parser-networkx = { version = ">=2025.10", optional = true }
-rqadeforestation = { version = ">=0.1", optional = true }
-odc-geo = { version = ">=0.4.1,<1", optional = true }
-stac_validator = { version = ">=3.3.1", optional = true }
-odc-stac = { version = ">=0.3.9", optional = true }
-pystac_client = { version = ">=0.6.1", optional = true }
-planetary_computer = { version = ">=0.5.1", optional = true }
-scipy = "^1.11.3"
-xvec = { version = "0.2.0", optional = true }
-joblib = { version = ">=1.3.2", optional = true }
 geoparquet = "^0.0.3"
-pyarrow = ">=15.0.2"
-openeo = ">=0.36.0"
+joblib = { version = ">=1.3.2", optional = true }
 numpy = { version = ">=1.26.3,<3", optional = false }
+odc-geo = { version = ">=0.4.1,<1", optional = true }
+# odc-stac depends on odc-loader, but it's odc-loader that needs to be
+# compatible with the zarr package, so depend on odc-loader to get the right
+# version constraint for the zarr package.
+odc-loader = { version = ">=0.5", extras = ["zarr"], optional = true }
+odc-stac = { version = ">=0.3.9", optional = true }
+openeo = ">=0.36.0"
+openeo-pg-parser-networkx = { version = ">=2025.10", optional = true }
+pandas = { version = ">=2.2.0", optional = true }
+planetary_computer = { version = ">=0.5.1", optional = true }
+pyarrow = ">=15.0.2"
 pystac = { version = ">=1.12.0", optional = true }
-zarr = "<=2.18.7"
+pystac_client = { version = ">=0.6.1", optional = true }
+rasterio = { version = "^1.3.4", optional = true }
+rioxarray = { version = ">=0.12.0,<1", optional = true }
+rqadeforestation = { version = ">=0.1", optional = true }
+scipy = "^1.11.3"
+stac_validator = { version = ">=3.3.1", optional = true }
+xarray = { version = ">=2022.11.0", optional = true }
+xgboost = { version = ">=1.5.1", extras = ["dask"], optional = true }
+xvec = { version = "0.2.0", optional = true }
 
 
 [tool.poetry.group.ci.dependencies]
@@ -58,6 +61,8 @@ zarr = "<=2.18.7"
 #
 # This GDAL version and the version in .github/ci-environment.yml need to agree.
 gdal = { version = "<3.13.2" }
+# Zarr v3 compatibility for test_load_stac.py::test_load_stac.
+xarray = { version = ">=2025.06.0" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=9.0.3"
@@ -71,7 +76,7 @@ pytest-cov = ">=7.0.0"
 
 [tool.poetry.extras]
 civersions = ["gdal"]
-implementations = ["gdal", "geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "odc-stac", "planetary_computer", "pystac_client", "pystac", "stac_validator", "xvec", "joblib"]
+implementations = ["gdal", "geopandas", "xarray", "dask", "rasterio", "dask-geopandas", "rioxarray", "openeo-pg-parser-networkx", "odc-geo", "odc-loader", "odc-stac", "planetary_computer", "pystac_client", "pystac", "stac_validator", "xvec", "joblib"]
 ml = ["xgboost"]
 deforestation = ["rqadeforestation"]
 

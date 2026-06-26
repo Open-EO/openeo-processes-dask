@@ -12,6 +12,7 @@ import numpy as np
 import odc.stac
 import planetary_computer as pc
 import pyproj
+import pystac
 import pystac_client
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
@@ -82,6 +83,19 @@ def _search_for_parent_catalog(url):
             "It was not possible to find the root STAC Catalog starting from the provided Collection."
         )
     return catalog_url, collection_id
+
+
+def _zarr_open_kwargs(asset: pystac.Asset, use_xarray_open_kwargs: bool) -> dict:
+    kwargs = (
+        dict(asset.extra_fields.get("xarray:open_kwargs", {}))
+        if use_xarray_open_kwargs
+        else {}
+    )
+    kwargs.setdefault("engine", "zarr")
+    kwargs.setdefault("chunks", {})
+    if "zarr_version" in kwargs and "zarr_format" not in kwargs:
+        kwargs["zarr_format"] = kwargs.pop("zarr_version")
+    return kwargs
 
 
 def load_stac(
@@ -239,11 +253,7 @@ def load_stac(
         datasets = []
         for item in items:
             for asset in item.assets.values():
-                kwargs = (
-                    asset.extra_fields.get("xarray:open_kwargs", {})
-                    if use_xarray_open_kwargs
-                    else {"engine": "zarr", "consolidated": True, "chunks": {}}
-                )
+                kwargs = _zarr_open_kwargs(asset, use_xarray_open_kwargs)
 
                 if use_xarray_storage_options:
                     storage_opts = asset.extra_fields.get("xarray:storage_options", {})
