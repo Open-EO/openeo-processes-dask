@@ -73,7 +73,7 @@ ci = [
 ]
 dev = [
     "folium >=0.12.1,<1",
-    "ipykernel >=6.15.1, <7",
+    "ipykernel >=6.15.1",
     "mapclassify >=2.4.3, <3",
     "matplotlib >=3.5.3, <4",
     "pre-commit >=2.20.0, <3",
