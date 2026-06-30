@@ -1,5 +1,5 @@
 # Checks here are inspired by makepath/xarray-spatial/tests/general_checks.py
-from typing import List, Optional
+from typing import Optional
 
 import dask.array as da
 import numpy as np

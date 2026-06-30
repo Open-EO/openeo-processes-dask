@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from openeo_processes_dask.process_implementations.cubes.indices import ndvi
-from openeo_processes_dask.process_implementations.cubes.load import load_stac
 from openeo_processes_dask.process_implementations.exceptions import (
     BandExists,
     DimensionAmbiguous,

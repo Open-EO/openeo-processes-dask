@@ -1,5 +1,3 @@
-import copy
-import itertools
 import logging
 from typing import Any, Callable, Optional, Union
 
@@ -9,7 +7,6 @@ import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike
 from openeo_pg_parser_networkx.pg_schema import DateTime
-from xarray.core.duck_array_ops import isnull, notnull
 
 from openeo_processes_dask.process_implementations.comparison import is_valid
 from openeo_processes_dask.process_implementations.cubes.utils import _is_dask_array

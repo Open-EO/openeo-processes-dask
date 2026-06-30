@@ -1,6 +1,7 @@
 from typing import Optional
 
-import odc.geo.xr  # Required for the .geo accessor on xarrays.
+# Required for the .geo accessor on xarrays.
+import odc.geo.xr  # noqa: F401
 import xarray as xr
 
 TEMPORAL_GUESSES = [

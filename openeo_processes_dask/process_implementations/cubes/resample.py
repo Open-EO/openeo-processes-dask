@@ -2,8 +2,9 @@ import logging
 from typing import Optional, Union
 
 import numpy as np
-import odc.geo.xr
-import rioxarray  # needs to be imported to set .rio accessor on xarray objects.
+
+# Needs to be imported to set .rio accessor on xarray objects.
+import rioxarray  # noqa: F401
 import xarray as xr
 from odc.geo.geobox import resolution_from_affine
 from pyproj.crs import CRS, CRSError
