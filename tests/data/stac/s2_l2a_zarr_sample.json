@@ -11,22 +11,22 @@
     {
       "rel": "collection",
       "type": "application/json",
-      "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample"
+      "href": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a"
     },
     {
       "rel": "parent",
       "type": "application/json",
-      "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample"
+      "href": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a"
     },
     {
       "rel": "root",
       "type": "application/json",
-      "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/"
+      "href": "https://earth-search.aws.element84.com/v1"
     },
     {
       "rel": "self",
       "type": "application/geo+json",
-      "href": "https://stac.openeo.eurac.edu/api/v1/pgstac/collections/s2_l2a_zarr_sample/items/s2_l2a_zarr_sample"
+      "href": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/s2_l2a_zarr_sample"
     }
   ],
   "assets": {

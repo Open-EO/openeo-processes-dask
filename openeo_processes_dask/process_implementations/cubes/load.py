@@ -91,8 +91,44 @@ def _search_for_parent_catalog(url):
 
 
 def _get_dimension_names_from_stac(stac_validator_obj):
-    """Extract dimension names from STAC Collection's cube:dimensions using stac_validator object."""
     dim_names = {"x": "x", "y": "y", "t": "t", "bands": "bands"}
+    try:
+        stac_content = stac_validator_obj.stac_content
+        if "cube:dimensions" in stac_content:
+            cube_dims = stac_content["cube:dimensions"]
+            for dim_name, dim_info in cube_dims.items():
+                if "axis" in dim_info and dim_info["axis"] == "x":
+                    dim_names["x"] = dim_name
+                elif "axis" in dim_info and dim_info["axis"] == "y":
+                    dim_names["y"] = dim_name
+                elif "type" in dim_info and dim_info["type"] == "temporal":
+                    dim_names["t"] = dim_name
+                elif "type" in dim_info and dim_info["type"] == "bands":
+                    dim_names["bands"] = dim_name
+            if (
+                dim_names["bands"] in cube_dims
+                and "values" in cube_dims[dim_names["bands"]]
+            ):
+                available_bands = cube_dims[dim_names["bands"]]["values"]
+                dim_names["_band_case_map"] = {
+                    band.lower(): band for band in available_bands
+                }
+                dim_names["_available_bands"] = available_bands
+        else:
+            if "summaries" in stac_content and "eo:bands" in stac_content["summaries"]:
+                available_bands = [
+                    band.get("name")
+                    for band in stac_content["summaries"]["eo:bands"]
+                    if band.get("name")
+                ]
+                if available_bands:
+                    dim_names["_band_case_map"] = {
+                        band.lower(): band for band in available_bands
+                    }
+                    dim_names["_available_bands"] = available_bands
+    except Exception as e:
+        logger.debug(f"Could not extract dimension names from STAC content: {e}")
+    return dim_names
 
 
 def _zarr_open_kwargs(asset: pystac.Asset, use_xarray_open_kwargs: bool) -> dict:
@@ -106,54 +142,6 @@ def _zarr_open_kwargs(asset: pystac.Asset, use_xarray_open_kwargs: bool) -> dict
     if "zarr_version" in kwargs and "zarr_format" not in kwargs:
         kwargs["zarr_format"] = kwargs.pop("zarr_version")
     return kwargs
-
-    try:
-        # Get the STAC content from the validator object
-        stac_content = stac_validator_obj.stac_content
-
-        # Check if cube:dimensions exists in the STAC content
-        if "cube:dimensions" in stac_content:
-            cube_dims = stac_content["cube:dimensions"]
-
-            # Extract dimension names based on axis/type
-            for dim_name, dim_info in cube_dims.items():
-                if "axis" in dim_info and dim_info["axis"] == "x":
-                    dim_names["x"] = dim_name
-                elif "axis" in dim_info and dim_info["axis"] == "y":
-                    dim_names["y"] = dim_name
-                elif "type" in dim_info and dim_info["type"] == "temporal":
-                    dim_names["t"] = dim_name
-                elif "type" in dim_info and dim_info["type"] == "bands":
-                    dim_names["bands"] = dim_name
-
-            if (
-                dim_names["bands"] in cube_dims
-                and "values" in cube_dims[dim_names["bands"]]
-            ):
-                available_bands = cube_dims[dim_names["bands"]]["values"]
-                dim_names["_band_case_map"] = {
-                    band.lower(): band for band in available_bands
-                }
-                dim_names["_available_bands"] = available_bands
-        else:
-            # If no cube:dimensions, try to get from eo:bands in summaries
-            if "summaries" in stac_content and "eo:bands" in stac_content["summaries"]:
-                available_bands = [
-                    band.get("name")
-                    for band in stac_content["summaries"]["eo:bands"]
-                    if band.get("name")
-                ]
-                if available_bands:
-                    dim_names["_band_case_map"] = {
-                        band.lower(): band for band in available_bands
-                    }
-                    dim_names["_available_bands"] = available_bands
-
-    except Exception as e:
-        logger.debug(f"Could not extract dimension names from STAC content: {e}")
-        # Fall back to default names
-
-    return dim_names
 
 
 def _normalize_band_names(bands, band_case_map=None, available_bands_list=None):

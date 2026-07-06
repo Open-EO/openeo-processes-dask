@@ -35,22 +35,26 @@ def _make_zarr_stac_item(
     If *open_kwargs* is ``None`` the ``xarray:open_kwargs`` field is
     removed from the asset.  Same for *storage_options*.
     """
-    item = pystac.read_file(str(_STAC_TEMPLATE_PATH))
-    asset = item.assets["data"]
-    asset.href = str(zarr_path)
+    import json
+
+    with open(str(_STAC_TEMPLATE_PATH)) as f:
+        item_dict = json.load(f)
+
+    item_dict["assets"]["data"]["href"] = str(zarr_path)
 
     if open_kwargs is not None:
-        asset.extra_fields["xarray:open_kwargs"] = open_kwargs
+        item_dict["assets"]["data"]["xarray:open_kwargs"] = open_kwargs
     else:
-        asset.extra_fields.pop("xarray:open_kwargs", None)
+        item_dict["assets"]["data"].pop("xarray:open_kwargs", None)
 
     if storage_options is not None:
-        asset.extra_fields["xarray:storage_options"] = storage_options
+        item_dict["assets"]["data"]["xarray:storage_options"] = storage_options
     else:
-        asset.extra_fields.pop("xarray:storage_options", None)
+        item_dict["assets"]["data"].pop("xarray:storage_options", None)
 
     stac_path = zarr_path.parent / f"{zarr_path.name}_stac.json"
-    pystac.write_file(item, dest_href=str(stac_path), include_self_link=False)
+    with open(str(stac_path), "w") as f:
+        json.dump(item_dict, f, indent=2)
     return stac_path
 
 
