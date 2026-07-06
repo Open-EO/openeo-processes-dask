@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import tempfile
 from collections.abc import Iterator
 from pathlib import PurePosixPath
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
@@ -10,9 +11,11 @@ import numpy as np
 import odc.stac
 import planetary_computer as pc
 import pyproj
+import pystac
 import pystac_client
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval
+from pyproj.crs import CRS
 from stac_validator import stac_validator
 
 from openeo_processes_dask.process_implementations.cubes._filter import (
@@ -69,6 +72,7 @@ def _search_for_parent_catalog(url):
     catalog_url = root_url
     url_parts = PurePosixPath(unquote(parsed_url.path)).parts
     collection_id = url_parts[-1]
+    asset_type = None
     for p in url_parts:
         if p != "/":
             catalog_url = catalog_url + "/" + p
@@ -88,8 +92,20 @@ def _search_for_parent_catalog(url):
 
 def _get_dimension_names_from_stac(stac_validator_obj):
     """Extract dimension names from STAC Collection's cube:dimensions using stac_validator object."""
-    # Default canonical openEO dimension names
     dim_names = {"x": "x", "y": "y", "t": "t", "bands": "bands"}
+
+
+def _zarr_open_kwargs(asset: pystac.Asset, use_xarray_open_kwargs: bool) -> dict:
+    kwargs = (
+        dict(asset.extra_fields.get("xarray:open_kwargs", {}))
+        if use_xarray_open_kwargs
+        else {}
+    )
+    kwargs.setdefault("engine", "zarr")
+    kwargs.setdefault("chunks", {})
+    if "zarr_version" in kwargs and "zarr_format" not in kwargs:
+        kwargs["zarr_format"] = kwargs.pop("zarr_version")
+    return kwargs
 
     try:
         # Get the STAC content from the validator object
@@ -110,7 +126,6 @@ def _get_dimension_names_from_stac(stac_validator_obj):
                 elif "type" in dim_info and dim_info["type"] == "bands":
                     dim_names["bands"] = dim_name
 
-            # Store band case mapping if available
             if (
                 dim_names["bands"] in cube_dims
                 and "values" in cube_dims[dim_names["bands"]]
@@ -431,16 +446,12 @@ def _load_zarr_assets(
     reference_system,
     use_xarray_open_kwargs,
     use_xarray_storage_options,
+    available_variables,
 ):
-    """Load Zarr assets from STAC items."""
     datasets = []
     for item in items:
         for asset in item.assets.values():
-            kwargs = (
-                asset.extra_fields.get("xarray:open_kwargs", {})
-                if use_xarray_open_kwargs
-                else {"engine": "zarr", "consolidated": True, "chunks": {}}
-            )
+            kwargs = _zarr_open_kwargs(asset, use_xarray_open_kwargs)
 
             if use_xarray_storage_options:
                 storage_opts = asset.extra_fields.get("xarray:storage_options", {})
@@ -453,30 +464,9 @@ def _load_zarr_assets(
                     }
 
             ds = xr.open_dataset(asset.href, **kwargs)
-
-            # Get available variables from dataset
-            available_variables = list(ds.data_vars.keys())
-
             if bands is not None and available_variables:
-                # Use case-insensitive matching for bands
-                vars_to_load = []
-                for band in bands:
-                    # Try exact match first
-                    if band in ds.data_vars:
-                        vars_to_load.append(band)
-                    else:
-                        # Try case-insensitive match
-                        for var_name in ds.data_vars:
-                            if var_name.lower() == band.lower():
-                                vars_to_load.append(var_name)
-                                break
-
-                if vars_to_load:
-                    ds = ds[vars_to_load]
-                else:
-                    logger.warning(
-                        f"No matching bands found in dataset for requested bands: {bands}"
-                    )
+                vars_to_load = [b for b in bands if b in ds.data_vars]
+                ds = ds[vars_to_load]
             datasets.append(ds)
 
     if datasets:
@@ -670,6 +660,7 @@ def load_stac(
             reference_system,
             use_xarray_open_kwargs,
             use_xarray_storage_options,
+            available_variables,
         )
     else:
         stack = _load_non_zarr_assets(
@@ -728,7 +719,7 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
 
     response = requests.get(url)
     if not response.status_code < 400:
-        raise Exception(f"Provided url {url} unavailable. ")
+        raise Exception(f"Provided url {url} unavailable.")
 
     if "JSON" in format:
         url_json = response.json()
@@ -752,17 +743,20 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
 
         import geoparquet as gpq
 
-        file_name = url.split("/")[-1]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Use a fixed filename in tmpdir for download so we don't have to worry
+            # about trying to sanitize the URL.
+            file_name = os.path.join(tmpdir, "downloaded.parquet")
+            with open(file_name, "wb") as file:
+                file.write(response.content)
 
-        with open(file_name, "wb") as file:
-            file.write(response.content)
+            file_size = os.path.getsize(file_name)
+            if file_size > 0:
+                logger.info(
+                    f"File downloaded successfully. File size: {file_size} bytes"
+                )
 
-        file_size = os.path.getsize(file_name)
-        if file_size > 0:
-            logger.info(f"File downloaded successfully. File size: {file_size} bytes")
-
-        gdf = gpq.read_geoparquet(file_name)
-        os.system(f"rm -rf {file_name}")
+            gdf = gpq.read_geoparquet(file_name)
 
     elif format == "JSON":
         return url_json

@@ -2,4 +2,4 @@ name: ci
 channels:
   - conda-forge
 dependencies:
-  - gdal=3.13.0
+  - gdal=3.13.1

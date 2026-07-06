@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 __all__ = [
     "text_begins",
@@ -8,9 +8,7 @@ __all__ = [
 ]
 
 
-def text_begins(
-    data: str, pattern: str, case_sensitive: Optional[bool] = True
-) -> Optional[str]:
+def text_begins(data: str, pattern: str, case_sensitive: bool = True) -> bool | None:
     if data:
         if case_sensitive:
             return data.startswith(pattern)
@@ -20,9 +18,7 @@ def text_begins(
         return None
 
 
-def text_contains(
-    data: str, pattern: str, case_sensitive: Optional[bool] = True
-) -> Optional[str]:
+def text_contains(data: str, pattern: str, case_sensitive: bool = True) -> bool | None:
     if data:
         if case_sensitive:
             return pattern in data
@@ -32,9 +28,7 @@ def text_contains(
         return None
 
 
-def text_ends(
-    data: str, pattern: str, case_sensitive: Optional[bool] = True
-) -> Optional[str]:
+def text_ends(data: str, pattern: str, case_sensitive: bool = True) -> bool | None:
     if data:
         if case_sensitive:
             return data.endswith(pattern)

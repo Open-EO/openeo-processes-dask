@@ -70,7 +70,7 @@ This project requires **GDAL >=3.8.4** (the version shipped by Ubuntu 24.04) and
 
 ## Development environment
 
-openeo-processes-dask requires poetry >1.2, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
+This package requires at least Poetry 2.2, see their [docs](https://python-poetry.org/docs/#installation) for installation instructions.
 
 Clone the repository with `--recurse-submodules` to also fetch the process specs:
 

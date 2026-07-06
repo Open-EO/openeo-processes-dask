@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Union
+from typing import Callable, Literal, Optional, Union
 
 import numpy as np
 import scipy.ndimage
@@ -131,8 +131,8 @@ def apply_dimension(
 def apply_kernel(
     data: RasterCube,
     kernel: np.ndarray,
-    factor: Optional[float] = 1,
-    border: Union[float, str, None] = 0,
+    factor: float = 1.0,
+    border: int | float | Literal["replicate", "reflect", "reflect_pixel", "wrap"] = 0,
     replace_invalid: Optional[float] = 0,
 ) -> RasterCube:
     kernel = np.asarray(kernel)
@@ -141,7 +141,13 @@ def apply_kernel(
             "Each dimension of the kernel must have an uneven number of elements."
         )
 
-    def convolve(data, kernel, mode="constant", cval=0, fill_value=0):
+    def convolve(
+        data: RasterCube,
+        kernel: np.ndarray,
+        mode: str,
+        cval: int | float,
+        fill_value,
+    ):
         dims = data.openeo.spatial_dims
         convolved = lambda data: scipy.ndimage.convolve(
             data, kernel, mode=mode, cval=cval
