@@ -173,8 +173,9 @@ def test_load_stac_zarr_missing_requested_band(bounding_box, tmp_path):
 
 
 def test_load_url(tmp_path):
-    import geopandas as gpd
     import multiprocessing as _mp
+
+    import geopandas as gpd
     import pyarrow as _pa
     import pyarrow.parquet as _pq
     import shapely as _shapely
