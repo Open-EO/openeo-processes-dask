@@ -1,3 +1,4 @@
+import json
 import pathlib
 import shutil
 import tempfile
@@ -171,15 +172,72 @@ def test_load_stac_zarr_missing_requested_band(bounding_box, tmp_path):
         load_stac(url=str(stac_path), bands=["missing_band"])
 
 
-def test_load_url():
-    URL = "https://github.com/ValentinaHutter/polygons/raw/master/geoparquet/example%20file.geoparquet"
+def test_load_url(tmp_path):
+    import geopandas as gpd
+    import multiprocessing as _mp
+    import pyarrow as _pa
+    import pyarrow.parquet as _pq
+    import shapely as _shapely
+    from shapely.geometry import Point, Polygon
 
-    load_vector = load_url(url=URL, format="Parquet")
+    # -- GeoJSON test --
+    geojson_data = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"name": "test"},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [10.0, 46.0],
+                            [11.0, 46.0],
+                            [11.0, 47.0],
+                            [10.0, 47.0],
+                            [10.0, 46.0],
+                        ]
+                    ],
+                },
+            }
+        ],
+        "crs": {"type": "name", "properties": {"name": "EPSG:4326"}},
+    }
+    geojson_path = tmp_path / "test.geojson"
+    geojson_path.write_text(json.dumps(geojson_data))
 
+    load_vector = load_url(url=str(geojson_path), format="GeoJSON")
     assert isinstance(load_vector, xr.Dataset)
 
-    URL = "https://raw.githubusercontent.com/ValentinaHutter/polygons/master/polygons_all.json"
+    # -- GeoParquet test --
+    gdf = gpd.GeoDataFrame(
+        {"a": [1]},
+        geometry=[Point(0, 0)],
+        crs="EPSG:4326",
+    )
+    field_name = gdf.geometry.name
+    df = gdf.copy()
+    with _mp.Pool() as pool:
+        df[field_name] = pool.map(_shapely.wkb.dumps, df[field_name])
+    table = _pa.Table.from_pandas(df)
+    geo_metadata = {
+        "geometry_fields": [
+            {
+                "field_name": field_name,
+                "geometry_format": "wkb",
+                "geometry_types": ["Point"],
+                "crs": "EPSG:4326",
+                "crs_format": "unknown",
+            }
+        ]
+    }
+    tbl_metadata = table.schema.metadata
+    tbl_metadata[b"geometry_fields"] = json.dumps(
+        geo_metadata["geometry_fields"]
+    ).encode("utf-8")
+    table = table.replace_schema_metadata(tbl_metadata)
+    geoparquet_path = tmp_path / "test.geoparquet"
+    _pq.write_table(table, str(geoparquet_path))
 
-    load_vector = load_url(url=URL, format="GeoJSON")
-
+    load_vector = load_url(url=str(geoparquet_path), format="Parquet")
     assert isinstance(load_vector, xr.Dataset)

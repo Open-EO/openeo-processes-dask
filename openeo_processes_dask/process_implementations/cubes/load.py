@@ -697,20 +697,40 @@ def load_stac(
 
 
 def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}):
+    import os as _os
+
     import geopandas as gpd
-    import requests
 
     if format not in ["GeoJSON", "JSON", "Parquet"]:
         raise Exception(
             f"FormatUnsuitable: Data can't be loaded with the requested input format {format}."
         )
 
-    response = requests.get(url)
-    if not response.status_code < 400:
-        raise Exception(f"Provided url {url} unavailable.")
+    _parsed = urlparse(url)
+    _is_local = _parsed.scheme in ("file", "") and _os.path.exists(
+        _parsed.path if _parsed.scheme == "file" else url
+    )
 
-    if "JSON" in format:
-        url_json = response.json()
+    if _is_local:
+        _filepath = _parsed.path if _parsed.scheme == "file" else url
+        if "JSON" in format:
+            import json as _json
+
+            with open(_filepath) as _f:
+                url_json = _json.load(_f)
+        elif format == "Parquet":
+            with open(_filepath, "rb") as _f:
+                response_content = _f.read()
+    else:
+        import requests
+
+        response = requests.get(url)
+        if not response.status_code < 400:
+            raise Exception(f"Provided url {url} unavailable.")
+        if "JSON" in format:
+            url_json = response.json()
+        elif format == "Parquet":
+            response_content = response.content
 
     if format == "GeoJSON":
         for feature in url_json.get("features", {}):
@@ -736,7 +756,7 @@ def load_url(url: str, format: Literal["GeoJSON", "JSON", "Parquet"], options={}
             # about trying to sanitize the URL.
             file_name = os.path.join(tmpdir, "downloaded.parquet")
             with open(file_name, "wb") as file:
-                file.write(response.content)
+                file.write(response_content)
 
             file_size = os.path.getsize(file_name)
             if file_size > 0:
