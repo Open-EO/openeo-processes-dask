@@ -365,7 +365,7 @@ def quantiles(
 
     if q is not None:
         logger.warning(
-            "This parameter has been **deprecated**. Please use the parameter `probabilities` instead."
+            "The 'q' parameter has been **deprecated**. Please use the parameter `probabilities` instead."
         )
         probabilities = np.arange(1.0 / q, 1, 1.0 / q)
 
