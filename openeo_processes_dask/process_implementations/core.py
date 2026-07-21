@@ -46,7 +46,7 @@ def process(f):
 
         # If an arg is specified in positional_parameters, put the correct key-value pair into named_parameters
         for arg_name, i in positional_parameters.items():
-            named_parameters[arg_name] = args[i]
+            named_parameters[str(arg_name)] = args[i]
 
         for arg in args:
             if isinstance(arg, ParameterReference):
