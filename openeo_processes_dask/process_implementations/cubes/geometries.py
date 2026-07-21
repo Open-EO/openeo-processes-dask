@@ -6,7 +6,9 @@ import geopandas as gpd
 import numpy as np
 import shapely
 import xarray as xr
-import xvec
+
+# Required to get .xvec attribute on DataArray.
+import xvec  # noqa: F401
 
 from openeo_processes_dask.process_implementations.data_model import VectorCube
 from openeo_processes_dask.process_implementations.exceptions import (

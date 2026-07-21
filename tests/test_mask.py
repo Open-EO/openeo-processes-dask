@@ -2,16 +2,13 @@ from functools import partial
 
 import numpy as np
 import pytest
-from openeo_pg_parser_networkx.pg_schema import ParameterReference, TemporalInterval
+from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
 from openeo_processes_dask.process_implementations.cubes.mask import mask
 from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
     mask_polygon,
 )
-from openeo_processes_dask.process_implementations.cubes.reduce import (
-    reduce_dimension,
-    reduce_spatial,
-)
+from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from tests.mockdata import create_fake_rastercube
 
 

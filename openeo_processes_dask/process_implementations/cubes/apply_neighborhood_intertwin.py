@@ -1,8 +1,4 @@
-from typing import Any, Callable, Optional
-
-import numpy as np
-import numpy.typing as npt
-import xarray as xr
+from typing import Callable, Optional
 
 from openeo_processes_dask.process_implementations.data_model import RasterCube
 
