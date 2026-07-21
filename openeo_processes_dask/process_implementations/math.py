@@ -3,6 +3,7 @@ import logging
 import dask
 import dask.array as da
 import numpy as np
+from dask.delayed import delayed
 
 from openeo_processes_dask.process_implementations.cubes.utils import (
     _has_dask,
@@ -83,7 +84,7 @@ def nan(data=None):
     if data is None or isinstance(data, np.ndarray):
         return np.nan
     elif data is not None and _has_dask() and _is_dask_array(data):
-        return dask.delayed(np.nan)
+        return delayed(np.nan)
     else:
         raise OpenEOException(
             f"Don't know which nan-value to use for provided datatype: {type(data)}."
@@ -324,7 +325,7 @@ def extrema(data, ignore_nodata=True, axis=None, keepdims=False):
     # TODO: Could be sped up by only iterating over array once
     minimum = _min(data, ignore_nodata=ignore_nodata, axis=axis, keepdims=keepdims)
     maximum = _max(data, ignore_nodata=ignore_nodata, axis=axis, keepdims=keepdims)
-    array = dask.delayed(np.array)([minimum, maximum])
+    array = delayed(np.array)([minimum, maximum])
     return da.from_delayed(array, (2,), dtype=data.dtype)
 
 
