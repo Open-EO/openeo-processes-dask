@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 from numpy.typing import ArrayLike
 
@@ -49,16 +47,16 @@ def _not(x: ArrayLike):
 
 def _if(
     value: ArrayLike,
-    accept: Union[np.array, list, str, float, int],
-    reject: Optional[Union[np.array, list, str, float, int]] = np.nan,
+    accept: ArrayLike,
+    reject: ArrayLike = np.nan,
 ):
     return np.where(value, accept, reject)
 
 
 def _any(
     data: ArrayLike,
-    ignore_nodata: Optional[bool] = True,
-    axis: Optional[int] = None,
+    ignore_nodata: bool = True,
+    axis: int | tuple[int] | None = None,
 ):
     if len(data) == 0:
         return np.nan
@@ -73,8 +71,8 @@ def _any(
 
 def _all(
     data: ArrayLike,
-    ignore_nodata: Optional[bool] = True,
-    axis: Optional[int] = None,
+    ignore_nodata: bool = True,
+    axis: int | tuple[int] | None = None,
 ):
     if len(data) == 0:
         return np.nan
