@@ -153,7 +153,7 @@ def mask_polygon(
         try:
             if final_mask.shape[axis] != data.shape[axis]:
                 diff_axes.append(axis)
-        except:
+        except Exception:
             if len(diff_axes) < (len(data_dims) - 2):
                 diff_axes.append(axis)
 

@@ -106,7 +106,7 @@ def date_shift(date: str, value: int, unit: str) -> str:
                         new_daytime_numpy = np.datetime64(new_daytime)
                         result = f"{new_daytime}{time}"
                         return result
-                    except:
+                    except Exception:
                         pass
             elif int(day) < 10:
                 new_daytime = f"{new_date}-0{day}{time}"

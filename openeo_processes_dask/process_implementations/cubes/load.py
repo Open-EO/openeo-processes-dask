@@ -45,7 +45,7 @@ def _validate_stac(url):
     if len(stac.message) == 1:
         try:
             asset_type = stac.message[0]["asset_type"]
-        except:
+        except Exception:
             raise Exception(f"stac-validator returned an error: {stac.message}")
     else:
         raise Exception(
