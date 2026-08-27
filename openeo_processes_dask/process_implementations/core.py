@@ -2,7 +2,7 @@ import importlib
 import inspect
 import logging
 from functools import wraps
-from typing import Optional
+from typing import Any
 
 from openeo_pg_parser_networkx.pg_schema import ParameterReference
 
@@ -24,8 +24,8 @@ def process(f):
     @wraps(f)
     def wrapper(
         *args,
-        positional_parameters: Optional[dict[int]] = None,
-        named_parameters: Optional[dict[str]] = None,
+        positional_parameters: dict[int, Any] | None = None,
+        named_parameters: dict[str, Any] | None = None,
         **kwargs,
     ):
         # Need to transform this from a tuple to a list to be able to delete from it.
