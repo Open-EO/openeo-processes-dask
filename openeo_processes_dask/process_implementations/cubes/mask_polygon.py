@@ -6,9 +6,7 @@ import dask.array as da
 import geopandas as gpd
 import numpy as np
 import rasterio
-import rioxarray
 import shapely
-import xarray as xr
 from xarray.core import dtypes
 
 from openeo_processes_dask.process_implementations.data_model import (
@@ -155,7 +153,7 @@ def mask_polygon(
         try:
             if final_mask.shape[axis] != data.shape[axis]:
                 diff_axes.append(axis)
-        except:
+        except Exception:
             if len(diff_axes) < (len(data_dims) - 2):
                 diff_axes.append(axis)
 

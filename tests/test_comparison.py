@@ -1,4 +1,3 @@
-from datetime import datetime
 from functools import partial
 
 import dask
@@ -11,9 +10,8 @@ from openeo_pg_parser_networkx.pg_schema import ParameterReference
 from openeo_processes_dask.process_implementations import merge_cubes
 from openeo_processes_dask.process_implementations.comparison import *
 from openeo_processes_dask.process_implementations.cubes.apply import apply
-from openeo_processes_dask.process_implementations.cubes.reduce import reduce_dimension
 from openeo_processes_dask.process_implementations.utils import get_scalar_type
-from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
+from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
 
 

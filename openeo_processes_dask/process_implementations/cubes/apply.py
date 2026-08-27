@@ -3,7 +3,7 @@ from typing import Callable, Literal, Optional, Union
 import numpy as np
 import scipy.ndimage
 import xarray as xr
-from shapely.geometry import MultiPolygon, Polygon, shape
+from shapely.geometry import MultiPolygon, shape
 from shapely.ops import unary_union
 
 from openeo_processes_dask.process_implementations.cubes.mask_polygon import (

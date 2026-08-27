@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from openeo_processes_dask.process_implementations import drop_dimension
 from tests.mockdata import create_fake_rastercube
 
 

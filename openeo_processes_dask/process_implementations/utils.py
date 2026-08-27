@@ -1,6 +1,4 @@
-import dask.array as da
 import numpy as np
-import xarray as xr
 
 
 def get_scalar_type(obj):

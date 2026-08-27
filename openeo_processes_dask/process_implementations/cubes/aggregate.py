@@ -1,17 +1,15 @@
 import copy
-import gc
 import logging
 from typing import Callable, Optional, Union
 
-import dask.array as da
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import rasterio
 import shapely
 import xarray as xr
-import xvec
-from joblib import Parallel, delayed
+
+# Required to get .xvec attribute on DataArray.
+import xvec  # noqa: F401
 from openeo_pg_parser_networkx.pg_schema import TemporalInterval, TemporalIntervals
 
 from openeo_processes_dask.process_implementations.data_model import (

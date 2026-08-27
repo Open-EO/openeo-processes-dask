@@ -1,5 +1,4 @@
 import numpy as np
-import openeo
 import pytest
 import xarray as xr
 

@@ -1,14 +1,10 @@
-import json
 import logging
 import warnings
 from typing import Any, Callable, Optional, Union
 
-import dask.array as da
 import geopandas as gpd
 import numpy as np
 import pyproj
-import rasterio
-import rioxarray
 import shapely
 import xarray as xr
 from openeo_pg_parser_networkx.pg_schema import BoundingBox, TemporalInterval

@@ -15,7 +15,7 @@ from openeo_processes_dask.process_implementations.cubes.apply import (
 from openeo_processes_dask.process_implementations.cubes.mask_polygon import (
     mask_polygon,
 )
-from tests.general_checks import assert_numpy_equals_dask_numpy, general_output_checks
+from tests.general_checks import general_output_checks
 from tests.mockdata import create_fake_rastercube
 
 
