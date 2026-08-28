@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import dask.array as da
 import xarray as xr
@@ -12,11 +12,21 @@ __all__ = ["run_udf"]
 
 
 def run_udf(
-    data: da.Array, udf: str, runtime: str, context: Optional[dict] = None
+    data: Union[RasterCube, da.Array],
+    udf: str,
+    runtime: str,
+    context: Optional[dict] = None,
 ) -> RasterCube:
-    data = XarrayDataCube(xr.DataArray(data))
-    data = UdfData(datacube_list=[data], user_context=context)
-    result = run_udf_code(code=udf, data=data)
+    # Preserve dimension names and coordinates if input is already an xr.DataArray
+    if isinstance(data, xr.DataArray):
+        # Input is already a proper xr.DataArray (RasterCube), preserve its structure
+        data_cube = XarrayDataCube(data)
+    else:
+        # Input is a dask/numpy array, convert to xr.DataArray (will have generic dims)
+        data_cube = XarrayDataCube(xr.DataArray(data))
+
+    udf_data = UdfData(datacube_list=[data_cube], user_context=context)
+    result = run_udf_code(code=udf, data=udf_data)
     cubes = result.get_datacube_list()
     if len(cubes) != 1:
         raise ValueError(
