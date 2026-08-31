@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import xarray as xr
 
 from openeo_processes_dask.process_implementations.cubes.indices import ndvi
 from openeo_processes_dask.process_implementations.exceptions import (
@@ -73,11 +74,14 @@ def test_ndvi(temporal_interval, bounding_box, random_raster_data, process_regis
 
     target_band = "yay"
     output_with_extra_dim = ndvi(input_cube, target_band=target_band)
+    assert isinstance(output_with_extra_dim, xr.DataArray)
     assert len(output_with_extra_dim.dims) == len(output.dims) + 1
     assert (
         len(output_with_extra_dim.coords[band_dim])
         == len(input_cube.coords[band_dim]) + 1
     )
+    assert output_with_extra_dim.coords[band_dim].values[-1] == target_band
+    assert output_with_extra_dim.coords["common_name"][-1] == ""
 
     with pytest.raises(BandExists):
         output_with_extra_dim = ndvi(input_cube, target_band="t")
