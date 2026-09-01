@@ -44,24 +44,33 @@ def _add_missing_coords(
         DataArray `reference` with potentially altered coordinate dtype
     """
     missing = {}
-    for name, coord in reference.coords.items():
-        if name in target.coords:
-            continue
 
-        fill = _dummy_value(coord.dtype)
+    # get all secondary coordinates to dim in reference DataArray
+    secondary_coord_to_dim = [
+        (name, coord)
+        for name, coord in reference.coords.items()
+        if name != dim and coord.dims == (dim,)
+    ]
 
-        if coord.dims == ():  # scalar coordinate
-            missing[name] = ((), np.array(fill, dtype=coord.dtype))
+    for name, coord in secondary_coord_to_dim:
+        # special case: dim is "common_name"
+        if coord.dtype.kind == "U" and name == "common_name":
+            fill = "NDVI"
 
-        elif coord.dims == (dim,):  # coordinate along concat dim
-            missing[name] = (dim, np.full(target.sizes[dim], fill, dtype=coord.dtype))
+            # convert coord dtype to U<4 to fit "NDVI", if it is less than 4 characters
+            if coord.dtype.kind == "U" and int(coord.dtype.str[2:]) < 4:
+                reference = reference.assign_coords(common_name=coord.astype("<U4"))
 
-        elif all(d in target.dims for d in coord.dims):  # other dims
-            shape = tuple(target.sizes[d] for d in coord.dims)
-            missing[name] = (coord.dims, np.full(shape, fill, dtype=coord.dtype))
-        # else: dims don't exist in target -> can't sensibly create it, skip
+        else:
+            fill = _dummy_value(coord.dtype)
 
-    return target.assign_coords(**missing) if missing else target
+        missing[name] = (
+            dim,
+            np.full(target.sizes[dim], fill, dtype=reference.coords[name].dtype),
+        )
+
+    return target.assign_coords(**missing) if missing else target, reference
+
 
 def ndvi(
     data: RasterCube, nir: str = "nir", red: str = "red", target_band: str | None = None
@@ -109,7 +118,7 @@ def ndvi(
         nd = nd.expand_dims(band_dim).assign_coords({band_dim: [target_band]})
 
         # add potentially missing coords from data to nd, so that xr.concat works
-        nd = _add_missing_coords(nd, data, band_dim)
+        nd, data = _add_missing_coords(nd, data, band_dim)
         nd = xr.concat([data, nd], dim=band_dim)
 
     nd.attrs = data.attrs
