@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import xarray as xr
 
@@ -13,7 +15,7 @@ from openeo_processes_dask.process_implementations.math import normalized_differ
 __all__ = ["ndvi"]
 
 
-def _dummy_value(dtype):
+def _dummy_value(dtype: np.dtype) -> Any:
     """A sensible 'missing' fill value for a given numpy dtype."""
     if np.issubdtype(dtype, np.floating):
         return np.nan
@@ -28,10 +30,18 @@ def _dummy_value(dtype):
     return ""  # str / object
 
 
-def _add_missing_coords(target, reference, dim):
+def _add_missing_coords(
+    target: xr.DataArray, reference: xr.DataArray, dim: str
+) -> tuple[xr.DataArray, xr.DataArray]:
     """
-    Ensure `target` has every coordinate that `reference` has.
-    Missing coordinates are created with a dummy value
+    Adds missing secondary coordinate to dimension dim in 'reference' to 'target
+    Returns the target DataArray with added coordiantes, and the reference with
+    potentially altered coordinate data type
+    :param target: DataArray to which secondary coordinate is added
+    :param reference: DataArray to be checked for secondary coordiantes to dimension dim
+    :param dim: Name of dimension to check for secondary coordiante in dim
+    :return: DataArray `target` with potentially added coordinate dim,
+        DataArray `reference` with potentially altered coordinate dtype
     """
     missing = {}
     for name, coord in reference.coords.items():
@@ -53,8 +63,9 @@ def _add_missing_coords(target, reference, dim):
 
     return target.assign_coords(**missing) if missing else target
 
-
-def ndvi(data: RasterCube, nir="nir", red="red", target_band=None):
+def ndvi(
+    data: RasterCube, nir: str = "nir", red: str = "red", target_band: str | None = None
+) -> xr.DataArray:
     if len(data.openeo.band_dims) == 0:
         raise DimensionAmbiguous(
             "Dimension of type `bands` is not available or is ambiguous."
