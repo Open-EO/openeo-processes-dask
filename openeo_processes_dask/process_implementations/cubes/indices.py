@@ -64,10 +64,7 @@ def _add_missing_coords(
         else:
             fill = _dummy_value(coord.dtype)
 
-        missing[name] = (
-            dim,
-            np.full(target.sizes[dim], fill, dtype=reference.coords[name].dtype),
-        )
+        missing[name] = (dim, np.array([fill]))
 
     return target.assign_coords(**missing) if missing else target, reference
 
