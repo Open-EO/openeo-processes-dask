@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
+import xarray as xr
 
+import openeo_processes_dask.process_implementations.cubes.indices as indices
 from openeo_processes_dask.process_implementations.cubes.indices import ndvi
 from openeo_processes_dask.process_implementations.exceptions import (
     BandExists,
@@ -71,13 +73,56 @@ def test_ndvi(temporal_interval, bounding_box, random_raster_data, process_regis
     with pytest.raises(KeyError):
         ndvi(cube_with_nothing_resolvable)
 
-    target_band = "yay"
+    target_band = "yayyyy"
     output_with_extra_dim = ndvi(input_cube, target_band=target_band)
+    assert isinstance(output_with_extra_dim, xr.DataArray)
     assert len(output_with_extra_dim.dims) == len(output.dims) + 1
     assert (
         len(output_with_extra_dim.coords[band_dim])
         == len(input_cube.coords[band_dim]) + 1
     )
+    assert output_with_extra_dim.coords[band_dim].values[-1] == target_band
+    assert output_with_extra_dim.coords["common_name"].dtype == np.dtype("<U4")
+    assert output_with_extra_dim.coords["common_name"][-1] == "NDVI"
+
+    output_with_other_dim = ndvi(
+        input_cube.rename({"common_name": "renamed"}), target_band=target_band
+    )
+    assert isinstance(output_with_other_dim, xr.DataArray)
+    assert len(output_with_other_dim.dims) == len(output.dims) + 1
+    assert (
+        len(output_with_other_dim.coords[band_dim])
+        == len(input_cube.coords[band_dim]) + 1
+    )
+    assert output_with_other_dim.coords[band_dim].values[-1] == target_band
+    assert output_with_other_dim.coords["renamed"][-1] == ""
+
+    # unnamed cube caused problems in the past
+    input_cube_noname = input_cube.rename(None)
+    out_noname = ndvi(input_cube_noname, target_band="ndvi")
+    assert (
+        len(out_noname.coords[band_dim]) == len(input_cube_noname.coords[band_dim]) + 1
+    )
 
     with pytest.raises(BandExists):
         output_with_extra_dim = ndvi(input_cube, target_band="t")
+
+
+def test_dummy_value():
+    out = indices._dummy_value(np.float32)
+    assert np.isnan(out)
+
+    out = indices._dummy_value(np.datetime64("2026-09-01").dtype)
+    assert np.isnat(out)
+
+    out = indices._dummy_value(np.timedelta64(100).dtype)
+    assert np.isnat(out)
+
+    out = indices._dummy_value(np.int64)
+    assert out == -1
+
+    out = indices._dummy_value(np.dtype("bool"))
+    assert out is False
+
+    out = indices._dummy_value(np.dtype("<U5"))
+    assert out == ""
