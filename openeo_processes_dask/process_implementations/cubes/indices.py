@@ -34,7 +34,7 @@ def _add_missing_coords(
     target: xr.DataArray, reference: xr.DataArray, dim: str
 ) -> tuple[xr.DataArray, xr.DataArray]:
     """
-    Adds missing secondary coordinate to dimension dim in 'reference' to 'target
+    Adds missing secondary coordinate to dimension dim in 'reference' to 'target'
     Returns the target DataArray with added coordiantes, and the reference with
     potentially altered coordinate data type
     :param target: DataArray to which secondary coordinate is added
