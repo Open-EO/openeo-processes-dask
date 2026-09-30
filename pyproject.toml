@@ -1,14 +1,15 @@
 [project]
 name = "openeo-processes-dask"
-version = "2026.8.2"
+version = "2026.9.1"
 description = "Python implementations of many OpenEO processes, dask-friendly by default."
 authors = [
-    {name = "Lukas Weidenholzer", email = "lukas.weidenholzer@eodc.eu"},
     {name = "Sean Hoyal", email = "sean.hoyal@eodc.eu"},
     {name = "Valentina Hutter", email = "valentina.hutter@eodc.eu"},
+    {name = "Eurac Research - Institute for Earth Observation", email = "earth.observation@eurac.edu"},    
 ]
 maintainers = [
     {name = "EODC Staff", email = "support@eodc.eu"},
+    {name = "Eurac Research - Institute for Earth Observation", email = "earth.observation@eurac.edu"},
 ]
 license = "Apache-2.0"
 readme = "README.md"
