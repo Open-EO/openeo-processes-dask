@@ -5,7 +5,7 @@ description = "Python implementations of many OpenEO processes, dask-friendly by
 authors = [
     {name = "Sean Hoyal", email = "sean.hoyal@eodc.eu"},
     {name = "Valentina Hutter", email = "valentina.hutter@eodc.eu"},
-    {name = "Eurac Research - Institute for Earth Observation", email = "earth.observation@eurac.edu"},    
+    {name = "Eurac Research - Institute for Earth Observation", email = "earth.observation@eurac.edu"},
 ]
 maintainers = [
     {name = "EODC Staff", email = "support@eodc.eu"},
