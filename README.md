@@ -3,7 +3,7 @@
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 ![PyPI - Status](https://img.shields.io/pypi/status/openeo-processes-dask)
 ![PyPI](https://img.shields.io/pypi/v/openeo-processes-dask)
-![Python Version](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12%20|%203.13-blue)
+![Python Version](https://img.shields.io/badge/python-3.12%20|%203.13%20|%203.14-blue)
 [![codecov](https://codecov.io/github/Eurac-Research-Institute-for-EO/openeo-processes-dask/branch/fix/dependencies_update/graph/badge.svg?token=RA82MUN9RZ)](https://codecov.io/github/Eurac-Research-Institute-for-EO/openeo-processes-dask)
 
 `openeo-processes-dask` is a collection of Python implementations of [OpenEO processes](https://processes.openeo.org/) based on the [xarray](https://github.com/pydata/xarray)/[dask](https://github.com/dask/dask) ecosystem. It is intended to be used alongside with [openeo-pg-parser-networkx](https://github.com/Open-EO/openeo-pg-parser-networkx), which handles the parsing and execution of [OpenEO process graphs](https://openeo.org/documentation/1.0/developers/api/reference.html#section/Processes/Process-Graphs). There you'll also find a tutorial on how to register process implementations from an arbitrary source (e.g. this repo) to the registry of available processes.
@@ -62,7 +62,7 @@ A subset of process implementations with heavy or unstable dependencies are hidd
 The `implementations` extra depends on GDAL transitively via `rasterio`, `rioxarray`, `odc-stac`, and `geopandas`.
 Always install GDAL **first** (via conda-forge or system packages) before pip-installing extras.
 The `ml` (`xgboost`) and `deforestation` (`rqadeforestation`) extras do not directly depend on GDAL.
-This project requires **GDAL >=3.8.4** (the version shipped by Ubuntu 24.04) and is CI-tested against conda-forge GDAL on Python 3.10–3.13.
+This project requires **GDAL >=3.8.4** (the version shipped by Ubuntu 24.04) and is CI-tested against conda-forge GDAL on Python 3.12–3.13.
 
 **Version-ceiling policy:** Library dependencies in `pyproject.toml` declare only minimum versions (`>=X`). Any upper bounds (`<Y`) needed for CI go into `[tool.poetry.group.ci.dependencies]` (or the conda `ci-environment.yml` pin) so downstream consumers are never blocked. Install the `civersions` extra if your environment also needs the ceiling.
 
